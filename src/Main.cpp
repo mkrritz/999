@@ -17,8 +17,10 @@ void CameraInit(Heap* const);
 // Camera
 
 // Shader
-void ShadersInit(Heap* const, Shader*[], bool);
-void ReloadShader(Heap* const, uint32_t);
+void ShadersInit(Heap* const,
+                 Shader*[], bool);
+void ReloadShader(Heap* const,
+                  uint32_t);
 // Shader
 
 // Input
