@@ -1,8 +1,8 @@
 #ifndef CAMERA_HPP
 #define CAMERA_HPP
 
-static const uint32_t CAMERA_PASS = 0;
-static const uint32_t GODSEYE_PASS = 1;
+static const uint32_t FIRST_PASS = 0;
+static const uint32_t SECOND_PASS = 1;
 
 static glm::vec3 Up = glm::vec3(0,1,0);
 

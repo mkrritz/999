@@ -29,10 +29,18 @@ InputState* NextRecordedInputState();
 
 // UI
 void UIInit(Heap* const);
-void RenderUI(const Shader* const [],
-              const Camera* const,
-              const UI* const,
-              float);
+void RenderGameScreen(const Shader* const [],
+                      const Camera* const,
+                      const UI* const,
+                      float);
+void RenderFinalScreen(const Shader* const [],
+                       const Camera* const,
+                       const UI* const,
+                       float);
+void RenderToScreen(const Shader* const [],
+                    const Camera* const,
+                    const UI* const,
+                    float);
 //
 
 int main() {
@@ -73,8 +81,6 @@ int main() {
     uint32_t UpdateCount= 0;
     uint32_t FixedUpdateCount= 0;
     
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    
     while (!(input->special & InputM::ESC)) {
         CurrectTime = glfwGetTime();
         DeltaTime = CurrectTime - LastTime;
@@ -100,22 +106,25 @@ int main() {
             
         }
         
-        glClearColor(0.3,0.4,0.3,0.0);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)Quads::GAME_SCREEN].framebuffer);
+        glClearColor(1, 0, 0, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        if (camera->render_passes == 2) {
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)Quads::GAME_SCREEN].framebuffer);
-            glClearColor(1, 0, 0, 0);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        }
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)Quads::FINAL_SCREEN].framebuffer);
+        glClearColor(0, 1, 0, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glClearColor(0, 0, 1, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         for (uint32_t pass = 0; pass < camera->render_passes; pass++) {
-            if (pass == CAMERA_PASS) {
-                RenderUI(shaders, camera, ui, TotalTime);
+            if (pass == FIRST_PASS) {
+                RenderGameScreen(shaders, camera, ui, TotalTime);
             }
             
-            if (pass == GODSEYE_PASS) {
-                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-                RenderUI(shaders, camera, ui, TotalTime);
+            if (pass == SECOND_PASS) {
+                RenderFinalScreen(shaders, camera, ui, TotalTime);
+                
+                RenderToScreen(shaders, camera, ui, TotalTime);
             }
         }
         
