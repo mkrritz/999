@@ -20,7 +20,8 @@ void RenderToScreen(const Shader* const shaders[],
                     const UI* const ui,
                     float total_time) {
     const Shader* shader;
-    const Quad& quad = ui->quads[(uint32_t)Quads::FINAL_SCREEN];
+    const Quad& quad = ui->quads[(uint32_t)Quads::FINAL_SCREEN]; // Yes that's ok. do better
+    //const Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];  // Yes that's ok. do better
     
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     
@@ -52,9 +53,9 @@ void RenderFinalScreen(const Shader* const shaders[],
                       const UI* const ui,
                       float total_time) {
     const Shader* shader;
-    const Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
+    const Quad& quad = ui->quads[(uint32_t)Quads::FINAL_SCREEN];
     
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)Quads::FINAL_SCREEN].framebuffer);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)Quads::GAME_SCREEN].framebuffer);
     
     glBindVertexArray(ui->quad_vao);
     glActiveTexture(GL_TEXTURE0);
@@ -84,28 +85,28 @@ void RenderGameScreen(const Shader* const shaders[],
                       const UI* const ui,
                       float total_time) {
     const Shader* shader;
-    const Quad& quad = ui->quads[(uint32_t)Quads::FINAL_SCREEN];
+    const Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
     
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)Quads::GAME_SCREEN].framebuffer);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)Quads::FINAL_SCREEN].framebuffer);
     
     glBindVertexArray(ui->quad_vao);
     glActiveTexture(GL_TEXTURE0);
     glBindSampler(0, camera->sampler_clamp_linear);
     
-    //shader = shaders[(uint32_t)Shaders::TripleChannelQuad];
-    //glUseProgram(shader->ID);
-    //for (uint32_t U = 0; U < shader->uniforms_count; U++) {
-    //    GLuint location = shader->uniform_location[U];
-    //    switch(shader->uniform_name[U]) {
-    //        case Uniforms::Sampler: glUniform1i(location, 0); break;
-    //        case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-0.95f, 0.25f, 0.7f, 0.7f))); break;
-    //        case Uniforms::Time:   glUniform1f(location, total_time); break;
-    //        default: SHADER_WARNING("Uniform mismatch"); break;
-    //    }
-    //}
-    //glBindTexture(GL_TEXTURE_2D, quad.texture);
-    //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    //glBindTexture(GL_TEXTURE_2D, 0);
+    shader = shaders[(uint32_t)Shaders::TripleChannelQuad];
+    glUseProgram(shader->ID);
+    for (uint32_t U = 0; U < shader->uniforms_count; U++) {
+        GLuint location = shader->uniform_location[U];
+        switch(shader->uniform_name[U]) {
+            case Uniforms::Sampler: glUniform1i(location, 0); break;
+            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-0.95f, -0.95f, 0.7f, 0.7f))); break;
+            case Uniforms::Time:   glUniform1f(location, total_time); break;
+            default: SHADER_WARNING("Uniform mismatch"); break;
+        }
+    }
+    glBindTexture(GL_TEXTURE_2D, quad.texture);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
     
     shader = shaders[(uint32_t)Shaders::SingleChannelQuad];
     glUseProgram(shader->ID);
