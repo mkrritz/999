@@ -4,6 +4,8 @@
 enum struct Quads {
     GAME_SCREEN,
     SAVED_GAME_SCREEN,
+    // SETTINGS_SCREEN,
+    // MENU_SCREEN,
     Count
 };
 

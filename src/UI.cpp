@@ -20,8 +20,17 @@ void RenderToScreen(const Shader* const shaders[],
                     const UI* const ui,
                     float total_time) {
     const Shader* shader;
-    //const Quad& quad = ui->quads[(uint32_t)Quads::SAVED_GAME_SCREEN]; // Yes that's ok. do better
-    const Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];  // Yes that's ok. do better
+    const Quad* quad;
+    switch(camera->render_passes) {
+        case 1: {
+            quad = &ui->quads[(uint32_t)Quads::SAVED_GAME_SCREEN]; // Yes that's ok. do better
+            break;
+        }
+        case 2: {
+            quad = &ui->quads[(uint32_t)Quads::GAME_SCREEN];  // Yes that's ok. do better
+            break;
+        }
+    }
     
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     glClearColor(0, 0, 1, 0); // Blue
@@ -42,7 +51,7 @@ void RenderToScreen(const Shader* const shaders[],
             default: SHADER_WARNING("Uniform mismatch"); break;
         }
     }
-    glBindTexture(GL_TEXTURE_2D, quad.texture);
+    glBindTexture(GL_TEXTURE_2D, quad->texture);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     
@@ -151,7 +160,7 @@ void UIInit(Heap* const heap) {
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, quad.texture, 0);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, quad.depthbuffer, 0);
         
-        if(glCheckFramebufferStatus(GL_FRAMEBUFFER)!=GL_FRAMEBUFFER_COMPLETE) printf("\nFramebuffer Error\n"); // How is this triggered?
+        if(glCheckFramebufferStatus(GL_FRAMEBUFFER)!=GL_FRAMEBUFFER_COMPLETE) printf("\nFramebuffer Error\n");
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     }
     
@@ -173,7 +182,7 @@ void UIInit(Heap* const heap) {
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, quad.texture, 0);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, quad.depthbuffer, 0);
         
-        if(glCheckFramebufferStatus(GL_FRAMEBUFFER)!=GL_FRAMEBUFFER_COMPLETE) printf("\nFramebuffer Error\n"); // How is this triggered?
+        if(glCheckFramebufferStatus(GL_FRAMEBUFFER)!=GL_FRAMEBUFFER_COMPLETE) printf("\nFramebuffer Error\n");
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     }
     

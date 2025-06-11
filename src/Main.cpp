@@ -94,6 +94,13 @@ int main() {
         
         input = NextRecordedInputState();
         
+        if (input->special & InputM::F1) {
+            if (input->toggles & InputM::Toggle_F1) {
+                camera->render_passes = camera->render_passes % 2 + 1;
+            }
+            input->toggles &= ~InputM::Toggle_F1;
+        } else input->toggles |= InputM::Toggle_F1;
+        
         while (shader_slots_to_reload) {
             uint32_t slot = __builtin_ctzll(shader_slots_to_reload);
             shader_slots_to_reload &= ~(1ULL << slot);
@@ -114,9 +121,9 @@ int main() {
             
             if (pass == SECOND_PASS) {
                 SaveGameScreen(shaders, camera, ui, TotalTime);
-                
-                RenderToScreen(shaders, camera, ui, TotalTime);
             }
+            
+            RenderToScreen(shaders, camera, ui, TotalTime);
         }
         
         glfwSwapBuffers(window);
