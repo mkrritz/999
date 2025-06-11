@@ -20,10 +20,12 @@ void RenderToScreen(const Shader* const shaders[],
                     const UI* const ui,
                     float total_time) {
     const Shader* shader;
-    const Quad& quad = ui->quads[(uint32_t)Quads::FINAL_SCREEN]; // Yes that's ok. do better
-    //const Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];  // Yes that's ok. do better
+    //const Quad& quad = ui->quads[(uint32_t)Quads::SAVED_GAME_SCREEN]; // Yes that's ok. do better
+    const Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];  // Yes that's ok. do better
     
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glClearColor(0, 0, 1, 0); // Blue
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     glBindVertexArray(ui->quad_vao);
     glActiveTexture(GL_TEXTURE0);
@@ -48,14 +50,16 @@ void RenderToScreen(const Shader* const shaders[],
     glBindSampler(0, 0);
 }
 
-void RenderFinalScreen(const Shader* const shaders[],
-                      const Camera* const camera,
-                      const UI* const ui,
-                      float total_time) {
+void SaveGameScreen(const Shader* const shaders[],
+                    const Camera* const camera,
+                    const UI* const ui,
+                    float total_time) {
     const Shader* shader;
-    const Quad& quad = ui->quads[(uint32_t)Quads::FINAL_SCREEN];
+    const Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
     
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)Quads::GAME_SCREEN].framebuffer);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)Quads::SAVED_GAME_SCREEN].framebuffer);
+    glClearColor(0, 1, 0, 0); // Green
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     glBindVertexArray(ui->quad_vao);
     glActiveTexture(GL_TEXTURE0);
@@ -67,7 +71,7 @@ void RenderFinalScreen(const Shader* const shaders[],
         GLuint location = shader->uniform_location[U];
         switch(shader->uniform_name[U]) {
             case Uniforms::Sampler: glUniform1i(location, 0); break;
-            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-0.95f, 0.25f, 0.7f, 0.7f))); break;
+            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-0.65f, 0.1f, 0.7f, 0.7f))); break;
             case Uniforms::Time:   glUniform1f(location, total_time); break;
             default: SHADER_WARNING("Uniform mismatch"); break;
         }
@@ -87,26 +91,13 @@ void RenderGameScreen(const Shader* const shaders[],
     const Shader* shader;
     const Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
     
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)Quads::FINAL_SCREEN].framebuffer);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, quad.framebuffer);
+    glClearColor(1, 0, 0, 0); // Red
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     glBindVertexArray(ui->quad_vao);
     glActiveTexture(GL_TEXTURE0);
     glBindSampler(0, camera->sampler_clamp_linear);
-    
-    shader = shaders[(uint32_t)Shaders::TripleChannelQuad];
-    glUseProgram(shader->ID);
-    for (uint32_t U = 0; U < shader->uniforms_count; U++) {
-        GLuint location = shader->uniform_location[U];
-        switch(shader->uniform_name[U]) {
-            case Uniforms::Sampler: glUniform1i(location, 0); break;
-            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-0.95f, -0.95f, 0.7f, 0.7f))); break;
-            case Uniforms::Time:   glUniform1f(location, total_time); break;
-            default: SHADER_WARNING("Uniform mismatch"); break;
-        }
-    }
-    glBindTexture(GL_TEXTURE_2D, quad.texture);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
     
     shader = shaders[(uint32_t)Shaders::SingleChannelQuad];
     glUseProgram(shader->ID);
@@ -114,7 +105,7 @@ void RenderGameScreen(const Shader* const shaders[],
        GLuint location = shader->uniform_location[U];
        switch(shader->uniform_name[U]) {
            case Uniforms::Sampler: glUniform1i(location, 0); break;
-           case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(0.25f, 0.25f, 0.7f, 0.7f))); break;
+           case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-0.9f, -0.9f, 0.9f, 0.9f))); break;
            default: SHADER_WARNING("Uniform mismatch"); break;
        }
     }
@@ -165,7 +156,7 @@ void UIInit(Heap* const heap) {
     }
     
     {
-        Quad& quad = ui->quads[(uint32_t)Quads::FINAL_SCREEN];
+        Quad& quad = ui->quads[(uint32_t)Quads::SAVED_GAME_SCREEN];
         
         glGenTextures(1, &quad.texture);
         glBindTexture(GL_TEXTURE_2D, quad.texture);

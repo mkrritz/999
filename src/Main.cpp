@@ -33,7 +33,7 @@ void RenderGameScreen(const Shader* const [],
                       const Camera* const,
                       const UI* const,
                       float);
-void RenderFinalScreen(const Shader* const [],
+void SaveGameScreen(const Shader* const [],
                        const Camera* const,
                        const UI* const,
                        float);
@@ -106,15 +106,6 @@ int main() {
             
         }
         
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)Quads::GAME_SCREEN].framebuffer);
-        glClearColor(1, 0, 0, 0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)Quads::FINAL_SCREEN].framebuffer);
-        glClearColor(0, 1, 0, 0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        glClearColor(0, 0, 1, 0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         for (uint32_t pass = 0; pass < camera->render_passes; pass++) {
             if (pass == FIRST_PASS) {
@@ -122,7 +113,7 @@ int main() {
             }
             
             if (pass == SECOND_PASS) {
-                RenderFinalScreen(shaders, camera, ui, TotalTime);
+                SaveGameScreen(shaders, camera, ui, TotalTime);
                 
                 RenderToScreen(shaders, camera, ui, TotalTime);
             }

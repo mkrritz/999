@@ -2,8 +2,8 @@
 #define UI_HPP
 
 enum struct Quads {
-    FINAL_SCREEN,
     GAME_SCREEN,
+    SAVED_GAME_SCREEN,
     Count
 };
 
