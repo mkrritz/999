@@ -65,9 +65,9 @@ int main() {
     //glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     //glDepthFunc(GL_LESS);
-    glDepthFunc(GL_LEQUAL);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glBlendEquation(GL_FUNC_ADD);
+    //glDepthFunc(GL_LEQUAL);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    //glBlendEquation(GL_FUNC_ADD);
     glPointSize(5);
     glLineWidth(2);
     glfwSwapInterval(1); //  fast rendering with 0, dt in fixed, DeltaTime out.. obviously

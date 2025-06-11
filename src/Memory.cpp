@@ -15,9 +15,9 @@ static Heap* HeapInit(size_t size) {
 }
 
 void HeapsInit(Heap* heaps[]) {
-    heaps[(uint32_t)Heaps::Camera]     = HeapInit(512 * 1024);
+    heaps[(uint32_t)Heaps::Camera]     = HeapInit(1024);
     heaps[(uint32_t)Heaps::Font]       = HeapInit(1024);
-    heaps[(uint32_t)Heaps::Shader]     = HeapInit(20 * 1024);
+    heaps[(uint32_t)Heaps::Shader]     = HeapInit(5 * 1024);
     heaps[(uint32_t)Heaps::UI]         = HeapInit(1024);
     heaps[(uint32_t)Heaps::Threads]    = HeapInit(1024);
 }
