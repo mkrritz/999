@@ -40,6 +40,5 @@ void CameraInit(Heap* const heap) {
     camera->sampler_repeat_linear  = Sampler(GL_REPEAT, GL_LINEAR);
     
     glGenVertexArrays(1, &camera->vao);
-    
 }
 

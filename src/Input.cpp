@@ -61,3 +61,4 @@ void UpdateInputMousePosition(double x, double y) {
 void UpdateInputMouseWheel(double xoffset, double yoffset) {
     _input.wheel = yoffset;
 }
+

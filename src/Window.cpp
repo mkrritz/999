@@ -3,10 +3,27 @@
 
 #include "game/Window.h"
 
-void key_callback(GLFWwindow*, int, int, int, int);
-void cursor_position_callback(GLFWwindow*, double, double);
-void mouse_button_callback(GLFWwindow*, int, int, int);
-void scroll_callback(GLFWwindow*, double, double);
+void UpdateInputStateKeyboard(int, int, int, int);
+void UpdateInputMousePosition(double, double);
+void UpdateInputStateMouse(int, int, int);
+void UpdateInputMouseWheel(double, double);
+
+void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (action == GLFW_REPEAT) return; 
+    UpdateInputStateKeyboard(key, scancode, action, mods);
+}
+
+void CursorPosCallback(GLFWwindow* window, double xpos, double ypos) {
+    UpdateInputMousePosition(xpos, ypos);
+}
+
+void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    UpdateInputStateMouse(button, action, mods);
+}
+
+void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
+    UpdateInputMouseWheel(xoffset, yoffset);
+}
 
 static void SetWindowHints() {
     // Context
@@ -26,7 +43,7 @@ static void SetWindowHints() {
     glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER,    GL_FALSE);
     glfwWindowHint(GLFW_FOCUS_ON_SHOW,              GL_TRUE);
     glfwWindowHint(GLFW_SCALE_TO_MONITOR,           GL_TRUE);
-
+    
     // Framebuffer
     glfwWindowHint(GLFW_RED_BITS,       8);
     glfwWindowHint(GLFW_GREEN_BITS,     8);
@@ -40,10 +57,10 @@ static void SetWindowHints() {
 }
 
 static void SetWindowCallbacks(GLFWwindow* const window) {
-    glfwSetKeyCallback(window, key_callback);
-    glfwSetCursorPosCallback(window, cursor_position_callback);
-    glfwSetMouseButtonCallback(window, mouse_button_callback);
-    glfwSetScrollCallback(window, scroll_callback);
+    glfwSetKeyCallback(window, KeyCallback);
+    glfwSetCursorPosCallback(window, CursorPosCallback);
+    glfwSetMouseButtonCallback(window, MouseButtonCallback);
+    glfwSetScrollCallback(window, ScrollCallback);
 }
 
 static void SetWindowCursor(GLFWwindow* const window) {
@@ -51,7 +68,7 @@ static void SetWindowCursor(GLFWwindow* const window) {
     const int H = W; // image height
     unsigned char pixels[W * H * 4];
     memset(pixels, 0xff, sizeof(pixels));
-
+    
     int middle_pixel = (H >> 1) * (W + 1) * 4;
     
     int left_pixel = middle_pixel - 4;
@@ -82,14 +99,14 @@ static void SetWindowCursor(GLFWwindow* const window) {
     pixels[up_left_pixel + 3]     = 0;
     pixels[down_right_pixel + 3]  = 0;
     pixels[down_left_pixel + 3]   = 0;
-
+    
     GLFWimage image;
     image.width = W;
     image.height = H;
     image.pixels = pixels;
-
+    
     GLFWcursor* cursor = glfwCreateCursor(&image, W>>1, H>>1);
-
+    
     glfwSetCursor(window, cursor);
 }
 
@@ -140,7 +157,7 @@ GLFWwindow* WindowInit() {
         glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &fragment_units);
         printf("  Vertex Texture Units: %d\n", vertex_units);
         printf("  Fragment Texture Units: %d\n", fragment_units);
-
+        
         GLint maxTextureUnits;
         glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxTextureUnits);
         printf("  Max Texture Units: %d\n", maxTextureUnits);
@@ -164,11 +181,11 @@ GLFWwindow* WindowInit() {
         GLint maxVertexTextureImageUnits;
         glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &maxVertexTextureImageUnits);
         printf("  Max Vertex Texture Image Units: %d\n", maxVertexTextureImageUnits);
-
+        
         GLint maxFragmentTextureImageUnits;
         glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxFragmentTextureImageUnits);
         printf("  Max Fragment Texture Image Units: %d\n", maxFragmentTextureImageUnits);
-
+        
         GLint maxCombinedTextureImageUnits;
         glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxCombinedTextureImageUnits);
         printf("  Max Combined Texture Image Units: %d\n", maxCombinedTextureImageUnits);
@@ -237,3 +254,4 @@ GLFWwindow* WindowInit() {
     
     return window;
 }
+

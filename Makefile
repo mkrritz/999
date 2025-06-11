@@ -8,7 +8,6 @@ SOURCES = \
 	Input.cpp \
 	Shader.cpp \
 	Camera.cpp \
-	Callbacks.cpp \
 	Globals.cpp \
 	UI.cpp \
 	Memory.cpp \
