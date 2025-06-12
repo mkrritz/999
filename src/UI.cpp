@@ -119,7 +119,7 @@ void RenderGameScreen(const Shader* const shaders[],
            default: SHADER_WARNING("Uniform mismatch"); break;
        }
     }
-    glBindTexture(GL_TEXTURE_2D, quad.depthbuffer);
+    glBindTexture(GL_TEXTURE_2D, quad.texture);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     
