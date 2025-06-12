@@ -23,11 +23,11 @@ void RenderToScreen(const Shader* const shaders[],
     const Quad* quad;
     switch(camera->render_passes) {
         case 1: {
-            quad = &ui->quads[(uint32_t)Quads::SAVED_GAME_SCREEN]; // Yes that's ok. do better
+            quad = &ui->quads[(uint32_t)Quads::GAME_SCREEN];
             break;
         }
         case 2: {
-            quad = &ui->quads[(uint32_t)Quads::GAME_SCREEN];  // Yes that's ok. do better
+            quad = &ui->quads[(uint32_t)Quads::SAVED_GAME_SCREEN];
             break;
         }
     }
@@ -114,7 +114,8 @@ void RenderGameScreen(const Shader* const shaders[],
        GLuint location = shader->uniform_location[U];
        switch(shader->uniform_name[U]) {
            case Uniforms::Sampler: glUniform1i(location, 0); break;
-           case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-0.9f, -0.9f, 0.9f, 0.9f))); break;
+           case Uniforms::Resolution: glUniform1f(location, camera->resolution); break;
+           case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-0.9f, -0.9f, 1.8f, 1.8f))); break;
            default: SHADER_WARNING("Uniform mismatch"); break;
        }
     }
@@ -172,7 +173,7 @@ void UIInit(Heap* const heap) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
         glBindTexture(GL_TEXTURE_2D, 0);
         
-        glGenTextures(1, &quad.depthbuffer); // remove
+        glGenTextures(1, &quad.depthbuffer);
         glBindTexture(GL_TEXTURE_2D, quad.depthbuffer);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
         glBindTexture(GL_TEXTURE_2D, 0);

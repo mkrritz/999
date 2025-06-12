@@ -19,6 +19,7 @@ static Uniforms StringToEnum(const string& name) {
         {"Time", Uniforms::Time},
         {"Sampler", Uniforms::Sampler},
         {"Position", Uniforms::Position},
+        {"Resolution", Uniforms::Resolution},
         {"Up", Uniforms::Up},
         {"Right", Uniforms::Right},
         {"PositionAndSize", Uniforms::PositionAndSize},

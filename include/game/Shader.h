@@ -35,6 +35,7 @@ enum struct Uniforms {
     Sampler,
     Position,
     Right,
+    Resolution,
     Up,
     PositionAndSize,
     Count // Not really a uniform.
@@ -94,7 +95,7 @@ struct ShaderConfig {
 */
 const ShaderConfig SHADERS_CONFIG[] = {
     { "Quad.vs", nullptr, "TripleChannelQuad.fs", nullptr, nullptr, nullptr, (const char*[]){"Sampler", "PositionAndSize", "Time"}, 3, nullptr, 0 },
-    { "Quad.vs", nullptr, "SingleChannelQuad.fs", nullptr, nullptr, nullptr, (const char*[]){"Sampler", "PositionAndSize"}, 2, nullptr, 0 },
+    { "Quad.vs", nullptr, "SingleChannelQuad.fs", nullptr, nullptr, nullptr, (const char*[]){"Resolution", "Sampler", "PositionAndSize"}, 3, nullptr, 0 },
     { "SDF.vs", nullptr, "SDF.fs", nullptr, nullptr, nullptr, (const char*[]){"Position", "Right", "Up", "SignNW", "Time", "Sampler"}, 6, nullptr, 0 },
 };
 

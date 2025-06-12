@@ -94,6 +94,9 @@ int main() {
         
         input = NextRecordedInputState();
         
+        camera->resolution += input->wheel;
+        input->wheel = 0;
+        
         if (input->special & InputM::F1) {
             if (input->toggles & InputM::Toggle_F1) {
                 camera->render_passes = camera->render_passes % 2 + 1;

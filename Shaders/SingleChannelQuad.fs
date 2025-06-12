@@ -4,15 +4,15 @@ in vec2 UV;
 
 uniform sampler2D Sampler;
 
-out vec4 FragColor;
+uniform float Resolution;
 
-const float OneImagePixel = 1.0f / 8.0f;
+out vec4 FragColor;
 
 const vec3 Color = vec3(1); // White
 
 void main() {
-    int x = int(UV.x / OneImagePixel);
-    int y = int(UV.y / OneImagePixel);
+    int x = int(Resolution * UV.x);
+    int y = int(Resolution * UV.y);
     int c = (x + y) & 1;
     FragColor = vec4(c * Color, 1.0);
     //FragColor = vec4(c * Color + (1-c) * (1-Color), 1.0);
