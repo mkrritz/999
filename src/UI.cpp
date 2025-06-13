@@ -115,7 +115,7 @@ void RenderGameScreen(const Shader* const shaders[],
        switch(shader->uniform_name[U]) {
            case Uniforms::Sampler: glUniform1i(location, 0); break;
            case Uniforms::Resolution: glUniform1f(location, camera->resolution); break;
-           case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-0.9f, -0.9f, 1.8f, 1.8f))); break;
+           case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-1.0f, -1.0f, 2.0f, 2.0f))); break;
            default: SHADER_WARNING("Uniform mismatch"); break;
        }
     }

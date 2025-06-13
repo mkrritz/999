@@ -158,7 +158,7 @@ void SetText(TextField& tf, const std::string& text, uint32_t resolution) {
             LocalColumn = 0;
             
             CellIndexX = -1.0f + Scale;
-            CellIndexY += 3.0f * Scale;
+            CellIndexY += 2.0f * Scale;
             
             continue;
         }
@@ -171,6 +171,8 @@ void SetText(TextField& tf, const std::string& text, uint32_t resolution) {
         float LocalX = Scale * VerticalPadding * (LocalColumn - (tf.info.width  - 1.0f) / 2.0f);
         float LocalY = Scale * HorizontalPadding * ((tf.info.height - 1.0f) / 2.0f - LocalRow);
         LocalColumn++;
+        LocalX = 0;
+        LocalY = 0;
         
         uint32_t CellVerticesIndex = CharacterIndex * (4 * TEXT_VERTEX_ATTRIBUTE_COUNT);
         uint32_t CellIndicesIndex  = CharacterIndex * 6;
