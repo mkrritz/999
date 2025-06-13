@@ -3,7 +3,7 @@
 #define TWOPI 6.2831850
 #define PI    3.1415925
 
-layout(location = 0) in vec3 _Position; // Make it in the range -1,1 ? .. Constant around uniform Position?
+layout(location = 0) in vec3 _Position;
 layout(location = 1) in vec2 _UV;
 
 //layout(std430, binding = 6) readonly buffer CameraVP {
