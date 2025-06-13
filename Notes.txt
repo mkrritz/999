@@ -1,3 +1,8 @@
+
+N = 3
+
 Grid:
     N x N cells
     Each cell is numbered in the range [1, N*N]
+    
+Grid is in NDC space.
