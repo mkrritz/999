@@ -142,37 +142,40 @@ void SetText(TextField& tf, const std::string& text, uint32_t resolution) {
     uint32_t Indices[tf.info.length * 6];
     uint32_t IndexOffset = 0, CharacterIndex = 0;
     
-    float VerticalPadding = 0.5f;
-    float HorizontalPadding = 0.5f;
+    float GridScale = 1.0f / float(resolution);
+    float HalfGridScale = GridScale / 2.0f;
+    float CharacterScale = 1.5f;
     
-    float Scale = 1.0f / float(resolution);
-    float HalfScale = Scale / 2.0f;
-    
-    float CellIndexX  = -1.0f + Scale;
-    float CellIndexY  = -1.0f + Scale;
+    float CellIndexX  = -1.0f + GridScale;
+    float CellIndexY  = -1.0f + GridScale;
     float LocalRow    =  0.0f;
     float LocalColumn =  0.0f;
+    uint32_t DigitsInTheNumber = 0;
     for (const char &Character : tf.text) {
         if (Character == '\n') {
             LocalRow++;
             LocalColumn = 0;
-            
-            CellIndexX = -1.0f + Scale;
-            CellIndexY += 2.0f * Scale;
-            
+            CellIndexX = -1.0f + GridScale;
+            CellIndexY += 2.0f * GridScale;
+            DigitsInTheNumber = 0;
             continue;
         }
         if (Character == ' ') {
-            CellIndexX += 2.0f * Scale;
+            LocalColumn = 0;
+            CellIndexX += 2.0f * GridScale;
+            DigitsInTheNumber = 0;
             continue;
         }
         
         
-        float LocalX = Scale * VerticalPadding * (LocalColumn - (tf.info.width  - 1.0f) / 2.0f);
-        float LocalY = Scale * HorizontalPadding * ((tf.info.height - 1.0f) / 2.0f - LocalRow);
+        DigitsInTheNumber++;
+        float LocalX = 0;
+        float LocalY = 0;
         LocalColumn++;
-        LocalX = 0;
-        LocalY = 0;
+        if (DigitsInTheNumber > 1) {
+            LocalX = GridScale * 0.05f * (LocalColumn + (tf.info.width - 1.0f) / 2.0f);
+        }
+        
         
         uint32_t CellVerticesIndex = CharacterIndex * (4 * TEXT_VERTEX_ATTRIBUTE_COUNT);
         uint32_t CellIndicesIndex  = CharacterIndex * 6;
@@ -183,29 +186,29 @@ void SetText(TextField& tf, const std::string& text, uint32_t resolution) {
         glm::vec2 UV = GetAtlasUV(Character);
         
         // BL
-        Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + LocalX - HalfScale;
-        Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellIndexY + LocalY - HalfScale;
+        Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + CharacterScale * (LocalX - HalfGridScale);
+        Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellIndexY + CharacterScale * (LocalY - HalfGridScale);
         Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2 ] = 0.0f;
         Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3 ] = UV.x;
         Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4 ] = UV.y;
         
         // TL
-        Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + LocalX - HalfScale;
-        Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellIndexY + LocalY + HalfScale;
+        Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + CharacterScale * (LocalX - HalfGridScale);
+        Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellIndexY + CharacterScale * (LocalY + HalfGridScale);
         Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2 ] = 0.0f;
         Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3 ] = UV.x;
         Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4 ] = UV.y + 0.125f;
 
         // BR
-        Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + LocalX + HalfScale;
-        Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellIndexY + LocalY - HalfScale;
+        Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + CharacterScale * (LocalX + HalfGridScale);
+        Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellIndexY + CharacterScale * (LocalY - HalfGridScale);
         Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2 ] = 0.0f;
         Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3 ] = UV.x + 0.125f;
         Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4 ] = UV.y;
 
         // TR
-        Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + LocalX + HalfScale;
-        Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellIndexY + LocalY + HalfScale;
+        Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + CharacterScale * (LocalX + HalfGridScale);
+        Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellIndexY + CharacterScale * (LocalY + HalfGridScale);
         Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2 ] = 0.0f;
         Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3 ] = UV.x + 0.125f;
         Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4 ] = UV.y + 0.125f;
