@@ -22,7 +22,7 @@ out vec2 UV;
 
 float PulseEffect() {
     float period = 2.0;
-    float s = 1.0 + 0.05 * sin(TWOPI * Time / period);
+    float s = 1.0 + 0.01 * sin(TWOPI * Time / period);
     return s;
 }
 

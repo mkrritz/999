@@ -29,7 +29,7 @@ struct TextField {
     TextInfo info;
 };
 
-void SetText(TextField&, const std::string&);
+void SetText(TextField&, const std::string&, const uint32_t);
 
 #endif
 

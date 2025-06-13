@@ -53,22 +53,30 @@ void FontsInit(Heap* const,
 //
 
 using std::string;
+static std::random_device rd;
+static std::mt19937 gen(time(nullptr));
 
-string GenerateGrid(int N) {
-    int maxVal = N * N;
-    string grid;
+static string GenerateGrid(uint32_t N) {
+    uint32_t total = N * N;
     
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
-            int num = rand() % (maxVal + 1); // random in [0, N*N]
-            grid += std::to_string(num);
+    std::vector<uint32_t> numbers(total);
+    for (uint32_t i = 0; i < total; ++i) {
+        numbers[i] = i + 1;
+    }
+    std::shuffle(numbers.begin(), numbers.end(), gen);
+    
+    string grid;
+    for (uint32_t i = 0; i < total; ++i) {
+        grid += std::to_string(numbers[i]);
+        if ((i + 1) % N == 0) {
+            grid += '\n';
+        } else {
+            grid += ' ';
         }
-        grid += '\n';
     }
     
     return grid;
 }
-
 
 int main() {
     GLFWwindow* window;
@@ -91,50 +99,22 @@ int main() {
     Font* fonts[(uint32_t)FontType::Count] = {nullptr};
     FontsInit(heaps[(uint32_t)Heaps::Font], fonts);
     
-    string grid = GenerateGrid(3);
+    TextField text_level;
+    glGenVertexArrays(1, &text_level.vao);
+    glGenBuffers(1, &text_level.vbo);
+    glGenBuffers(1, &text_level.ibo);
+    glBindVertexArray(text_level.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, text_level.vbo);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, TEXT_VERTEX_ATTRIBUTE_COUNT * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, TEXT_VERTEX_ATTRIBUTE_COUNT * sizeof(float), (void*)(3 * sizeof(GLfloat))); 
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, text_level.ibo);
+    glBindVertexArray(0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
-    TextField tf[5];
-    for(uint32_t i = 0; i < 5; i++) {
-        
-        glGenVertexArrays(1, &tf[i].vao);
-        glGenBuffers(1, &tf[i].vbo);
-        glGenBuffers(1, &tf[i].ibo);
-        glBindVertexArray(tf[i].vao);
-        glBindBuffer(GL_ARRAY_BUFFER, tf[i].vbo);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, TEXT_VERTEX_ATTRIBUTE_COUNT * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, TEXT_VERTEX_ATTRIBUTE_COUNT * sizeof(float), (void*)(3 * sizeof(GLfloat))); 
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tf[i].ibo);
-        glBindVertexArray(0);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        
-        switch(i) {
-            case 0: {
-                SetText(tf[i], grid.c_str());
-                break;
-            }
-            case 1: {
-                SetText(tf[i], "912\n345\n678");
-                break;
-            }
-            case 2: {
-                SetText(tf[i], "912\n345\n678");
-                break;
-            }
-            case 3: {
-                SetText(tf[i], "912\n345\n678");
-                break;
-            }
-            case 4: {
-                SetText(tf[i], "912\n345\n678");
-                break;
-            }
-        }
-        
-    }
+    SetText(text_level, "Hello", 1);
     
-    glPatchParameteri(GL_PATCH_VERTICES, 4);
     //glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     //glDepthFunc(GL_LESS);
@@ -156,8 +136,6 @@ int main() {
     uint32_t UpdateCount= 0;
     uint32_t FixedUpdateCount= 0;
     
-    uint32_t text_to_render = 0;
-    
     while (!(input->special & InputM::ESC)) {
         CurrectTime = glfwGetTime();
         DeltaTime = CurrectTime - LastTime;
@@ -171,9 +149,14 @@ int main() {
         
         input = NextRecordedInputState();
         
-        camera->resolution += input->wheel;
-        text_to_render = (text_to_render + glm::abs(input->wheel) ) % 5;
-        input->wheel = 0;
+        if (input->wheel) {
+            camera->resolution += input->wheel;
+            input->wheel = 0;
+            camera->resolution = glm::abs(camera->resolution);
+            string grid = GenerateGrid(camera->resolution);
+            grid = GenerateGrid(camera->resolution);
+            SetText(text_level, grid.c_str(), camera->resolution);
+        }
         
         if (input->special & InputM::F1) {
             if (input->toggles & InputM::Toggle_F1) {
@@ -215,8 +198,8 @@ int main() {
                         default: SHADER_WARNING("Uniform mismatch"); break;
                     }
                 }
-                glBindVertexArray(tf[text_to_render].vao);
-                glDrawElements(GL_TRIANGLES, 6 * tf[text_to_render].info.length, GL_UNSIGNED_INT, 0);
+                glBindVertexArray(text_level.vao);
+                glDrawElements(GL_TRIANGLES, 6 * text_level.info.length, GL_UNSIGNED_INT, 0);
                 
                 glBindVertexArray(0);
                 glBindSampler(0, 0);

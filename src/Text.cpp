@@ -130,29 +130,18 @@ static void LoadFont(const std::string& name) {
     stbi_image_free(img);
 }
 
-void SetText(TextField& tf, const std::string& text) {
+void SetText(TextField& tf, const std::string& text, uint32_t resolution) {
     tf.text = text;
     
-    // Can be filled from the same thing that will provide the string.
-    // So if string comes from file then width height and length
-    // can be stored there as well.
     FillTextInfo(tf);
+    
+    float scale_from_N = 0.5f / float(resolution);
     
     float Vertices[tf.info.length * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT];
     uint32_t Indices[tf.info.length * 6];
     uint32_t IndexOffset = 0, CharacterIndex = 0, Column = 0, Row = 0;
-    float HorizontalPadding = 0.4f, VerticalPadding = 0.7f;
-    float Scale = 0.5, HalfScale = Scale / 2.0f;
-    
-    // Text type is passed as a vertex attribute because of the single
-    // shader usage for all effects. Is many shaders better? One for each
-    // effect. How is text rendered. UI static stuff. Do compute shader for effects?
-    // And text rendering is just the MVP T R S stuff in SDF.vs (left with controlling orientation and scale)
-    // Text rendering for:
-    //      Casual proximity prompts to player?
-    //      Casual proximity prompts to camera?
-    //      Casual prompts to the void?
-    //      Dialogues with player?
+    float HorizontalPadding = 0.5f, VerticalPadding = 0.5f;
+    float Scale = scale_from_N, HalfScale = Scale / 2.0f;
     
     for (const char &Character : tf.text) {
         if (Character == '\n') {
@@ -164,14 +153,12 @@ void SetText(TextField& tf, const std::string& text) {
         uint32_t CellIndicesIndex  = CharacterIndex * 6;
         CharacterIndex++;
         
+        float LocalX = Scale * HorizontalPadding * (Column - (tf.info.width  - 1.0f) / 2.0f);
+        float LocalY = Scale * VerticalPadding   * ((tf.info.height - 1.0f) / 2.0f - Row);
+        
         // Get the BL point and offset the rest, which is by a constant,
         // unless font image changes and each glyph is not 128x128 any more
         glm::vec2 UV = GetAtlasUV(Character);
-        
-        float LocalX = Scale * HorizontalPadding * (Column - (tf.info.width  - 1.0f) / 2.0f); // add italics
-        float LocalY = Scale * VerticalPadding   * ((tf.info.height - 1.0f) / 2.0f - Row);
-        
-        if (Character >= 'A' && Character <= 'Z') LocalY += Scale / 5.0f; // Enough with this.. find better ways
         
         // BL
         Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = LocalX - HalfScale;

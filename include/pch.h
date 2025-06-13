@@ -8,6 +8,9 @@
 #include <windows.h>
 #include <pthread.h>
 
+#include <random>
+#include <chrono>
+
 #include "glew.h"
 #include "glfw3.h"
 #include "glm/glm.hpp"
@@ -27,7 +30,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include <chrono>
 #include <stdbool.h>
 #include <bitset>
 
