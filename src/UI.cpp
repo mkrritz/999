@@ -4,6 +4,7 @@
 #include "game/Assert.h"
 #include "game/Memory.h"
 #include "game/UI.h"
+#include "game/Text.h"
 #include "game/Shader.h"
 #include "game/Camera.h"
 #include "game/Window.h"
@@ -12,7 +13,10 @@
 #define TOTAL_VERTEX_ATTRIBUTE_COUNT (4 * QUAD_VERTEX_ATTRIBUTE_COUNT)
 static uint32_t QuadIndices[6] = {1, 0, 2, 1, 2, 3};
 static float QuadVertices[TOTAL_VERTEX_ATTRIBUTE_COUNT] = {
-    0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f
+    0.0f, 0.0f,
+    0.0f, 1.0f,
+    1.0f, 0.0f,
+    1.0f, 1.0f
 };
 
 void RenderToScreen(const Shader* const shaders[],
@@ -95,18 +99,20 @@ void SaveGameScreen(const Shader* const shaders[],
 
 void RenderGameScreen(const Shader* const shaders[],
                       const Camera* const camera,
+                      const Font* const fonts[],
                       const UI* const ui,
-                      float total_time) {
+                      float total_time,
+                      TextField& level) {
     const Shader* shader;
     const Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
+    const Font* const font = fonts[(uint32_t)FontType::English];
     
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, quad.framebuffer);
+    
+    glBindSampler(0, camera->sampler_clamp_linear);
+    
     glClearColor(1, 0, 0, 0); // Red
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
-    glBindVertexArray(ui->quad_vao);
-    glActiveTexture(GL_TEXTURE0);
-    glBindSampler(0, camera->sampler_clamp_linear);
     
     shader = shaders[(uint32_t)Shaders::SingleChannelQuad];
     glUseProgram(shader->ID);
@@ -120,9 +126,29 @@ void RenderGameScreen(const Shader* const shaders[],
        }
     }
     glBindTexture(GL_TEXTURE_2D, quad.texture);
+    glBindVertexArray(ui->quad_vao);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    shader = shaders[(uint32_t)Shaders::SDF];
+    glUseProgram(shader->ID);
+    for (uint32_t U = 0; U < shader->uniforms_count; U++) {
+        GLuint location = shader->uniform_location[U];
+        switch(shader->uniform_name[U]) {
+            case Uniforms::Time: glUniform1f(location, total_time); break;
+            case Uniforms::Sampler: glUniform1i(location, 0); break;
+            default: SHADER_WARNING("Uniform mismatch"); break;
+        }
+    }
+    glBindTexture(GL_TEXTURE_2D, font->texture);
+    glBindVertexArray(level.vao);
+    glDrawElements(GL_TRIANGLES, 6 * level.info.length, GL_UNSIGNED_INT, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
     glBindVertexArray(0);
     glBindSampler(0, 0);
 }

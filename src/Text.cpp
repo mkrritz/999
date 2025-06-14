@@ -94,27 +94,27 @@ static inline glm::vec2 GetAtlasUV(char c) {
     return FontUV[index];
 }
 
-static void FillTextInfo(TextField& tf) {
-    tf.info.length = 0;
-    tf.info.width = 1;
-    tf.info.height = 1;
+static void FillTextInfo(TextField& level) {
+    level.info.length = 0;
+    level.info.width = 1;
+    level.info.height = 1;
     uint32_t cols = 0;
-    for (const char &Character : tf.text) {
+    for (const char &Character : level.text) {
         if (Character == '\n') {
-            tf.info.height++;
-            tf.info.width = glm::max(tf.info.width, cols);
+            level.info.height++;
+            level.info.width = glm::max(level.info.width, cols);
             cols = 0;
             continue;
         }
         if (Character == ' ') {
-            tf.info.width = glm::max(tf.info.width, cols);
+            level.info.width = glm::max(level.info.width, cols);
             cols = 0;
             continue;
         }
         cols++;
-        tf.info.length++;
+        level.info.length++;
     }
-    tf.info.width = glm::max(tf.info.width, cols);
+    level.info.width = glm::max(level.info.width, cols);
 }
 
 static const path FONT_DIRECTORY = "Fonts/";
@@ -135,13 +135,13 @@ static void LoadFont(const std::string& name) {
     stbi_image_free(img);
 }
 
-void SetText(TextField& tf, const std::string& text, uint32_t resolution) {
-    tf.text = text;
+void SetText(TextField& level, const std::string& text, uint32_t resolution) {
+    level.text = text;
     
-    FillTextInfo(tf);
+    FillTextInfo(level);
     
-    float Vertices[tf.info.length * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT];
-    uint32_t Indices[tf.info.length * 6];
+    float Vertices[level.info.length * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT];
+    uint32_t Indices[level.info.length * 6];
     uint32_t IndexOffset = 0, CharacterIndex = 0;
     
     float CellScale = 1.0f / float(resolution);
@@ -153,7 +153,7 @@ void SetText(TextField& tf, const std::string& text, uint32_t resolution) {
     float LocalRow    =  0.0f;
     float LocalColumn =  0.0f;
     uint32_t DigitsInTheNumber = 0;
-    for (const char &Character : tf.text) {
+    for (const char &Character : level.text) {
         if (Character == '\n') {
             LocalRow++;
             LocalColumn = 0;
@@ -173,7 +173,7 @@ void SetText(TextField& tf, const std::string& text, uint32_t resolution) {
         DigitsInTheNumber++;
         float LocalX = 0;
         LocalColumn++;
-        if (DigitsInTheNumber > 1) {
+        if (DigitsInTheNumber > 1) { // THis is dogshit, do better parsing.
             LocalX = LocalColumn * 0.15f;
         }
         
@@ -223,11 +223,11 @@ void SetText(TextField& tf, const std::string& text, uint32_t resolution) {
         IndexOffset += 4;
     }
     
-    glBindBuffer(GL_ARRAY_BUFFER, tf.vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, level.vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tf.ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, level.ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     

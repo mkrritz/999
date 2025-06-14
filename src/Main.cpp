@@ -35,8 +35,10 @@ InputState* NextRecordedInputState();
 void UIInit(Heap* const);
 void RenderGameScreen(const Shader* const [],
                       const Camera* const,
+                      const Font* const [],
                       const UI* const,
-                      float);
+                      float,
+                      TextField&);
 void SaveGameScreen(const Shader* const [],
                        const Camera* const,
                        const UI* const,
@@ -99,21 +101,22 @@ int main() {
     Font* fonts[(uint32_t)FontType::Count] = {nullptr};
     FontsInit(heaps[(uint32_t)Heaps::Font], fonts);
     
-    TextField text_level;
-    glGenVertexArrays(1, &text_level.vao);
-    glGenBuffers(1, &text_level.vbo);
-    glGenBuffers(1, &text_level.ibo);
-    glBindVertexArray(text_level.vao);
-    glBindBuffer(GL_ARRAY_BUFFER, text_level.vbo);
+    TextField level;
+    glGenVertexArrays(1, &level.vao);
+    glGenBuffers(1, &level.vbo);
+    glGenBuffers(1, &level.ibo);
+    glBindVertexArray(level.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, level.vbo);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, TEXT_VERTEX_ATTRIBUTE_COUNT * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, TEXT_VERTEX_ATTRIBUTE_COUNT * sizeof(float), (void*)(3 * sizeof(GLfloat))); 
     glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, text_level.ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, level.ibo);
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
-    SetText(text_level, "Hello", 1);
+    string grid = GenerateGrid(camera->resolution);
+    SetText(level, grid.c_str(), camera->resolution);
     
     //glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
@@ -153,9 +156,8 @@ int main() {
             camera->resolution += input->wheel;
             input->wheel = 0;
             camera->resolution = glm::abs(camera->resolution);
-            string grid = GenerateGrid(camera->resolution);
             grid = GenerateGrid(camera->resolution);
-            SetText(text_level, grid.c_str(), camera->resolution);
+            SetText(level, grid.c_str(), camera->resolution);
         }
         
         if (input->special & InputM::F1) {
@@ -180,33 +182,7 @@ int main() {
         
         for (uint32_t pass = 0; pass < camera->render_passes; pass++) {
             if (pass == FIRST_PASS) {
-                RenderGameScreen(shaders, camera, ui, TotalTime);
-                
-                // Text
-                glDisable(GL_DEPTH_TEST);
-                glEnable(GL_BLEND);
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, fonts[(uint32_t)FontType::English]->texture);
-                glBindSampler(0, camera->sampler_clamp_linear);
-                
-                glUseProgram(shaders[(uint32_t)Shaders::SDF]->ID);
-                for (uint32_t U = 0; U < shaders[(uint32_t)Shaders::SDF]->uniforms_count; U++) {
-                    GLuint location = shaders[(uint32_t)Shaders::SDF]->uniform_location[U];
-                    switch(shaders[(uint32_t)Shaders::SDF]->uniform_name[U]) {
-                        case Uniforms::Time: glUniform1f(location, TotalTime); break;
-                        case Uniforms::Sampler: glUniform1i(location, 0); break;
-                        default: SHADER_WARNING("Uniform mismatch"); break;
-                    }
-                }
-                glBindVertexArray(text_level.vao);
-                glDrawElements(GL_TRIANGLES, 6 * text_level.info.length, GL_UNSIGNED_INT, 0);
-                
-                glBindVertexArray(0);
-                glBindSampler(0, 0);
-                glBindTexture(GL_TEXTURE_2D, 0);
-                glDisable(GL_BLEND);
-                glEnable(GL_DEPTH_TEST);
-                // Text
+                RenderGameScreen(shaders, camera, fonts, ui, TotalTime, level);
             }
             
             if (pass == SECOND_PASS) {
