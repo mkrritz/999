@@ -18,7 +18,7 @@ struct Font {
 struct TextField {
     GLuint vao, vbo, ibo;
     std::string text;
-    uint32_t length;
+    size_t length;
 };
 
 #endif

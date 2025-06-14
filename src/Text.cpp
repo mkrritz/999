@@ -106,10 +106,10 @@ static void FillTextInfo(TextField& level,
         }
         level.length++;
     }
+    
     // Create an array of N*N elements with uint32_t values
     // each value describes how many digits there are in each number
-    // because it's useful to know so, they can be placed correctly
-    // around cell center
+    // because it's useful to know
 }
 
 static const string FONTS[(uint32_t)FontType::Count] = {
@@ -131,43 +131,44 @@ static void LoadFont(const std::string& name) {
 void SetText(TextField& level, const std::string& text, float resolution) {
     FillTextInfo(level, text);
     
-    float Vertices[level.length * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT];
-    uint32_t Indices[level.length * 6];
-    uint32_t IndexOffset = 0, CharacterIndex = 0;
+    float Vertices[level.length * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT];  // in the heap and free in the end
+    uint32_t Indices[level.length * 6];                              // in the heap and free in the end
+    uint32_t IndexOffset = 0, CharacterIndex = 0;                    // in the heap and free in the end
     
-    float CellScale = 1.0f / glm::abs(glm::floor(resolution));
+    uint32_t N = uint32_t(glm::abs(glm::floor(resolution)));
+    //uint32_t Cells = N * N;
+    
+    float CellScale = 1.0f / float(N);
     float HalfCellScale = CellScale / 2.0f;
-    float CharacterScale = 1.0f;
+    //float CharacterScale = 1.0f + CellScale;
+    float CharacterScale = 2.0f;
     
     float CellIndexX = -1.0f + CellScale;
     float CellIndexY = -1.0f + CellScale;
-    float LocalRow =  0.0f;
-    float LocalColumn =  0.0f;
-    uint32_t DigitsInTheNumber = 0;
-    for (const char &Character : level.text) {
+    
+    float LocalColumn =  -1.0f; // this is friendly on 3-digit numbers... clean this..
+    
+    for (size_t i = 0; level.text[i] != '\0'; i++) {
+        char Character = level.text[i];
         if (Character == '\n') {
-            LocalRow++;
-            LocalColumn = 0;
             CellIndexX = -1.0f + CellScale;
             CellIndexY += 2.0f * CellScale;
-            DigitsInTheNumber = 0;
+            LocalColumn = -1.0f;
             continue;
         }
         if (Character == ' ') {
-            LocalColumn = 0;
             CellIndexX += 2.0f * CellScale;
-            DigitsInTheNumber = 0;
+            LocalColumn = -1.0f;
             continue;
         }
         
-        
-        DigitsInTheNumber++;
-        float LocalX = 0;
-        LocalColumn++;
-        if (DigitsInTheNumber > 1) { // THis is dogshit, do better parsing.
-            LocalX = LocalColumn * 0.15f;
-        }
-        
+        float LocalX = LocalColumn; // This is here to offset the numbers around
+        LocalColumn++;              // (CellIndexX, CellIndexY) so that 1 digit numbers
+                                    // spawn at the center and 2 digit numbers spawn
+                                    // with -HalfCellScale and HalfCellScale
+                                    // and 3 digit numbers spawn with
+                                    // -CellScale and 0 and CellScale
+                                    // and so on...
         
         uint32_t CellVerticesIndex = CharacterIndex * (4 * TEXT_VERTEX_ATTRIBUTE_COUNT);
         uint32_t CellIndicesIndex  = CharacterIndex * 6;
@@ -178,28 +179,28 @@ void SetText(TextField& level, const std::string& text, float resolution) {
         glm::vec2 UV = GetAtlasUV(Character);
         
         // BL
-        Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + CharacterScale * (CellScale * LocalX - HalfCellScale);
+        Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + (LocalX - CharacterScale) * HalfCellScale;
         Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellIndexY - CharacterScale * HalfCellScale;
         Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2 ] = 0.0f;
         Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3 ] = UV.x;
         Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4 ] = UV.y;
         
         // TL
-        Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + CharacterScale * (CellScale * LocalX - HalfCellScale);
+        Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + (LocalX - CharacterScale) * HalfCellScale;
         Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellIndexY + CharacterScale * HalfCellScale;
         Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2 ] = 0.0f;
         Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3 ] = UV.x;
         Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4 ] = UV.y + 0.125f;
 
         // BR
-        Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + CharacterScale * (CellScale * LocalX + HalfCellScale);
+        Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + (LocalX + CharacterScale) * HalfCellScale;
         Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellIndexY - CharacterScale * HalfCellScale;
         Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2 ] = 0.0f;
         Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3 ] = UV.x + 0.125f;
         Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4 ] = UV.y;
 
         // TR
-        Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + CharacterScale * (CellScale * LocalX + HalfCellScale);
+        Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + (LocalX + CharacterScale) * HalfCellScale;
         Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellIndexY + CharacterScale * HalfCellScale;
         Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2 ] = 0.0f;
         Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3 ] = UV.x + 0.125f;
