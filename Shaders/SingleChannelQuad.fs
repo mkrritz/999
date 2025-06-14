@@ -6,7 +6,7 @@ uniform float Resolution;
 
 out vec4 FragColor;
 
-const vec3 Color = vec3(0.2, 0.2, 0.5);
+const vec3 Color = vec3(0.2, 0.8, 0.8);
 //const vec3 Color = vec3(1);
 
 void main() {

@@ -15,18 +15,10 @@ struct Font {
     GLuint texture;
 };
 
-struct TextInfo {
-    uint32_t length;
-    uint32_t height;
-    uint32_t width;
-};
-
 struct TextField {
     GLuint vao, vbo, ibo;
-    glm::mat4 transform;
-    
     std::string text;
-    TextInfo info;
+    uint32_t length;
 };
 
 #endif

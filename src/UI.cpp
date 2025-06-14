@@ -142,7 +142,7 @@ void RenderGameScreen(const Shader* const shaders[],
     }
     glBindTexture(GL_TEXTURE_2D, font->texture);
     glBindVertexArray(level.vao);
-    glDrawElements(GL_TRIANGLES, 6 * level.info.length, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, 6 * level.length, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     glDisable(GL_BLEND);

@@ -96,27 +96,20 @@ static inline glm::vec2 GetAtlasUV(char c) {
     return FontUV[index];
 }
 
-static void FillTextInfo(TextField& level) {
-    level.info.length = 0;
-    level.info.width = 1;
-    level.info.height = 1;
-    uint32_t cols = 0;
+static void FillTextInfo(TextField& level,
+                         const std::string& text) {
+    level.text = text;
+    level.length = 0;
     for (const char &Character : level.text) {
-        if (Character == '\n') {
-            level.info.height++;
-            level.info.width = glm::max(level.info.width, cols);
-            cols = 0;
+        if (Character == '\n' || Character == ' ') {
             continue;
         }
-        if (Character == ' ') {
-            level.info.width = glm::max(level.info.width, cols);
-            cols = 0;
-            continue;
-        }
-        cols++;
-        level.info.length++;
+        level.length++;
     }
-    level.info.width = glm::max(level.info.width, cols);
+    // Create an array of N*N elements with uint32_t values
+    // each value describes how many digits there are in each number
+    // because it's useful to know so, they can be placed correctly
+    // around cell center
 }
 
 static const string FONTS[(uint32_t)FontType::Count] = {
@@ -136,17 +129,15 @@ static void LoadFont(const std::string& name) {
 }
 
 void SetText(TextField& level, const std::string& text, float resolution) {
-    level.text = text;
+    FillTextInfo(level, text);
     
-    FillTextInfo(level);
-    
-    float Vertices[level.info.length * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT];
-    uint32_t Indices[level.info.length * 6];
+    float Vertices[level.length * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT];
+    uint32_t Indices[level.length * 6];
     uint32_t IndexOffset = 0, CharacterIndex = 0;
     
     float CellScale = 1.0f / glm::abs(glm::floor(resolution));
     float HalfCellScale = CellScale / 2.0f;
-    float CharacterScale = 2.0f;
+    float CharacterScale = 1.0f;
     
     float CellIndexX = -1.0f + CellScale;
     float CellIndexY = -1.0f + CellScale;

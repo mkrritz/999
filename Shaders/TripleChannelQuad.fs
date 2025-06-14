@@ -11,9 +11,10 @@ void main()
 {
     //vec4 Color = vec4(UV, 0, 1);
     vec4 Color = texture(Sampler, UV);
-    //vec4 Color = texture(Sampler, UV * sin(Time));
     
+    //vec4 Color = texture(Sampler, UV * abs(sin(Time)) + 0.3);
     //Color.x += fract(Time);
+    
     //Color.x = 1 - Color.x;
     FragColor = Color;
 }
