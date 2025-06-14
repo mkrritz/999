@@ -52,13 +52,18 @@ void RenderToScreen(const Shader* const [],
 // Text
 void FontsInit(Heap* const,
                Font* []);
+void SetText(TextField&,
+             const std::string&,
+             const float);
+
 //
 
 using std::string;
 static std::random_device rd;
 static std::mt19937 gen(time(nullptr));
 
-static string GenerateGrid(uint32_t N) {
+static string GenerateGrid(float resolution) {
+    uint32_t N = glm::abs(glm::floor(resolution));
     uint32_t total = N * N;
     
     std::vector<uint32_t> numbers(total);
@@ -70,13 +75,13 @@ static string GenerateGrid(uint32_t N) {
     string grid;
     for (uint32_t i = 0; i < total; ++i) {
         grid += std::to_string(numbers[i]);
-        if ((i + 1) % N == 0) {
+        if (((i + 1) % N == 0) && i != (total-1)) {
             grid += '\n';
         } else {
             grid += ' ';
         }
     }
-    
+    //printf("\n--\n%s\n--\n", grid.c_str());
     return grid;
 }
 
@@ -116,7 +121,6 @@ int main() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
     string grid = GenerateGrid(camera->resolution);
-    // string grid = "Text strings\nto be used\nfor progress"; TODO
     SetText(level, grid.c_str(), camera->resolution);
     
     //glEnable(GL_CULL_FACE);
@@ -156,7 +160,6 @@ int main() {
         if (input->wheel) {
             camera->resolution += input->wheel;
             input->wheel = 0;
-            camera->resolution = glm::abs(camera->resolution);
             grid = GenerateGrid(camera->resolution); // TODO BETTER PARSING
             SetText(level, grid.c_str(), camera->resolution);
         }
@@ -177,7 +180,6 @@ int main() {
         while(AccumulatorTime >= dt) {
             AccumulatorTime -= dt;
             FixedUpdateCount += 1;
-            
         }
         
         

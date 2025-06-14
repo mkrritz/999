@@ -135,7 +135,7 @@ static void LoadFont(const std::string& name) {
     stbi_image_free(img);
 }
 
-void SetText(TextField& level, const std::string& text, uint32_t resolution) {
+void SetText(TextField& level, const std::string& text, float resolution) {
     level.text = text;
     
     FillTextInfo(level);
@@ -144,13 +144,13 @@ void SetText(TextField& level, const std::string& text, uint32_t resolution) {
     uint32_t Indices[level.info.length * 6];
     uint32_t IndexOffset = 0, CharacterIndex = 0;
     
-    float CellScale = 1.0f / float(resolution);
+    float CellScale = 1.0f / glm::abs(glm::floor(resolution));
     float HalfCellScale = CellScale / 2.0f;
-    float CharacterScale = 1.5f;
+    float CharacterScale = 2.0f;
     
-    float CellIndexX  = -1.0f + CellScale;
-    float CellIndexY  = -1.0f + CellScale;
-    float LocalRow    =  0.0f;
+    float CellIndexX = -1.0f + CellScale;
+    float CellIndexY = -1.0f + CellScale;
+    float LocalRow =  0.0f;
     float LocalColumn =  0.0f;
     uint32_t DigitsInTheNumber = 0;
     for (const char &Character : level.text) {

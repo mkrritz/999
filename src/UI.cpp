@@ -68,7 +68,7 @@ void SaveGameScreen(const Shader* const shaders[],
                     const UI* const ui,
                     float total_time) {
     const Shader* shader;
-    const Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
+    const Quad* quad = &ui->quads[(uint32_t)Quads::GAME_SCREEN];
     
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)Quads::SAVED_GAME_SCREEN].framebuffer);
     glClearColor(0, 1, 0, 0); // Green
@@ -89,7 +89,7 @@ void SaveGameScreen(const Shader* const shaders[],
             default: SHADER_WARNING("Uniform mismatch"); break;
         }
     }
-    glBindTexture(GL_TEXTURE_2D, quad.texture);
+    glBindTexture(GL_TEXTURE_2D, quad->texture);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     
@@ -104,10 +104,10 @@ void RenderGameScreen(const Shader* const shaders[],
                       float total_time,
                       TextField& level) {
     const Shader* shader;
-    const Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
+    const Quad* quad = &ui->quads[(uint32_t)Quads::GAME_SCREEN];
     const Font* const font = fonts[(uint32_t)FontType::English];
     
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, quad.framebuffer);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, quad->framebuffer);
     
     glBindSampler(0, camera->sampler_clamp_linear);
     
@@ -119,13 +119,11 @@ void RenderGameScreen(const Shader* const shaders[],
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
        GLuint location = shader->uniform_location[U];
        switch(shader->uniform_name[U]) {
-           case Uniforms::Sampler: glUniform1i(location, 0); break;
            case Uniforms::Resolution: glUniform1f(location, camera->resolution); break;
            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-1.0f, -1.0f, 2.0f, 2.0f))); break;
            default: SHADER_WARNING("Uniform mismatch"); break;
        }
     }
-    glBindTexture(GL_TEXTURE_2D, quad.texture);
     glBindVertexArray(ui->quad_vao);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);

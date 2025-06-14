@@ -13,7 +13,7 @@ struct Camera {
     GLuint       sampler_repeat_linear;
     
     // Game specific stuff, where to store?
-    uint32_t     resolution;
+    float     resolution;
 };
 
 #endif

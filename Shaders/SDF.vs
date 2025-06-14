@@ -28,7 +28,7 @@ vec3 WaveEffect() {
 
 void main() {
     vec3 Position = _Position;
-    Position = PulseEffect();
+    //Position = PulseEffect();
     //Position = WaveEffect();
 
     gl_Position = vec4(Position, 1.0);
