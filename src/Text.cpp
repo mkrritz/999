@@ -97,16 +97,26 @@ static inline glm::vec2 GetAtlasUV(char c) {
 }
 
 static void FillTextInfo(TextField& level,
-                         const std::string& text) {
+                         const std::string& text,
+                         const uint32_t N) {
     level.text = text;
     level.length = 0;
+    uint32_t Nx = 0;
+    uint32_t Ny = 0;
+    
+    uint32_t* digits_on_each_cell = (uint32_t*)malloc(N * N * sizeof(uint32_t));
+
     for (const char &Character : level.text) {
-        if (Character == '\n' || Character == ' ') {
+        if (Character == '\n') {
+            continue;
+        }
+        if (Character == ' ') {
             continue;
         }
         level.length++;
     }
     
+    free(digits_on_each_cell);
     // Create an array of N*N elements with uint32_t values
     // each value describes how many digits there are in each number
     // because it's useful to know
@@ -129,13 +139,17 @@ static void LoadFont(const std::string& name) {
 }
 
 void SetText(TextField& level, const std::string& text, float resolution) {
-    FillTextInfo(level, text);
-    
-    float Vertices[level.length * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT];  // in the heap and free in the end
-    uint32_t Indices[level.length * 6];                              // in the heap and free in the end
-    uint32_t IndexOffset = 0, CharacterIndex = 0;                    // in the heap and free in the end
     
     uint32_t N = uint32_t(glm::abs(glm::floor(resolution)));
+    
+    FillTextInfo(level, text, N);
+    
+    uint32_t VertexCount = level.length * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT;
+    uint32_t IndexCount = level.length * 6;
+    float* Vertices = new float[VertexCount];
+    uint32_t* Indices = new uint32_t[IndexCount];
+    uint32_t IndexOffset = 0, CharacterIndex = 0;
+    
     //uint32_t Cells = N * N;
     
     float CellScale = 1.0f / float(N);
@@ -216,13 +230,15 @@ void SetText(TextField& level, const std::string& text, float resolution) {
     }
     
     glBindBuffer(GL_ARRAY_BUFFER, level.vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, VertexCount * sizeof(float), &Vertices[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, level.ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, IndexCount * sizeof(uint32_t), &Indices[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
+    delete[] Vertices;
+    delete[] Indices;
 }
 
 void FontsInit(Heap* const heap, Font* fonts[]) {
