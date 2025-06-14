@@ -10,6 +10,8 @@
 using std::string;
 using std::filesystem::path;
 
+static const path FONT_DIRECTORY = "Fonts/";
+
 static const glm::vec2 FontUV[64] = {
     glm::vec2(0    , 0.875), // 0
     glm::vec2(0.125, 0.875), // 1
@@ -117,8 +119,6 @@ static void FillTextInfo(TextField& level) {
     level.info.width = glm::max(level.info.width, cols);
 }
 
-static const path FONT_DIRECTORY = "Fonts/";
-
 static const string FONTS[(uint32_t)FontType::Count] = {
     // Keep these in the same order as the 'enum struct FontType'
     "font_1.png",
@@ -146,7 +146,7 @@ void SetText(TextField& level, const std::string& text, uint32_t resolution) {
     
     float CellScale = 1.0f / float(resolution);
     float HalfCellScale = CellScale / 2.0f;
-    float CharacterScale = 1.0f;
+    float CharacterScale = 1.5f;
     
     float CellIndexX  = -1.0f + CellScale;
     float CellIndexY  = -1.0f + CellScale;

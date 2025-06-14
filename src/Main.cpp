@@ -116,6 +116,7 @@ int main() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
     string grid = GenerateGrid(camera->resolution);
+    // string grid = "Text strings\nto be used\nfor progress"; TODO
     SetText(level, grid.c_str(), camera->resolution);
     
     //glEnable(GL_CULL_FACE);
@@ -156,7 +157,7 @@ int main() {
             camera->resolution += input->wheel;
             input->wheel = 0;
             camera->resolution = glm::abs(camera->resolution);
-            grid = GenerateGrid(camera->resolution);
+            grid = GenerateGrid(camera->resolution); // TODO BETTER PARSING
             SetText(level, grid.c_str(), camera->resolution);
         }
         
