@@ -53,44 +53,8 @@ void RenderToScreen(const Shader* const [],
 void FontsInit(Heap* const,
                Font* []);
 void SetText(TextField&,
-             const std::string&,
              const float);
-
 //
-
-using std::string;
-static std::random_device rd;
-static std::mt19937 gen(time(nullptr));
-
-static string GenerateGrid(float resolution) {
-    uint32_t N = glm::abs(glm::floor(resolution));
-    uint32_t total = N * N;
-    
-    std::vector<uint32_t> numbers(total);
-    for (uint32_t i = 0; i < total; ++i) {
-        numbers[i] = i + 1;
-    }
-    std::shuffle(numbers.begin(), numbers.end(), gen);
-    
-    string grid;
-    string digits;
-    for (uint32_t i = 0; i < total; ++i) {
-        const string number = std::to_string(numbers[i]);
-        grid  += number;
-        const string digitCount = std::to_string(number.length());
-        digits += digitCount;
-        if (((i + 1) % N == 0) && i != (total-1)) {
-            grid += '\n';
-            digits += '\n';
-        } else {
-            grid += ' ';
-            digits += ' ';
-        }
-    }
-    //printf("\n--\n%s\n--\n", grid.c_str());
-    //printf("\n--\n%s\n--\n", digits.c_str());
-    return grid;
-}
 
 int main() {
     GLFWwindow* window;
@@ -127,8 +91,7 @@ int main() {
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
-    string grid = GenerateGrid(camera->resolution);
-    SetText(level, grid.c_str(), camera->resolution);
+    SetText(level, camera->resolution);
     
     //glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
@@ -167,8 +130,7 @@ int main() {
         if (input->wheel) {
             camera->resolution += input->wheel;
             input->wheel = 0;
-            grid = GenerateGrid(camera->resolution); // TODO BETTER PARSING
-            SetText(level, grid.c_str(), camera->resolution);
+            SetText(level, camera->resolution);
         }
         
         if (input->special & InputM::F1) {

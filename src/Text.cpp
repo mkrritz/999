@@ -152,11 +152,58 @@ static void LoadFont(const std::string& name) {
     stbi_image_free(img);
 }
 
-void SetText(TextField& level, const std::string& text, float resolution) {
+
+using std::string;
+static std::random_device rd;
+static std::mt19937 gen(time(nullptr));
+
+static string GenerateGrid(float resolution) {
+    uint32_t N = glm::abs(glm::floor(resolution));
+    uint32_t total = N * N;
+    
+    std::vector<uint32_t> numbers(total);
+    for (uint32_t i = 0; i < total; ++i) {
+        numbers[i] = i + 1;
+    }
+    //std::shuffle(numbers.begin(), numbers.end(), gen);
+    
+    string grid;
+    string digits;
+    for (uint32_t i = 0; i < total; ++i) {
+        const string number = std::to_string(numbers[i]);
+        const string digitCount = std::to_string(number.length());
+        
+        //if (numbers[i] % 2 == 0) {
+            grid  += number;
+            digits += digitCount;
+        //}
+        
+        if (((i + 1) % N == 0) && i != (total-1)) {
+            grid += '\n';
+            digits += '\n';
+        } else {
+            grid += ' ';
+            digits += ' ';
+        }
+    }
+    //printf("\n--\n%s\n--\n", grid.c_str());
+    //printf("\n--\n%s\n--\n", digits.c_str());
+    return grid;
+    /*
+        Find the number in 10 seconds.
+        Finding the number adds 10 seconds.
+        Do various hints.
+        
+    */
+}
+
+void SetText(TextField& level, float resolution) {
+    
+    string grid = GenerateGrid(resolution);
     
     const uint32_t N = uint32_t(glm::abs(glm::floor(resolution)));
     
-    uint32_t* DigitsOnEachCell = FillTextInfo(level, text, N);
+    uint32_t* DigitsOnEachCell = FillTextInfo(level, grid, N);
     
     const uint32_t VertexCount = level.length * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT;
     const uint32_t IndexCount = level.length * 6;
@@ -170,28 +217,30 @@ void SetText(TextField& level, const std::string& text, float resolution) {
     
     const float VerticalPadding = 0.6f;
     
-    float CellCenterX = -1.0f + CellScale;
-    float CellCenterY = -1.0f + CellScale;
     uint32_t CIX = 0;
     uint32_t CIY = 0;
     float CharacterScale = 1.0f + 1.0f / float(DigitsOnEachCell[CIY * N + CIX]);
     float LocalX = -CharacterScale * ((float(DigitsOnEachCell[CIY * N + CIX]) - 1.0f) / 2.0f);
+    float CellCenterX = -1.0f + CellScale;
+    float CellCenterY = -1.0f + CellScale;
     
     for (size_t i = 0; level.text[i] != '\0'; i++) {
-        char Character = level.text[i];
+        const char Character = level.text[i];
         if (Character == '\n') {
-            CIY++;
+            CIY += 1;
             CIX = 0;
             CharacterScale = 1.0f + 1.0f / float(DigitsOnEachCell[CIY * N + CIX]);
             LocalX = -CharacterScale * ((float(DigitsOnEachCell[CIY * N + CIX]) - 1.0f) / 2.0f);
+            
             CellCenterX = -1.0f + CellScale;
             CellCenterY += 2.0f * CellScale;
             continue;
         }
         if (Character == ' ') {
-            CIX++;
+            CIX += 1;
             CharacterScale = 1.0f + 1.0f / float(DigitsOnEachCell[CIY * N + CIX]);
             LocalX = -CharacterScale * ((float(DigitsOnEachCell[CIY * N + CIX]) - 1.0f) / 2.0f);
+            
             CellCenterX += 2.0f * CellScale;
             continue;
         }
@@ -202,7 +251,7 @@ void SetText(TextField& level, const std::string& text, float resolution) {
         
         uint32_t CellVerticesIndex = CharacterIndex * (4 * TEXT_VERTEX_ATTRIBUTE_COUNT);
         uint32_t CellIndicesIndex  = CharacterIndex * 6;
-        CharacterIndex++;
+        CharacterIndex += 1;
         
         // BL
         Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellCenterX + (LocalX * VerticalPadding - CharacterScale) * HalfCellScale;
