@@ -73,18 +73,22 @@ static string GenerateGrid(float resolution) {
     std::shuffle(numbers.begin(), numbers.end(), gen);
     
     string grid;
+    string digits;
     for (uint32_t i = 0; i < total; ++i) {
         const string number = std::to_string(numbers[i]);
-        //const string digitCount = std::to_string(number.length());
-        //grid += digitCount + number;
-        grid += number;
+        grid  += number;
+        const string digitCount = std::to_string(number.length());
+        digits += digitCount;
         if (((i + 1) % N == 0) && i != (total-1)) {
             grid += '\n';
+            digits += '\n';
         } else {
             grid += ' ';
+            digits += ' ';
         }
     }
     //printf("\n--\n%s\n--\n", grid.c_str());
+    //printf("\n--\n%s\n--\n", digits.c_str());
     return grid;
 }
 

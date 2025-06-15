@@ -96,30 +96,44 @@ static inline glm::vec2 GetAtlasUV(char c) {
     return FontUV[index];
 }
 
-static void FillTextInfo(TextField& level,
+static uint32_t* FillTextInfo(TextField& level,
                          const std::string& text,
                          const uint32_t N) {
+    uint32_t* digits_on_each_cell = new uint32_t[N * N];
+    
     level.text = text;
     level.length = 0;
-    uint32_t Nx = 0;
-    uint32_t Ny = 0;
     
-    uint32_t* digits_on_each_cell = (uint32_t*)malloc(N * N * sizeof(uint32_t));
-
+    uint32_t digits = 0;
+    uint32_t cell_x = 0;
+    uint32_t cell_y = 0;
     for (const char &Character : level.text) {
         if (Character == '\n') {
+            digits_on_each_cell[cell_y * N + cell_x] = digits;
+            cell_x = 0;
+            cell_y++;
+            digits = 0;
             continue;
         }
         if (Character == ' ') {
+            digits_on_each_cell[cell_y * N + cell_x] = digits;
+            cell_x++;
+            digits = 0;
             continue;
         }
         level.length++;
+        digits++;
     }
     
-    free(digits_on_each_cell);
-    // Create an array of N*N elements with uint32_t values
-    // each value describes how many digits there are in each number
-    // because it's useful to know
+    //for (uint32_t i = 0; i < N; i++) { // reverse this for easier prints.. will delete later anyway
+    //    for (uint32_t j = 0; j < N; j++) {
+    //        printf(" %u", digits_on_each_cell[i * N + j]);
+    //    }
+    //    printf("\n");
+    //}
+    
+    return digits_on_each_cell;
+    //free(digits_on_each_cell);
 }
 
 static const string FONTS[(uint32_t)FontType::Count] = {
@@ -142,47 +156,45 @@ void SetText(TextField& level, const std::string& text, float resolution) {
     
     uint32_t N = uint32_t(glm::abs(glm::floor(resolution)));
     
-    FillTextInfo(level, text, N);
+    uint32_t* digits_on_each_cell = FillTextInfo(level, text, N);
     
-    uint32_t VertexCount = level.length * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT;
-    uint32_t IndexCount = level.length * 6;
+    const uint32_t VertexCount = level.length * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT;
+    const uint32_t IndexCount = level.length * 6;
+    
     float* Vertices = new float[VertexCount];
     uint32_t* Indices = new uint32_t[IndexCount];
     uint32_t IndexOffset = 0, CharacterIndex = 0;
     
-    //uint32_t Cells = N * N;
-    
     float CellScale = 1.0f / float(N);
     float HalfCellScale = CellScale / 2.0f;
     //float CharacterScale = 1.0f + CellScale;
-    float CharacterScale = 2.0f;
+    float CharacterScale = 1.0f;
     
     float CellIndexX = -1.0f + CellScale;
     float CellIndexY = -1.0f + CellScale;
     
-    float LocalColumn =  -1.0f; // this is friendly on 3-digit numbers... clean this..
+    uint32_t CIX = 0;
+    uint32_t CIY = 0;
+    float LocalColumn = -(float(digits_on_each_cell[CIY * N + CIX]) - 1.0f) / 2.0f;
     
     for (size_t i = 0; level.text[i] != '\0'; i++) {
         char Character = level.text[i];
         if (Character == '\n') {
             CellIndexX = -1.0f + CellScale;
             CellIndexY += 2.0f * CellScale;
-            LocalColumn = -1.0f;
+            
+            CIY++;
+            CIX = 0;
+            LocalColumn = -(float(digits_on_each_cell[CIY * N + CIX]) - 1.0f) / 2.0f;
             continue;
         }
         if (Character == ' ') {
             CellIndexX += 2.0f * CellScale;
-            LocalColumn = -1.0f;
+            
+            CIX++;
+            LocalColumn = -(float(digits_on_each_cell[CIY * N + CIX]) - 1.0f) / 2.0f;
             continue;
         }
-        
-        float LocalX = LocalColumn; // This is here to offset the numbers around
-        LocalColumn++;              // (CellIndexX, CellIndexY) so that 1 digit numbers
-                                    // spawn at the center and 2 digit numbers spawn
-                                    // with -HalfCellScale and HalfCellScale
-                                    // and 3 digit numbers spawn with
-                                    // -CellScale and 0 and CellScale
-                                    // and so on...
         
         uint32_t CellVerticesIndex = CharacterIndex * (4 * TEXT_VERTEX_ATTRIBUTE_COUNT);
         uint32_t CellIndicesIndex  = CharacterIndex * 6;
@@ -193,28 +205,28 @@ void SetText(TextField& level, const std::string& text, float resolution) {
         glm::vec2 UV = GetAtlasUV(Character);
         
         // BL
-        Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + (LocalX - CharacterScale) * HalfCellScale;
+        Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + (LocalColumn - CharacterScale) * HalfCellScale;
         Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellIndexY - CharacterScale * HalfCellScale;
         Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2 ] = 0.0f;
         Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3 ] = UV.x;
         Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4 ] = UV.y;
         
         // TL
-        Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + (LocalX - CharacterScale) * HalfCellScale;
+        Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + (LocalColumn - CharacterScale) * HalfCellScale;
         Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellIndexY + CharacterScale * HalfCellScale;
         Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2 ] = 0.0f;
         Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3 ] = UV.x;
         Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4 ] = UV.y + 0.125f;
 
         // BR
-        Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + (LocalX + CharacterScale) * HalfCellScale;
+        Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + (LocalColumn + CharacterScale) * HalfCellScale;
         Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellIndexY - CharacterScale * HalfCellScale;
         Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2 ] = 0.0f;
         Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3 ] = UV.x + 0.125f;
         Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4 ] = UV.y;
 
         // TR
-        Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + (LocalX + CharacterScale) * HalfCellScale;
+        Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + (LocalColumn + CharacterScale) * HalfCellScale;
         Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellIndexY + CharacterScale * HalfCellScale;
         Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2 ] = 0.0f;
         Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3 ] = UV.x + 0.125f;
@@ -227,6 +239,8 @@ void SetText(TextField& level, const std::string& text, float resolution) {
         Indices[CellIndicesIndex + 4] = 2 + IndexOffset;
         Indices[CellIndicesIndex + 5] = 3 + IndexOffset;
         IndexOffset += 4;
+        
+        LocalColumn += CharacterScale;
     }
     
     glBindBuffer(GL_ARRAY_BUFFER, level.vbo);
@@ -239,6 +253,7 @@ void SetText(TextField& level, const std::string& text, float resolution) {
     
     delete[] Vertices;
     delete[] Indices;
+    free(digits_on_each_cell);
 }
 
 void FontsInit(Heap* const heap, Font* fonts[]) {
