@@ -70,7 +70,7 @@ static string GenerateGrid(float resolution) {
     for (uint32_t i = 0; i < total; ++i) {
         numbers[i] = i + 1;
     }
-    std::shuffle(numbers.begin(), numbers.end(), gen);
+    //std::shuffle(numbers.begin(), numbers.end(), gen);
     
     string grid;
     string digits;

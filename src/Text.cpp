@@ -156,7 +156,7 @@ void SetText(TextField& level, const std::string& text, float resolution) {
     
     uint32_t N = uint32_t(glm::abs(glm::floor(resolution)));
     
-    uint32_t* digits_on_each_cell = FillTextInfo(level, text, N);
+    uint32_t* DigitsOnEachCell = FillTextInfo(level, text, N);
     
     const uint32_t VertexCount = level.length * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT;
     const uint32_t IndexCount = level.length * 6;
@@ -167,66 +167,66 @@ void SetText(TextField& level, const std::string& text, float resolution) {
     
     float CellScale = 1.0f / float(N);
     float HalfCellScale = CellScale / 2.0f;
-    //float CharacterScale = 1.0f + CellScale;
-    float CharacterScale = 1.0f;
     
     float CellIndexX = -1.0f + CellScale;
     float CellIndexY = -1.0f + CellScale;
     
     uint32_t CIX = 0;
     uint32_t CIY = 0;
-    float LocalColumn = -(float(digits_on_each_cell[CIY * N + CIX]) - 1.0f) / 2.0f;
+    float CharacterScale = 1.0f + 1.0f / float(DigitsOnEachCell[CIY * N + CIX]);
+    float LocalX = -CharacterScale * ((float(DigitsOnEachCell[CIY * N + CIX]) - 1.0f) / 2.0f);
+    float VerticalPadding = 0.6f;
     
     for (size_t i = 0; level.text[i] != '\0'; i++) {
         char Character = level.text[i];
         if (Character == '\n') {
-            CellIndexX = -1.0f + CellScale;
-            CellIndexY += 2.0f * CellScale;
-            
             CIY++;
             CIX = 0;
-            LocalColumn = -(float(digits_on_each_cell[CIY * N + CIX]) - 1.0f) / 2.0f;
+            CharacterScale = 1.0f + 1.0f / float(DigitsOnEachCell[CIY * N + CIX]);
+            LocalX = -CharacterScale * ((float(DigitsOnEachCell[CIY * N + CIX]) - 1.0f) / 2.0f);
+            CellIndexX = -1.0f + CellScale;
+            CellIndexY += 2.0f * CellScale;
             continue;
         }
         if (Character == ' ') {
-            CellIndexX += 2.0f * CellScale;
-            
             CIX++;
-            LocalColumn = -(float(digits_on_each_cell[CIY * N + CIX]) - 1.0f) / 2.0f;
+            CharacterScale = 1.0f + 1.0f / float(DigitsOnEachCell[CIY * N + CIX]);
+            LocalX = -CharacterScale * ((float(DigitsOnEachCell[CIY * N + CIX]) - 1.0f) / 2.0f);
+            CellIndexX += 2.0f * CellScale;
             continue;
         }
-        
-        uint32_t CellVerticesIndex = CharacterIndex * (4 * TEXT_VERTEX_ATTRIBUTE_COUNT);
-        uint32_t CellIndicesIndex  = CharacterIndex * 6;
-        CharacterIndex++;
         
         // Get the BL point and offset the rest, which is by a constant,
         // unless font image changes and each glyph is not 128x128 any more
         glm::vec2 UV = GetAtlasUV(Character);
         
+        uint32_t CellVerticesIndex = CharacterIndex * (4 * TEXT_VERTEX_ATTRIBUTE_COUNT);
+        uint32_t CellIndicesIndex  = CharacterIndex * 6;
+        CharacterIndex++;
+        
         // BL
-        Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + (LocalColumn - CharacterScale) * HalfCellScale;
+        Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + (LocalX * VerticalPadding - CharacterScale) * HalfCellScale;
         Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellIndexY - CharacterScale * HalfCellScale;
         Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2 ] = 0.0f;
         Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3 ] = UV.x;
         Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4 ] = UV.y;
         
         // TL
-        Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + (LocalColumn - CharacterScale) * HalfCellScale;
+        Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + (LocalX * VerticalPadding - CharacterScale) * HalfCellScale;
         Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellIndexY + CharacterScale * HalfCellScale;
         Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2 ] = 0.0f;
         Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3 ] = UV.x;
         Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4 ] = UV.y + 0.125f;
 
         // BR
-        Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + (LocalColumn + CharacterScale) * HalfCellScale;
+        Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + (LocalX * VerticalPadding + CharacterScale) * HalfCellScale;
         Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellIndexY - CharacterScale * HalfCellScale;
         Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2 ] = 0.0f;
         Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3 ] = UV.x + 0.125f;
         Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4 ] = UV.y;
 
         // TR
-        Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + (LocalColumn + CharacterScale) * HalfCellScale;
+        Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellIndexX + (LocalX * VerticalPadding + CharacterScale) * HalfCellScale;
         Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellIndexY + CharacterScale * HalfCellScale;
         Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2 ] = 0.0f;
         Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3 ] = UV.x + 0.125f;
@@ -240,7 +240,7 @@ void SetText(TextField& level, const std::string& text, float resolution) {
         Indices[CellIndicesIndex + 5] = 3 + IndexOffset;
         IndexOffset += 4;
         
-        LocalColumn += CharacterScale;
+        LocalX += CharacterScale;
     }
     
     glBindBuffer(GL_ARRAY_BUFFER, level.vbo);
@@ -253,7 +253,7 @@ void SetText(TextField& level, const std::string& text, float resolution) {
     
     delete[] Vertices;
     delete[] Indices;
-    free(digits_on_each_cell);
+    free(DigitsOnEachCell);
 }
 
 void FontsInit(Heap* const heap, Font* fonts[]) {
