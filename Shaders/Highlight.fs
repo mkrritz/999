@@ -1,0 +1,21 @@
+#version 430 core
+
+in vec2 UV;
+
+out vec4 FragColor;
+
+uniform float Time;
+
+const vec3  FILL_COLOR = vec3(0.5, 0.5, 0.5);
+
+void main()
+{
+    float a_1 = 0.3 * cos(Time);
+    float a_2 = 0.1 * sin(Time * 4.0);
+    float a_3 = a_2 * abs(a_1);
+    
+    float a_4 = clamp(abs(a_3), 0.25, 0.75);
+    vec3 highlight = vec3(a_1, a_2, a_3);
+    
+    FragColor = vec4(FILL_COLOR + highlight, 0.5 + a_4);
+}

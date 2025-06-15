@@ -23,8 +23,9 @@
 */
 
 enum struct Shaders {
-    TripleChannelQuad,
-    SingleChannelQuad,
+    TripleChannelQuad, // Rename to purpose?
+    SingleChannelQuad, // Rename to purpose?
+    Highlight,
     SDF,
     Count // Not really a shader.
 };
@@ -96,6 +97,7 @@ struct ShaderConfig {
 const ShaderConfig SHADERS_CONFIG[] = {
     { "Quad.vs", nullptr, "TripleChannelQuad.fs", nullptr, nullptr, nullptr, (const char*[]){"Sampler", "PositionAndSize", "Time"}, 3, nullptr, 0 },
     { "Quad.vs", nullptr, "SingleChannelQuad.fs", nullptr, nullptr, nullptr, (const char*[]){"Resolution", "PositionAndSize"}, 2, nullptr, 0 },
+    { "Quad.vs", nullptr, "Highlight.fs", nullptr, nullptr, nullptr, (const char*[]){"PositionAndSize", "Time"}, 2, nullptr, 0 },
     { "SDF.vs", nullptr, "SDF.fs", nullptr, nullptr, nullptr, (const char*[]){"Time", "Sampler"}, 2, nullptr, 0 },
 };
 

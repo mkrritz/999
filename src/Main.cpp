@@ -91,7 +91,7 @@ int main() {
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
-    SetText(level, camera->resolution);
+    SetText(level, camera->grid_resolution);
     
     //glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
@@ -128,9 +128,9 @@ int main() {
         input = NextRecordedInputState();
         
         if (input->wheel) {
-            camera->resolution += input->wheel;
+            camera->grid_resolution += input->wheel;
             input->wheel = 0;
-            SetText(level, camera->resolution);
+            SetText(level, camera->grid_resolution);
         }
         
         if (input->special & InputM::F1) {
@@ -149,20 +149,28 @@ int main() {
         while(AccumulatorTime >= dt) {
             AccumulatorTime -= dt;
             FixedUpdateCount += 1;
+            
+            camera->highlight_x = 2.0f * input->x_current / WINDOW_WIDTH  - 1.0f;
+            camera->highlight_y = 1.0f - 2.0f * input->y_current / WINDOW_HEIGHT;
+            printf("Mouse (%.2f, %.2f)   \r", camera->highlight_x, camera->highlight_y);
         }
         
         
         for (uint32_t pass = 0; pass < camera->render_passes; pass++) {
             if (pass == FIRST_PASS) {
                 RenderGameScreen(shaders, camera, fonts, ui, TotalTime, level);
+                
             }
             
             if (pass == SECOND_PASS) {
                 SaveGameScreen(shaders, camera, ui, TotalTime);
             }
             
-            RenderToScreen(shaders, camera, ui, TotalTime);
         }
+        RenderToScreen(shaders, camera, ui, TotalTime); // whatever..
+        
+        
+        
         
         glfwSwapBuffers(window);
     }

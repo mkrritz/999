@@ -24,7 +24,7 @@ void CameraInit(Heap* const heap) {
     camera->sampler_clamp_linear   = Sampler(GL_CLAMP_TO_EDGE, GL_LINEAR);
     camera->sampler_repeat_linear  = Sampler(GL_REPEAT, GL_LINEAR);
     
-    camera->resolution = 3;
+    camera->grid_resolution = 3;
     
 }
 

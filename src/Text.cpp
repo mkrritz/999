@@ -157,19 +157,18 @@ using std::string;
 static std::random_device rd;
 static std::mt19937 gen(time(nullptr));
 
-static string GenerateGrid(float resolution) {
-    uint32_t N = glm::abs(glm::floor(resolution));
-    uint32_t total = N * N;
+static string GenerateGrid(uint32_t N) {
+    uint32_t GridSize = N * N;
     
-    std::vector<uint32_t> numbers(total);
-    for (uint32_t i = 0; i < total; ++i) {
+    std::vector<uint32_t> numbers(GridSize);
+    for (uint32_t i = 0; i < GridSize; ++i) {
         numbers[i] = i + 1;
     }
-    //std::shuffle(numbers.begin(), numbers.end(), gen);
+    std::shuffle(numbers.begin(), numbers.end(), gen);
     
     string grid;
     string digits;
-    for (uint32_t i = 0; i < total; ++i) {
+    for (uint32_t i = 0; i < GridSize; ++i) {
         const string number = std::to_string(numbers[i]);
         const string digitCount = std::to_string(number.length());
         
@@ -178,7 +177,7 @@ static string GenerateGrid(float resolution) {
             digits += digitCount;
         //}
         
-        if (((i + 1) % N == 0) && i != (total-1)) {
+        if (((i + 1) % N == 0) && i != (GridSize-1)) {
             grid += '\n';
             digits += '\n';
         } else {
@@ -199,9 +198,9 @@ static string GenerateGrid(float resolution) {
 
 void SetText(TextField& level, float resolution) {
     
-    string grid = GenerateGrid(resolution);
-    
     const uint32_t N = uint32_t(glm::abs(glm::floor(resolution)));
+    
+    string grid = GenerateGrid(N);
     
     uint32_t* DigitsOnEachCell = FillTextInfo(level, grid, N);
     
