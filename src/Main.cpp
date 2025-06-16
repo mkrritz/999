@@ -159,7 +159,9 @@ int main() {
             camera->highlight_x = -1.0f + (GridX + 0.5f) * CellSize;
             camera->highlight_y =  1.0f - (GridY + 0.5f) * CellSize;
             
-            //printf("Mouse (%.2f, %.2f)   \r", camera->highlight_x, camera->highlight_y);
+            printf("MouseNDC=(%.2f, %.2f) Grid(%.3f)=(%u, %u) \r", NDC_X, NDC_Y,
+                                                                   CellSize,
+                                                                   GridX, GridY);
         }
         
         
