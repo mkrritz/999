@@ -9,6 +9,7 @@
 #include "game/Memory.h"
 #include "game/Text.h"
 #include "game/UI.h"
+#include "game/Grid.h"
 #include "game/Window.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -37,8 +38,10 @@ void RenderGameScreen(const Shader* const [],
                       const Camera* const,
                       const Font* const [],
                       const UI* const,
+                      const InputState* const,
                       float,
-                      TextField&);
+                      TextField&,
+                      float);
 void SaveGameScreen(const Shader* const [],
                        const Camera* const,
                        const UI* const,
@@ -53,8 +56,17 @@ void RenderToScreen(const Shader* const [],
 void FontsInit(Heap* const,
                Font* []);
 void SetText(TextField&,
-             const float);
+             Grid* const);
 //
+
+static void GridInit(Heap* const heap, const float resolution) {
+    HeapReset(heap);
+    Grid* grid = (Grid*)HeapAllocate(heap, sizeof(Grid));
+    grid->resolution = resolution;
+    grid->rows = uint32_t(glm::abs(resolution));
+    grid->cols = uint32_t(glm::abs(resolution));
+    grid->cells = (uint32_t*)HeapAllocate(heap, grid->rows * grid->cols * sizeof(uint32_t));
+}
 
 int main() {
     GLFWwindow* window;
@@ -77,6 +89,8 @@ int main() {
     Font* fonts[(uint32_t)FontType::Count] = {nullptr};
     FontsInit(heaps[(uint32_t)Heaps::Font], fonts);
     
+    
+    
     TextField level;
     glGenVertexArrays(1, &level.vao);
     glGenBuffers(1, &level.vbo);
@@ -91,7 +105,12 @@ int main() {
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
-    SetText(level, camera->grid_resolution);
+    GridInit(heaps[(uint32_t)Heaps::Grid], 3.0f);
+    Grid* const grid = (Grid*)heaps[(uint32_t)Heaps::Grid]->memory;
+    SetText(level, grid);
+    
+    
+    
     
     //glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
@@ -128,9 +147,11 @@ int main() {
         input = NextRecordedInputState();
         
         if (input->wheel) {
-            camera->grid_resolution += input->wheel;
+            grid->resolution += input->wheel;
             input->wheel = 0;
-            SetText(level, camera->grid_resolution);
+            
+            GridInit(heaps[(uint32_t)Heaps::Grid], grid->resolution);
+            SetText(level, grid);
         }
         
         if (input->special & InputM::F1) {
@@ -139,6 +160,22 @@ int main() {
             }
             input->toggles &= ~InputM::Toggle_F1;
         } else input->toggles |= InputM::Toggle_F1;
+        
+        if (input->mouse & InputM::LEFT_CLICK) {
+            if (input->toggles & InputM::Toggle_LC) {
+                const float NDC_X = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH;
+                const float NDC_Y =  1.0f - 2.0f * input->y_current / WINDOW_HEIGHT;
+                const float CellSize = 2.0f / grid->resolution;
+                const uint32_t GridX = uint32_t((NDC_X + 1.0f) / CellSize);
+                const uint32_t GridY = grid->rows - uint32_t((1.0f - NDC_Y) / CellSize) - 1;
+                
+                printf("\nMouseNDC=(%.2f, %.2f) Grid(%.3f)[%u, %u] = %u\n", NDC_X, NDC_Y,
+                                                                            CellSize,
+                                                                            GridX, GridY,
+                                                                            grid->cells[GridY * grid->rows + GridX]);
+            }
+            input->toggles &= ~InputM::Toggle_LC;
+        } else input->toggles |= InputM::Toggle_LC;
         
         while (shader_slots_to_reload) {
             uint32_t slot = __builtin_ctzll(shader_slots_to_reload);
@@ -150,24 +187,12 @@ int main() {
             AccumulatorTime -= dt;
             FixedUpdateCount += 1;
             
-            const float NDC_X = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH;
-            const float NDC_Y =  1.0f - 2.0f * input->y_current / WINDOW_HEIGHT;
-            const float CellSize = 2.0f / camera->grid_resolution;
-            const uint32_t GridX = uint32_t((NDC_X + 1.0f) / CellSize);
-            const uint32_t GridY = uint32_t((1.0f - NDC_Y) / CellSize);
-            
-            camera->highlight_x = -1.0f + (GridX + 0.5f) * CellSize;
-            camera->highlight_y =  1.0f - (GridY + 0.5f) * CellSize;
-            
-            printf("MouseNDC=(%.2f, %.2f) Grid(%.3f)=(%u, %u) \r", NDC_X, NDC_Y,
-                                                                   CellSize,
-                                                                   GridX, GridY);
         }
         
         
         for (uint32_t pass = 0; pass < camera->render_passes; pass++) {
             if (pass == FIRST_PASS) {
-                RenderGameScreen(shaders, camera, fonts, ui, TotalTime, level);
+                RenderGameScreen(shaders, camera, fonts, ui, input, TotalTime, level, grid->resolution);
                 
             }
             

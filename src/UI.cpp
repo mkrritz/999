@@ -5,6 +5,7 @@
 #include "game/Memory.h"
 #include "game/UI.h"
 #include "game/Text.h"
+#include "game/Input.h"
 #include "game/Shader.h"
 #include "game/Camera.h"
 #include "game/Window.h"
@@ -102,8 +103,10 @@ void RenderGameScreen(const Shader* const shaders[],
                       const Camera* const camera,
                       const Font* const fonts[],
                       const UI* const ui,
+                      const InputState* const input,
                       float TotalTime,
-                      TextField& level) {
+                      TextField& level,
+                      float resolution) {
     const Shader* shader;
     const Quad* quad = &ui->quads[(uint32_t)Quads::GAME_SCREEN];
     const Font* const font = fonts[(uint32_t)FontType::English];
@@ -120,7 +123,7 @@ void RenderGameScreen(const Shader* const shaders[],
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
        GLuint location = shader->uniform_location[U];
        switch(shader->uniform_name[U]) {
-           case Uniforms::Resolution: glUniform1f(location, camera->grid_resolution); break;
+           case Uniforms::Resolution: glUniform1f(location, resolution); break;
            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-1.0f, -1.0f, 2.0f, 2.0f))); break;
            default: SHADER_WARNING("Uniform mismatch"); break;
        }
@@ -146,17 +149,24 @@ void RenderGameScreen(const Shader* const shaders[],
     glDrawElements(GL_TRIANGLES, 6 * level.length, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     
-    float highlight_window = 1.0f / camera->grid_resolution;
+    const float NDC_X = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH;
+    const float NDC_Y =  1.0f - 2.0f * input->y_current / WINDOW_HEIGHT;
+    const float CellSize = 2.0f / resolution;
+    const uint32_t GridX = uint32_t((NDC_X + 1.0f) / CellSize);
+    const uint32_t GridY = uint32_t((1.0f - NDC_Y) / CellSize);
+    const float HighlightX = -1.0f + (GridX + 0.5f) * CellSize;
+    const float HighlightY =  1.0f - (GridY + 0.5f) * CellSize;
+    const float HighlightW = 1.0f / resolution;
     
     shader = shaders[(uint32_t)Shaders::Highlight];
     glUseProgram(shader->ID);
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
         GLuint location = shader->uniform_location[U];
         switch(shader->uniform_name[U]) {
-            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(camera->highlight_x - highlight_window,
-                                                                                               camera->highlight_y - highlight_window,
-                                                                                               2.0f * highlight_window,
-                                                                                               2.0f * highlight_window))); break;
+            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(HighlightX - HighlightW,
+                                                                                               HighlightY - HighlightW,
+                                                                                               2.0f * HighlightW,
+                                                                                               2.0f * HighlightW))); break;
             case Uniforms::Time:   glUniform1f(location, TotalTime); break;
             default: SHADER_WARNING("Uniform mismatch"); break;
         }

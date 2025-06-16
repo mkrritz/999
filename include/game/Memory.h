@@ -13,6 +13,7 @@ enum struct Heaps {
     UI,
     Font,
     Camera,
+    Grid,
     Count
 };
 

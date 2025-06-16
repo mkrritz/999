@@ -83,6 +83,7 @@ namespace InputM {
         Toggle_M    = 1 << 8,  // Keyboard
         Toggle_Y    = 1 << 9,  // Controller
         Toggle_B    = 1 << 10, // Keyboard
+        Toggle_LC   = 1 << 11, // Mouse
     };
     
     enum AXES {

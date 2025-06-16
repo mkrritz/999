@@ -3,6 +3,7 @@
 
 #include "game/Assert.h"
 #include "game/Memory.h"
+#include "game/Grid.h"
 #include "game/Text.h"
 
 #include "stb_image/stb_image.h"
@@ -149,46 +150,50 @@ using std::string;
 static std::random_device rd;
 static std::mt19937 gen(time(nullptr));
 
-static string GenerateGrid(uint32_t N) {
-    uint32_t GridSize = N * N;
+static string GenerateGrid(uint32_t N, Grid* const grid) {
+    uint32_t resolution = grid->rows * grid->cols;
     
-    std::vector<uint32_t> numbers(GridSize);
-    for (uint32_t i = 0; i < GridSize; ++i) {
+    std::vector<uint32_t> numbers(resolution);
+    for (uint32_t i = 0; i < resolution; ++i) {
         numbers[i] = i + 1;
     }
-    std::shuffle(numbers.begin(), numbers.end(), gen);
+    //std::shuffle(numbers.begin(), numbers.end(), gen);
     
-    string grid;
+    for (uint32_t i = 0; i < resolution; ++i) {
+        grid->cells[i] = numbers[i];
+    }
+    
+    string level;
     string digits;
-    for (uint32_t i = 0; i < GridSize; ++i) {
+    for (uint32_t i = 0; i < resolution; ++i) {
         const string number = std::to_string(numbers[i]);
         const string digitCount = std::to_string(number.length());
         
         //if (numbers[i] % 2 == 0) {
-            grid  += number;
+            level  += number;
             digits += digitCount;
         //}
         
-        if (((i + 1) % N == 0) && i != (GridSize-1)) {
-            grid += '\n';
+        if (((i + 1) % N == 0) && i != (resolution-1)) {
+            level += '\n';
             digits += '\n';
         } else {
-            grid += ' ';
+            level += ' ';
             digits += ' ';
         }
     }
     //printf("\n--\n%s\n--\n", grid.c_str());
     //printf("\n--\n%s\n--\n", digits.c_str());
-    return grid;
+    return level;
 }
 
-void SetText(TextField& level, float resolution) {
+void SetText(TextField& level, Grid* const grid) {
     
-    const uint32_t N = uint32_t(glm::abs(glm::floor(resolution)));
+    const uint32_t N = uint32_t(glm::abs(glm::floor(grid->resolution)));
     
-    const string grid = GenerateGrid(N);
+    const string level_grid = GenerateGrid(N, grid);
     
-    uint32_t* DigitsOnEachCell = FillTextInfo(level, grid, N);
+    uint32_t* DigitsOnEachCell = FillTextInfo(level, level_grid, N);
     
     const uint32_t VertexCount = level.length * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT;
     const uint32_t IndexCount = level.length * 6;

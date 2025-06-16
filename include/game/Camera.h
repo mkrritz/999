@@ -11,14 +11,6 @@ struct Camera {
     GLuint       sampler_clamp_nearest;
     GLuint       sampler_clamp_linear;
     GLuint       sampler_repeat_linear;
-    
-    // Game specific stuff, where to store? Move these to Level
-    // WHere there will also be another heap or something
-    // like octree for dynamic memory 
-    // for the grid level 2d array and stuff
-    float     grid_resolution;
-    float     highlight_x;
-    float     highlight_y;
 };
 
 #endif
