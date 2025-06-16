@@ -106,7 +106,7 @@ void RenderGameScreen(const Shader* const shaders[],
                       const InputState* const input,
                       float TotalTime,
                       TextField& level,
-                      float resolution) {
+                      float resolution) { // Grid here instead i guess..
     const Shader* shader;
     const Quad* quad = &ui->quads[(uint32_t)Quads::GAME_SCREEN];
     const Font* const font = fonts[(uint32_t)FontType::English];

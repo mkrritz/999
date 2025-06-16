@@ -59,13 +59,11 @@ void SetText(TextField&,
              Grid* const);
 //
 
-static void GridInit(Heap* const heap, const float resolution) {
+static void GridInit(Heap* const heap, const uint32_t resolution) {
     HeapReset(heap);
     Grid* grid = (Grid*)HeapAllocate(heap, sizeof(Grid));
-    grid->resolution = resolution;
-    grid->rows = uint32_t(glm::abs(resolution));
-    grid->cols = uint32_t(glm::abs(resolution));
-    grid->cells = (uint32_t*)HeapAllocate(heap, grid->rows * grid->cols * sizeof(uint32_t));
+    grid->N = resolution;
+    grid->cells = (uint32_t*)HeapAllocate(heap, grid->N * grid->N * sizeof(uint32_t));
 }
 
 int main() {
@@ -105,7 +103,7 @@ int main() {
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
-    GridInit(heaps[(uint32_t)Heaps::Grid], 3.0f);
+    GridInit(heaps[(uint32_t)Heaps::Grid], 3);
     Grid* const grid = (Grid*)heaps[(uint32_t)Heaps::Grid]->memory;
     SetText(level, grid);
     
@@ -147,10 +145,17 @@ int main() {
         input = NextRecordedInputState();
         
         if (input->wheel) {
-            grid->resolution += input->wheel;
+            grid->N += int(input->wheel);
             input->wheel = 0;
             
-            GridInit(heaps[(uint32_t)Heaps::Grid], grid->resolution);
+            if (grid->N < 1) {  // levels won't be controlled by scroll. it's uint32_t anyway..
+                grid->N = 1;    // levels won't be controlled by scroll. it's uint32_t anyway..
+            }                   // levels won't be controlled by scroll. it's uint32_t anyway..
+            if (grid->N > 40) { // There is enough memory for 40 levels. So that's here as a reminder.
+                grid->N = 1;    // There is enough memory for 40 levels. So that's here as a reminder.
+            }                   // There is enough memory for 40 levels. So that's here as a reminder.
+            
+            GridInit(heaps[(uint32_t)Heaps::Grid], grid->N);
             SetText(level, grid);
         }
         
@@ -165,14 +170,14 @@ int main() {
             if (input->toggles & InputM::Toggle_LC) {
                 const float NDC_X = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH;
                 const float NDC_Y =  1.0f - 2.0f * input->y_current / WINDOW_HEIGHT;
-                const float CellSize = 2.0f / grid->resolution;
+                const float CellSize = 2.0f / float(grid->N);
                 const uint32_t GridX = uint32_t((NDC_X + 1.0f) / CellSize);
-                const uint32_t GridY = grid->rows - uint32_t((1.0f - NDC_Y) / CellSize) - 1;
+                const uint32_t GridY = grid->N - uint32_t((1.0f - NDC_Y) / CellSize) - 1;
                 
                 printf("\nMouseNDC=(%.2f, %.2f) Grid(%.3f)[%u, %u] = %u\n", NDC_X, NDC_Y,
                                                                             CellSize,
                                                                             GridX, GridY,
-                                                                            grid->cells[GridY * grid->rows + GridX]);
+                                                                            grid->cells[GridY * grid->N + GridX]);
             }
             input->toggles &= ~InputM::Toggle_LC;
         } else input->toggles |= InputM::Toggle_LC;
@@ -192,7 +197,7 @@ int main() {
         
         for (uint32_t pass = 0; pass < camera->render_passes; pass++) {
             if (pass == FIRST_PASS) {
-                RenderGameScreen(shaders, camera, fonts, ui, input, TotalTime, level, grid->resolution);
+                RenderGameScreen(shaders, camera, fonts, ui, input, TotalTime, level, grid->N);
                 
             }
             

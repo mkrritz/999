@@ -13,6 +13,9 @@ using std::filesystem::path;
 
 static const path FONT_DIRECTORY = "Fonts/";
 
+static std::random_device rd;
+static std::mt19937 gen(time(nullptr));
+
 static const glm::vec2 FontUV[64] = {
     glm::vec2(0    , 0.875), // 0
     glm::vec2(0.125, 0.875), // 1
@@ -100,25 +103,25 @@ static inline glm::vec2 GetAtlasUV(char c) {
 static uint32_t* FillTextInfo(TextField& level,
                          const std::string& text,
                          const uint32_t N) {
-    uint32_t* digit_count = new uint32_t[N * N];
+    uint32_t* digits_count = new uint32_t[N * N];
     
     level.text = text;
     level.length = 0;
     
     uint32_t digits = 0;
-    uint32_t cell_x = 0;
-    uint32_t cell_y = 0;
+    uint32_t CIX = 0;
+    uint32_t CIY = 0;
     for (const char &Character : level.text) {
         if (Character == '\n') {
-            digit_count[cell_y * N + cell_x] = digits;
-            cell_x = 0;
-            cell_y++;
+            digits_count[CIY * N + CIX] = digits;
+            CIX = 0;
+            CIY++;
             digits = 0;
             continue;
         }
         if (Character == ' ') {
-            digit_count[cell_y * N + cell_x] = digits;
-            cell_x++;
+            digits_count[CIY * N + CIX] = digits;
+            CIX++;
             digits = 0;
             continue;
         }
@@ -126,7 +129,7 @@ static uint32_t* FillTextInfo(TextField& level,
         digits++;
     }
     
-    return digit_count;
+    return digits_count;
 }
 
 static const string FONTS[(uint32_t)FontType::Count] = {
@@ -145,27 +148,21 @@ static void LoadFont(const std::string& name) {
     stbi_image_free(img);
 }
 
-
-using std::string;
-static std::random_device rd;
-static std::mt19937 gen(time(nullptr));
-
-static string GenerateGrid(uint32_t N, Grid* const grid) {
-    uint32_t resolution = grid->rows * grid->cols;
+static string GenerateGrid(Grid* const grid) {
+    uint32_t cells_count = grid->N * grid->N;
     
-    std::vector<uint32_t> numbers(resolution);
-    for (uint32_t i = 0; i < resolution; ++i) {
+    std::vector<uint32_t> numbers(cells_count);
+    for (uint32_t i = 0; i < cells_count; ++i) {
         numbers[i] = i + 1;
     }
-    //std::shuffle(numbers.begin(), numbers.end(), gen);
-    
-    for (uint32_t i = 0; i < resolution; ++i) {
+    std::shuffle(numbers.begin(), numbers.end(), gen);
+    for (uint32_t i = 0; i < cells_count; ++i) {
         grid->cells[i] = numbers[i];
     }
     
     string level;
     string digits;
-    for (uint32_t i = 0; i < resolution; ++i) {
+    for (uint32_t i = 0; i < cells_count; ++i) {
         const string number = std::to_string(numbers[i]);
         const string digitCount = std::to_string(number.length());
         
@@ -174,7 +171,7 @@ static string GenerateGrid(uint32_t N, Grid* const grid) {
             digits += digitCount;
         //}
         
-        if (((i + 1) % N == 0) && i != (resolution-1)) {
+        if (((i + 1) % grid->N == 0) && i != (cells_count-1)) {
             level += '\n';
             digits += '\n';
         } else {
@@ -187,13 +184,11 @@ static string GenerateGrid(uint32_t N, Grid* const grid) {
     return level;
 }
 
-void SetText(TextField& level, Grid* const grid) {
+void SetText(TextField& level,
+             Grid* const grid) {
+    const string level_grid = GenerateGrid(grid); // Refactor this.. why?
     
-    const uint32_t N = uint32_t(glm::abs(glm::floor(grid->resolution)));
-    
-    const string level_grid = GenerateGrid(N, grid);
-    
-    uint32_t* DigitsOnEachCell = FillTextInfo(level, level_grid, N);
+    uint32_t* DigitsOnEachCell = FillTextInfo(level, level_grid, grid->N);
     
     const uint32_t VertexCount = level.length * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT;
     const uint32_t IndexCount = level.length * 6;
@@ -202,15 +197,15 @@ void SetText(TextField& level, Grid* const grid) {
     uint32_t* Indices = new uint32_t[IndexCount];
     uint32_t IndexOffset = 0, CharacterIndex = 0;
     
-    const float CellScale = 1.0f / float(N);
+    const float CellScale = 1.0f / float(grid->N);
     const float HalfCellScale = CellScale / 2.0f;
     
     const float VerticalPadding = 0.6f;
     
     uint32_t CIX = 0;
     uint32_t CIY = 0;
-    float CharacterScale = 1.0f + 1.0f / float(DigitsOnEachCell[CIY * N + CIX]);
-    float LocalX = -CharacterScale * ((float(DigitsOnEachCell[CIY * N + CIX]) - 1.0f) / 2.0f);
+    float CharacterScale = 1.0f + 1.0f / float(DigitsOnEachCell[CIY * grid->N + CIX]);
+    float LocalX = -CharacterScale * ((float(DigitsOnEachCell[CIY * grid->N + CIX]) - 1.0f) / 2.0f);
     float CellCenterX = -1.0f + CellScale;
     float CellCenterY = -1.0f + CellScale;
     
@@ -219,8 +214,8 @@ void SetText(TextField& level, Grid* const grid) {
         if (Character == '\n') {
             CIY += 1;
             CIX = 0;
-            CharacterScale = 1.0f + 1.0f / float(DigitsOnEachCell[CIY * N + CIX]);
-            LocalX = -CharacterScale * ((float(DigitsOnEachCell[CIY * N + CIX]) - 1.0f) / 2.0f);
+            CharacterScale = 1.0f + 1.0f / float(DigitsOnEachCell[CIY * grid->N + CIX]);
+            LocalX = -CharacterScale * ((float(DigitsOnEachCell[CIY * grid->N + CIX]) - 1.0f) / 2.0f);
             
             CellCenterX = -1.0f + CellScale;
             CellCenterY += 2.0f * CellScale;
@@ -228,8 +223,8 @@ void SetText(TextField& level, Grid* const grid) {
         }
         if (Character == ' ') {
             CIX += 1;
-            CharacterScale = 1.0f + 1.0f / float(DigitsOnEachCell[CIY * N + CIX]);
-            LocalX = -CharacterScale * ((float(DigitsOnEachCell[CIY * N + CIX]) - 1.0f) / 2.0f);
+            CharacterScale = 1.0f + 1.0f / float(DigitsOnEachCell[CIY * grid->N + CIX]);
+            LocalX = -CharacterScale * ((float(DigitsOnEachCell[CIY * grid->N + CIX]) - 1.0f) / 2.0f);
             
             CellCenterX += 2.0f * CellScale;
             continue;
@@ -295,7 +290,8 @@ void SetText(TextField& level, Grid* const grid) {
     free(DigitsOnEachCell);
 }
 
-void FontsInit(Heap* const heap, Font* fonts[]) {
+void FontsInit(Heap* const heap,
+               Font* fonts[]) {
     stbi_set_flip_vertically_on_load(true);
     for (uint32_t index = 0; index < (uint32_t)FontType::Count; index++) {
         fonts[index] = (Font*)HeapAllocate(heap, sizeof(Font));
