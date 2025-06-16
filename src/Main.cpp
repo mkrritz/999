@@ -150,9 +150,16 @@ int main() {
             AccumulatorTime -= dt;
             FixedUpdateCount += 1;
             
-            camera->highlight_x = 2.0f * input->x_current / WINDOW_WIDTH  - 1.0f;
-            camera->highlight_y = 1.0f - 2.0f * input->y_current / WINDOW_HEIGHT;
-            printf("Mouse (%.2f, %.2f)   \r", camera->highlight_x, camera->highlight_y);
+            const float NDC_X = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH;
+            const float NDC_Y =  1.0f - 2.0f * input->y_current / WINDOW_HEIGHT;
+            const float CellSize = 2.0f / camera->grid_resolution;
+            const uint32_t GridX = uint32_t((NDC_X + 1.0f) / CellSize);
+            const uint32_t GridY = uint32_t((1.0f - NDC_Y) / CellSize);
+            
+            camera->highlight_x = -1.0f + (GridX + 0.5f) * CellSize;
+            camera->highlight_y =  1.0f - (GridY + 0.5f) * CellSize;
+            
+            //printf("Mouse (%.2f, %.2f)   \r", camera->highlight_x, camera->highlight_y);
         }
         
         

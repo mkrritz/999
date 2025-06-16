@@ -99,7 +99,7 @@ static inline glm::vec2 GetAtlasUV(char c) {
 static uint32_t* FillTextInfo(TextField& level,
                          const std::string& text,
                          const uint32_t N) {
-    uint32_t* digits_on_each_cell = new uint32_t[N * N];
+    uint32_t* digit_count = new uint32_t[N * N];
     
     level.text = text;
     level.length = 0;
@@ -109,14 +109,14 @@ static uint32_t* FillTextInfo(TextField& level,
     uint32_t cell_y = 0;
     for (const char &Character : level.text) {
         if (Character == '\n') {
-            digits_on_each_cell[cell_y * N + cell_x] = digits;
+            digit_count[cell_y * N + cell_x] = digits;
             cell_x = 0;
             cell_y++;
             digits = 0;
             continue;
         }
         if (Character == ' ') {
-            digits_on_each_cell[cell_y * N + cell_x] = digits;
+            digit_count[cell_y * N + cell_x] = digits;
             cell_x++;
             digits = 0;
             continue;
@@ -125,15 +125,7 @@ static uint32_t* FillTextInfo(TextField& level,
         digits++;
     }
     
-    //for (uint32_t i = 0; i < N; i++) { // reverse this for easier prints.. will delete later anyway
-    //    for (uint32_t j = 0; j < N; j++) {
-    //        printf(" %u", digits_on_each_cell[i * N + j]);
-    //    }
-    //    printf("\n");
-    //}
-    
-    return digits_on_each_cell;
-    //free(digits_on_each_cell);
+    return digit_count;
 }
 
 static const string FONTS[(uint32_t)FontType::Count] = {
@@ -188,19 +180,13 @@ static string GenerateGrid(uint32_t N) {
     //printf("\n--\n%s\n--\n", grid.c_str());
     //printf("\n--\n%s\n--\n", digits.c_str());
     return grid;
-    /*
-        Find the number in 10 seconds.
-        Finding the number adds 10 seconds.
-        Do various hints.
-        
-    */
 }
 
 void SetText(TextField& level, float resolution) {
     
     const uint32_t N = uint32_t(glm::abs(glm::floor(resolution)));
     
-    string grid = GenerateGrid(N);
+    const string grid = GenerateGrid(N);
     
     uint32_t* DigitsOnEachCell = FillTextInfo(level, grid, N);
     
