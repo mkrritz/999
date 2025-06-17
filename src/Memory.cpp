@@ -20,6 +20,8 @@ void HeapsInit(Heap* heaps[]) {
     heaps[(uint32_t)Heaps::Shader]     = HeapInit(5 * 1024);
     heaps[(uint32_t)Heaps::UI]         = HeapInit(1024);
     
+    heaps[(uint32_t)Heaps::Main]       = HeapInit(64);
+    
     // Memory for up to level 40. Based on 'struct Grid'.
     heaps[(uint32_t)Heaps::Grid]       = HeapInit(8 + 4 * 40 * 40);
 }

@@ -13,4 +13,12 @@ struct TextField {
 };
 
 
+// The game.
+struct Puzzle {
+    Grid* grid;
+    TextField level;
+};
+
+
+
 #endif

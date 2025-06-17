@@ -29,7 +29,7 @@ vec3 WaveEffect() {
 void main() {
     vec3 Position = _Position;
     //Position = PulseEffect(); //do values controlled by resolution or something
-    Position = WaveEffect(); //do values controlled by resolution or something
+    //Position = WaveEffect();  //do values controlled by resolution or something
 
     gl_Position = vec4(Position, 1.0);
     UV = _UV;

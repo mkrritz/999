@@ -157,7 +157,7 @@ void RenderGameScreen(const Shader* const shaders[],
     const uint32_t GridY = uint32_t((1.0f - NDC_Y) / CellSize);
     const float HighlightX = -1.0f + (GridX + 0.5f) * CellSize;
     const float HighlightY =  1.0f - (GridY + 0.5f) * CellSize;
-    const float HighlightW = 1.0f / resolution;
+    const float HighlightW = CellSize / 2.0f;
     
     shader = shaders[(uint32_t)Shaders::Highlight];
     glUseProgram(shader->ID);

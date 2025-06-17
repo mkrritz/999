@@ -13,36 +13,37 @@ static std::mt19937 gen(time(nullptr));
 
 glm::vec2 GetAtlasUV(char);
 
-static uint32_t* FillTextInfo(TextField& level,
-                         const std::string& text,
-                         const uint32_t N) {
-    uint32_t* digits_count = new uint32_t[N * N];
+static uint32_t* FillTextInfo(Puzzle* const puzzle,
+                              const std::string& level_text) {
+    const uint32_t N = puzzle->grid->N;
     
-    level.text = text;
-    level.length = 0;
+    uint32_t* DigitsOnEachCell = new uint32_t[N * N];
+    
+    puzzle->level.text = level_text;
+    puzzle->level.length = 0;
     
     uint32_t digits = 0;
     uint32_t CIX = 0;
     uint32_t CIY = 0;
-    for (const char &Character : level.text) {
+    for (const char &Character : puzzle->level.text) {
         if (Character == '\n') {
-            digits_count[CIY * N + CIX] = digits;
+            DigitsOnEachCell[CIY * N + CIX] = digits;
             CIX = 0;
             CIY++;
             digits = 0;
             continue;
         }
         if (Character == ' ') {
-            digits_count[CIY * N + CIX] = digits;
+            DigitsOnEachCell[CIY * N + CIX] = digits;
             CIX++;
             digits = 0;
             continue;
         }
-        level.length++;
+        puzzle->level.length++;
         digits++;
     }
     
-    return digits_count;
+    return DigitsOnEachCell;
 }
 
 static string GenerateGrid(Grid* const grid) {
@@ -81,22 +82,21 @@ static string GenerateGrid(Grid* const grid) {
     return level;
 }
 
-void SetText(TextField& level,
-             Grid* const grid) {
-    const string level_grid = GenerateGrid(grid); // Refactor this.. why?
+void SetText(Puzzle* const puzzle) {
+    Grid* const grid = puzzle->grid;
     
-    uint32_t* DigitsOnEachCell = FillTextInfo(level, level_grid, grid->N);
+    const string level = GenerateGrid(grid);
     
-    const uint32_t VertexCount = level.length * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT;
-    const uint32_t IndexCount = level.length * 6;
+    uint32_t* DigitsOnEachCell = FillTextInfo(puzzle, level);
     
+    const uint32_t VertexCount = puzzle->level.length * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT;
+    const uint32_t IndexCount = puzzle->level.length * 6;
     float* Vertices = new float[VertexCount];
     uint32_t* Indices = new uint32_t[IndexCount];
     uint32_t IndexOffset = 0, CharacterIndex = 0;
     
     const float CellScale = 1.0f / float(grid->N);
     const float HalfCellScale = CellScale / 2.0f;
-    
     const float VerticalPadding = 0.6f;
     
     uint32_t CIX = 0;
@@ -106,8 +106,8 @@ void SetText(TextField& level,
     float CellCenterX = -1.0f + CellScale;
     float CellCenterY = -1.0f + CellScale;
     
-    for (size_t i = 0; level.text[i] != '\0'; i++) {
-        const char Character = level.text[i];
+    for (size_t i = 0; puzzle->level.text[i] != '\0'; i++) {
+        const char Character = puzzle->level.text[i];
         if (Character == '\n') {
             CIY += 1;
             CIX = 0;
@@ -174,11 +174,11 @@ void SetText(TextField& level,
         LocalX += CharacterScale;
     }
     
-    glBindBuffer(GL_ARRAY_BUFFER, level.vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, puzzle->level.vbo);
     glBufferData(GL_ARRAY_BUFFER, VertexCount * sizeof(float), &Vertices[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, level.ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, puzzle->level.ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, IndexCount * sizeof(uint32_t), &Indices[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     

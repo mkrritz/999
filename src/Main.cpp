@@ -55,16 +55,34 @@ void RenderToScreen(const Shader* const [],
 // Text
 void FontsInit(Heap* const,
                Font* []);
-void SetText(TextField&,
-             Grid* const);
+void SetText(Puzzle* const);
 // Text
 
-static void GridInit(Heap* const heap, const uint32_t resolution) {
+static void GridInit(Heap* const heap, Puzzle* const puzzle, const uint32_t resolution) {
     HeapReset(heap);
-    Grid* grid = (Grid*)HeapAllocate(heap, sizeof(Grid));
-    grid->N = resolution;
-    grid->cells = (uint32_t*)HeapAllocate(heap, grid->N * grid->N * sizeof(uint32_t));
+    puzzle->grid = (Grid*)HeapAllocate(heap, sizeof(Grid));
+    puzzle->grid->N = resolution;
+    puzzle->grid->cells = (uint32_t*)HeapAllocate(heap, puzzle->grid->N * puzzle->grid->N * sizeof(uint32_t));
 }
+
+static void PuzzleInit(Heap* const heap) {
+    Puzzle* puzzle = (Puzzle*)HeapAllocate(heap, sizeof(Puzzle));
+    puzzle->grid = nullptr;
+    
+    glGenVertexArrays(1, &puzzle->level.vao);
+    glGenBuffers(1, &puzzle->level.vbo);
+    glGenBuffers(1, &puzzle->level.ibo);
+    glBindVertexArray(puzzle->level.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, puzzle->level.vbo);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, TEXT_VERTEX_ATTRIBUTE_COUNT * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, TEXT_VERTEX_ATTRIBUTE_COUNT * sizeof(float), (void*)(3 * sizeof(GLfloat))); 
+    glEnableVertexAttribArray(1);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, puzzle->level.ibo);
+    glBindVertexArray(0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    
+};
 
 int main() {
     GLFWwindow* window;
@@ -89,24 +107,11 @@ int main() {
     
     
     
+    PuzzleInit(heaps[(uint32_t)Heaps::Main]);
+    Puzzle* const puzzle = (Puzzle*)heaps[(uint32_t)Heaps::Main]->memory;
     
-    TextField level;
-    glGenVertexArrays(1, &level.vao);
-    glGenBuffers(1, &level.vbo);
-    glGenBuffers(1, &level.ibo);
-    glBindVertexArray(level.vao);
-    glBindBuffer(GL_ARRAY_BUFFER, level.vbo);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, TEXT_VERTEX_ATTRIBUTE_COUNT * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, TEXT_VERTEX_ATTRIBUTE_COUNT * sizeof(float), (void*)(3 * sizeof(GLfloat))); 
-    glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, level.ibo);
-    glBindVertexArray(0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    
-    GridInit(heaps[(uint32_t)Heaps::Grid], 3);
-    Grid* const grid = (Grid*)heaps[(uint32_t)Heaps::Grid]->memory;
-    SetText(level, grid);
+    GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, 3);
+    SetText(puzzle);
     
     
     
@@ -142,21 +147,27 @@ int main() {
         UpdateCount += 1;
         glfwPollEvents();
         
+        while (shader_slots_to_reload) {
+            uint32_t slot = __builtin_ctzll(shader_slots_to_reload);
+            shader_slots_to_reload &= ~(1ULL << slot);
+            ReloadShader(heaps[(uint32_t)Heaps::Shader], slot);
+        }
+        
         input = NextRecordedInputState();
         
         if (input->wheel) {
-            grid->N += int(input->wheel);
+            puzzle->grid->N += int(input->wheel);
             input->wheel = 0;
             
-            if (grid->N < 1) {  // levels won't be controlled by scroll. it's uint32_t anyway..
-                grid->N = 1;    // levels won't be controlled by scroll. it's uint32_t anyway..
+            if (puzzle->grid->N < 1) {  // levels won't be controlled by scroll. it's uint32_t anyway..
+                puzzle->grid->N = 1;    // levels won't be controlled by scroll. it's uint32_t anyway..
             }                   // levels won't be controlled by scroll. it's uint32_t anyway..
-            if (grid->N > 40) { // There is enough memory for 40 levels. So that's here as a reminder.
-                grid->N = 1;    // There is enough memory for 40 levels. So that's here as a reminder.
-            }                   // There is enough memory for 40 levels. So that's here as a reminder.
+            if (puzzle->grid->N > 40) { // There is enough memory for 40 levels. So that's here so we don't crash.
+                puzzle->grid->N = 1;    // There is enough memory for 40 levels. So that's here so we don't crash.
+            }                   // There is enough memory for 40 levels. So that's here so we don't crash.
             
-            GridInit(heaps[(uint32_t)Heaps::Grid], grid->N);
-            SetText(level, grid);
+            GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, puzzle->grid->N);
+            SetText(puzzle);
         }
         
         if (input->special & InputM::F1) {
@@ -168,25 +179,22 @@ int main() {
         
         if (input->mouse & InputM::LEFT_CLICK) {
             if (input->toggles & InputM::Toggle_LC) {
+                
+                const uint32_t N = puzzle->grid->N;
+                
                 const float NDC_X = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH;
                 const float NDC_Y =  1.0f - 2.0f * input->y_current / WINDOW_HEIGHT;
-                const float CellSize = 2.0f / float(grid->N);
+                const float CellSize = 2.0f / float(N);
                 const uint32_t GridX = uint32_t((NDC_X + 1.0f) / CellSize);
-                const uint32_t GridY = grid->N - uint32_t((1.0f - NDC_Y) / CellSize) - 1;
+                const uint32_t GridY = N - uint32_t((1.0f - NDC_Y) / CellSize) - 1;
                 
                 printf("\nMouseNDC=(%.2f, %.2f) Grid(%.3f)[%u, %u] = %u\n", NDC_X, NDC_Y,
                                                                             CellSize,
                                                                             GridX, GridY,
-                                                                            grid->cells[GridY * grid->N + GridX]);
+                                                                            puzzle->grid->cells[GridY * N + GridX]);
             }
             input->toggles &= ~InputM::Toggle_LC;
         } else input->toggles |= InputM::Toggle_LC;
-        
-        while (shader_slots_to_reload) {
-            uint32_t slot = __builtin_ctzll(shader_slots_to_reload);
-            shader_slots_to_reload &= ~(1ULL << slot);
-            ReloadShader(heaps[(uint32_t)Heaps::Shader], slot);
-        }
         
         while(AccumulatorTime >= dt) {
             AccumulatorTime -= dt;
@@ -194,11 +202,9 @@ int main() {
             
         }
         
-        
         for (uint32_t pass = 0; pass < camera->render_passes; pass++) {
             if (pass == FIRST_PASS) {
-                RenderGameScreen(shaders, camera, fonts, ui, input, TotalTime, level, grid->N);
-                
+                RenderGameScreen(shaders, camera, fonts, ui, input, TotalTime, puzzle->level, puzzle->grid->N);
             }
             
             if (pass == SECOND_PASS) {
