@@ -19,6 +19,5 @@ enum struct Heaps {
 
 void* HeapAllocate(Heap* const, size_t);
 void HeapReset(Heap* const);
-void HeapsInit(Heap*[]);
 
 #endif

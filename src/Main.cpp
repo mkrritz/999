@@ -17,6 +17,10 @@
 
 GLFWwindow* WindowInit();
 
+//Memory
+void HeapsInit(Heap*[]);
+//Memory
+
 // Camera
 void CameraInit(Heap* const);
 // Camera
@@ -52,18 +56,17 @@ void RenderToScreen(const Shader* const [],
                     float);
 // UI
 
-// Text
+// Font
 void FontsInit(Heap* const,
                Font* []);
-void SetText(Puzzle* const);
-// Text
+// Font
 
-static void GridInit(Heap* const heap, Puzzle* const puzzle, const uint32_t resolution) {
-    HeapReset(heap);
-    puzzle->grid = (Grid*)HeapAllocate(heap, sizeof(Grid));
-    puzzle->grid->N = resolution;
-    puzzle->grid->cells = (uint32_t*)HeapAllocate(heap, puzzle->grid->N * puzzle->grid->N * sizeof(uint32_t));
-}
+// Grid
+void GridInit(Heap* const,
+              Puzzle* const,
+              const uint32_t);
+void SetText(Puzzle* const);
+// Grid
 
 static void PuzzleInit(Heap* const heap) {
     Puzzle* puzzle = (Puzzle*)HeapAllocate(heap, sizeof(Puzzle));
@@ -81,7 +84,6 @@ static void PuzzleInit(Heap* const heap) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, puzzle->level.ibo);
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    
 };
 
 int main() {
@@ -105,21 +107,18 @@ int main() {
     Font* fonts[(uint32_t)FontType::Count] = {nullptr};
     FontsInit(heaps[(uint32_t)Heaps::Font], fonts);
     
-    
-    
     PuzzleInit(heaps[(uint32_t)Heaps::Main]);
     Puzzle* const puzzle = (Puzzle*)heaps[(uint32_t)Heaps::Main]->memory;
+    
     
     GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, 3);
     SetText(puzzle);
     
     
-    
-    
-    //glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     //glDepthFunc(GL_LESS);
     //glDepthFunc(GL_LEQUAL);
+    //glEnable(GL_CULL_FACE);
     //glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBlendEquation(GL_FUNC_ADD);

@@ -82,6 +82,15 @@ static string GenerateGrid(Grid* const grid) {
     return level;
 }
 
+void GridInit(Heap* const heap,
+              Puzzle* const puzzle,
+              const uint32_t resolution) {
+    HeapReset(heap);
+    puzzle->grid = (Grid*)HeapAllocate(heap, sizeof(Grid));
+    puzzle->grid->N = resolution;
+    puzzle->grid->cells = (uint32_t*)HeapAllocate(heap, puzzle->grid->N * puzzle->grid->N * sizeof(uint32_t));
+}
+
 void SetText(Puzzle* const puzzle) {
     Grid* const grid = puzzle->grid;
     

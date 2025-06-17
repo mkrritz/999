@@ -13,12 +13,15 @@ struct TextField {
 };
 
 
-// The game.
+
+
+// The game stored in Main heap
+// Grid stored in Grid heap
+// TextField stored in Main heap because there are GPU resources there.
+// On new level Grid heap is reset, and GPU resources are updated.
 struct Puzzle {
     Grid* grid;
     TextField level;
 };
-
-
 
 #endif
