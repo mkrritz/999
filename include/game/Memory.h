@@ -8,7 +8,6 @@ struct Heap {
 };
 
 enum struct Heaps {
-    Threads,
     Shader,
     UI,
     Font,

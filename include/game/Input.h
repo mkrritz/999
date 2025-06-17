@@ -107,7 +107,7 @@ namespace InputM {
     };
 }
 
-struct InputState {
+struct Input {
     unsigned int  letters; // xxxxxx26
     unsigned int  special; // 23 esc, f12-f1, 9-0
     unsigned int  toggles; // whatever

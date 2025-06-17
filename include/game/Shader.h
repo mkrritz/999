@@ -37,7 +37,6 @@ enum struct Uniforms {
     Position,
     Right,
     Resolution,
-    Up,
     PositionAndSize,
     Count // Not really a uniform.
 };

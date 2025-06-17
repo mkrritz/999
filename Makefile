@@ -8,7 +8,8 @@ SOURCES = \
 	Input.cpp \
 	Shader.cpp \
 	Camera.cpp \
-	Text.cpp \
+	Font.cpp \
+	Grid.cpp \
 	Globals.cpp \
 	UI.cpp \
 	Memory.cpp \

@@ -7,7 +7,7 @@
 #include "game/Globals.h"
 #include "game/Camera.h"
 #include "game/Memory.h"
-#include "game/Text.h"
+#include "game/Font.h"
 #include "game/UI.h"
 #include "game/Grid.h"
 #include "game/Window.h"
@@ -29,7 +29,7 @@ void ReloadShader(Heap* const,
 // Shader
 
 // Input
-InputState* NextRecordedInputState();
+Input* NextRecordedInputState();
 // Input
 
 // UI
@@ -38,7 +38,7 @@ void RenderGameScreen(const Shader* const [],
                       const Camera* const,
                       const Font* const [],
                       const UI* const,
-                      const InputState* const,
+                      const Input* const,
                       float,
                       TextField&,
                       float);
@@ -50,14 +50,14 @@ void RenderToScreen(const Shader* const [],
                     const Camera* const,
                     const UI* const,
                     float);
-//
+// UI
 
 // Text
 void FontsInit(Heap* const,
                Font* []);
 void SetText(TextField&,
              Grid* const);
-//
+// Text
 
 static void GridInit(Heap* const heap, const uint32_t resolution) {
     HeapReset(heap);
@@ -70,7 +70,7 @@ int main() {
     GLFWwindow* window;
     window = WindowInit();
     
-    InputState* input = NextRecordedInputState();
+    Input* input = NextRecordedInputState();
     
     Heap* heaps[(uint32_t)Heaps::Count] = {nullptr};
     HeapsInit(heaps);
@@ -86,6 +86,7 @@ int main() {
     
     Font* fonts[(uint32_t)FontType::Count] = {nullptr};
     FontsInit(heaps[(uint32_t)Heaps::Font], fonts);
+    
     
     
     
@@ -117,7 +118,6 @@ int main() {
     //glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBlendEquation(GL_FUNC_ADD);
-    
     glPointSize(5);
     glLineWidth(2);
     glfwSwapInterval(1); //  fast rendering with 0, dt in fixed, DeltaTime out.. obviously

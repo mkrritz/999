@@ -19,14 +19,13 @@ void HeapsInit(Heap* heaps[]) {
     heaps[(uint32_t)Heaps::Font]       = HeapInit(1024);
     heaps[(uint32_t)Heaps::Shader]     = HeapInit(5 * 1024);
     heaps[(uint32_t)Heaps::UI]         = HeapInit(1024);
-    heaps[(uint32_t)Heaps::Threads]    = HeapInit(1024);
     
     // Memory for up to level 40. Based on 'struct Grid'.
     heaps[(uint32_t)Heaps::Grid]       = HeapInit(8 + 4 * 40 * 40);
 }
 
 void* HeapAllocate(Heap* const heap, size_t size) {
-    ASSERT (heap->offset + size > heap->size, "Heap full. Give more memory."); // Next time this triggers, do some better printing
+    ASSERT (heap->offset + size > heap->size, "Heap full. Give more memory.");
     void* ptr = (char*)heap->memory + heap->offset;
     heap->offset += size;
     return ptr;
@@ -35,10 +34,3 @@ void* HeapAllocate(Heap* const heap, size_t size) {
 void HeapReset(Heap* const heap) {
     heap->offset = 0;
 }
-
-//void HeapFree(Heap* heap) {
-//    free(heap->memory);
-//    heap->memory = nullptr;
-//    heap->size = 0;
-//    heap->offset = 0;
-//}

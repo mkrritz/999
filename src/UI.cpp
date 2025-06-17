@@ -4,8 +4,9 @@
 #include "game/Assert.h"
 #include "game/Memory.h"
 #include "game/UI.h"
-#include "game/Text.h"
+#include "game/Font.h"
 #include "game/Input.h"
+#include "game/Grid.h" // This is here for TextField. refactoring now..
 #include "game/Shader.h"
 #include "game/Camera.h"
 #include "game/Window.h"
@@ -103,7 +104,7 @@ void RenderGameScreen(const Shader* const shaders[],
                       const Camera* const camera,
                       const Font* const fonts[],
                       const UI* const ui,
-                      const InputState* const input,
+                      const Input* const input,
                       float TotalTime,
                       TextField& level,
                       float resolution) { // Grid here instead i guess..

@@ -18,8 +18,8 @@ vec3 PulseEffect() {
 
 vec3 WaveEffect() {
     vec3 p = _Position;
-    float frequency = 5.75;
-    float strength = 0.025;
+    float frequency = 20.0;
+    float strength = 0.0075;
     
     p.y += strength * sin(((TWOPI * frequency) * _Position.x) + Time);
     
@@ -28,8 +28,8 @@ vec3 WaveEffect() {
 
 void main() {
     vec3 Position = _Position;
-    //Position = PulseEffect();
-    //Position = WaveEffect();
+    //Position = PulseEffect(); //do values controlled by resolution or something
+    Position = WaveEffect(); //do values controlled by resolution or something
 
     gl_Position = vec4(Position, 1.0);
     UV = _UV;

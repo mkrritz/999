@@ -20,9 +20,9 @@ static int normalize(int k) {
     return k;
 }
 
-InputState _input;
+Input _input;
 
-InputState* NextRecordedInputState() {
+Input* NextRecordedInputState() {
     return &_input;
 }
 
