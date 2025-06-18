@@ -6,7 +6,8 @@
 #include "game/UI.h"
 #include "game/Font.h"
 #include "game/Input.h"
-#include "game/Grid.h" // This is here for TextField. refactoring now..
+#include "game/Puzzle.h"
+#include "game/Grid.h"
 #include "game/Shader.h"
 #include "game/Camera.h"
 #include "game/Window.h"
@@ -106,11 +107,12 @@ void RenderGameScreen(const Shader* const shaders[],
                       const UI* const ui,
                       const Input* const input,
                       float TotalTime,
-                      TextField& level,
-                      float resolution) { // Grid here instead i guess..
+                      const Puzzle* const puzzle) {
     const Shader* shader;
     const Quad* quad = &ui->quads[(uint32_t)Quads::GAME_SCREEN];
     const Font* const font = fonts[(uint32_t)FontType::English];
+    
+    const float resolution = float(puzzle->grid->N);
     
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, quad->framebuffer);
     
@@ -146,8 +148,8 @@ void RenderGameScreen(const Shader* const shaders[],
         }
     }
     glBindTexture(GL_TEXTURE_2D, font->texture);
-    glBindVertexArray(level.vao);
-    glDrawElements(GL_TRIANGLES, 6 * level.length, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(puzzle->surface.vao);
+    glDrawElements(GL_TRIANGLES, 6 * puzzle->surface.quads_count, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     
     const float NDC_X = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH;

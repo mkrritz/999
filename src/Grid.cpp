@@ -4,6 +4,7 @@
 #include "game/Assert.h"
 #include "game/Memory.h"
 #include "game/Grid.h"
+#include "game/Puzzle.h"
 #include "game/Font.h"
 
 using std::string;
@@ -14,36 +15,36 @@ static std::mt19937 gen(time(nullptr));
 glm::vec2 GetAtlasUV(char);
 
 static uint32_t* FillTextInfo(Puzzle* const puzzle,
-                              const std::string& level_text) {
+                              const std::string& level) {
     const uint32_t N = puzzle->grid->N;
     
-    uint32_t* DigitsOnEachCell = new uint32_t[N * N];
+    uint32_t* NumberOfDigitsOnEachCell = new uint32_t[N * N];
     
-    puzzle->level.text = level_text;
-    puzzle->level.length = 0;
+    puzzle->level = level;
+    puzzle->surface.quads_count = 0;
     
     uint32_t digits = 0;
     uint32_t CIX = 0;
     uint32_t CIY = 0;
-    for (const char &Character : puzzle->level.text) {
+    for (const char &Character : puzzle->level) {
         if (Character == '\n') {
-            DigitsOnEachCell[CIY * N + CIX] = digits;
+            NumberOfDigitsOnEachCell[CIY * N + CIX] = digits;
             CIX = 0;
             CIY++;
             digits = 0;
             continue;
         }
         if (Character == ' ') {
-            DigitsOnEachCell[CIY * N + CIX] = digits;
+            NumberOfDigitsOnEachCell[CIY * N + CIX] = digits;
             CIX++;
             digits = 0;
             continue;
         }
-        puzzle->level.length++;
+        puzzle->surface.quads_count++;
         digits++;
     }
     
-    return DigitsOnEachCell;
+    return NumberOfDigitsOnEachCell;
 }
 
 static string GenerateGrid(Grid* const grid) {
@@ -94,12 +95,12 @@ void GridInit(Heap* const heap,
 void SetText(Puzzle* const puzzle) {
     Grid* const grid = puzzle->grid;
     
-    const string level = GenerateGrid(grid);
+    const string level = GenerateGrid(grid); // Maybe don't do that here. Parameter instead
     
-    uint32_t* DigitsOnEachCell = FillTextInfo(puzzle, level);
+    uint32_t* NumberOfDigitsOnEachCell = FillTextInfo(puzzle, level);
     
-    const uint32_t VertexCount = puzzle->level.length * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT;
-    const uint32_t IndexCount = puzzle->level.length * 6;
+    const uint32_t VertexCount = puzzle->surface.quads_count * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT;
+    const uint32_t IndexCount = puzzle->surface.quads_count * 6;
     float* Vertices = new float[VertexCount];
     uint32_t* Indices = new uint32_t[IndexCount];
     uint32_t IndexOffset = 0, CharacterIndex = 0;
@@ -110,18 +111,18 @@ void SetText(Puzzle* const puzzle) {
     
     uint32_t CIX = 0;
     uint32_t CIY = 0;
-    float CharacterScale = 1.0f + 1.0f / float(DigitsOnEachCell[CIY * grid->N + CIX]);
-    float LocalX = -CharacterScale * ((float(DigitsOnEachCell[CIY * grid->N + CIX]) - 1.0f) / 2.0f);
+    float CharacterScale = 1.0f + 1.0f / float(NumberOfDigitsOnEachCell[CIY * grid->N + CIX]);
+    float LocalX = -CharacterScale * ((float(NumberOfDigitsOnEachCell[CIY * grid->N + CIX]) - 1.0f) / 2.0f);
     float CellCenterX = -1.0f + CellScale;
     float CellCenterY = -1.0f + CellScale;
     
-    for (size_t i = 0; puzzle->level.text[i] != '\0'; i++) {
-        const char Character = puzzle->level.text[i];
+    for (size_t i = 0; puzzle->level[i] != '\0'; i++) {
+        const char Character = puzzle->level[i];
         if (Character == '\n') {
             CIY += 1;
             CIX = 0;
-            CharacterScale = 1.0f + 1.0f / float(DigitsOnEachCell[CIY * grid->N + CIX]);
-            LocalX = -CharacterScale * ((float(DigitsOnEachCell[CIY * grid->N + CIX]) - 1.0f) / 2.0f);
+            CharacterScale = 1.0f + 1.0f / float(NumberOfDigitsOnEachCell[CIY * grid->N + CIX]);
+            LocalX = -CharacterScale * ((float(NumberOfDigitsOnEachCell[CIY * grid->N + CIX]) - 1.0f) / 2.0f);
             
             CellCenterX = -1.0f + CellScale;
             CellCenterY += 2.0f * CellScale;
@@ -129,8 +130,8 @@ void SetText(Puzzle* const puzzle) {
         }
         if (Character == ' ') {
             CIX += 1;
-            CharacterScale = 1.0f + 1.0f / float(DigitsOnEachCell[CIY * grid->N + CIX]);
-            LocalX = -CharacterScale * ((float(DigitsOnEachCell[CIY * grid->N + CIX]) - 1.0f) / 2.0f);
+            CharacterScale = 1.0f + 1.0f / float(NumberOfDigitsOnEachCell[CIY * grid->N + CIX]);
+            LocalX = -CharacterScale * ((float(NumberOfDigitsOnEachCell[CIY * grid->N + CIX]) - 1.0f) / 2.0f);
             
             CellCenterX += 2.0f * CellScale;
             continue;
@@ -140,7 +141,7 @@ void SetText(Puzzle* const puzzle) {
         // unless font image changes and each glyph is not 128x128 any more
         glm::vec2 UV = GetAtlasUV(Character);
         
-        uint32_t CellVerticesIndex = CharacterIndex * (4 * TEXT_VERTEX_ATTRIBUTE_COUNT);
+        uint32_t CellVerticesIndex = CharacterIndex * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT;
         uint32_t CellIndicesIndex  = CharacterIndex * 6;
         CharacterIndex += 1;
         
@@ -183,15 +184,15 @@ void SetText(Puzzle* const puzzle) {
         LocalX += CharacterScale;
     }
     
-    glBindBuffer(GL_ARRAY_BUFFER, puzzle->level.vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, puzzle->surface.vbo);
     glBufferData(GL_ARRAY_BUFFER, VertexCount * sizeof(float), &Vertices[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, puzzle->level.ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, puzzle->surface.ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, IndexCount * sizeof(uint32_t), &Indices[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
     delete[] Vertices;
     delete[] Indices;
-    free(DigitsOnEachCell);
+    free(NumberOfDigitsOnEachCell);
 }

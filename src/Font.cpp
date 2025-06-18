@@ -3,7 +3,6 @@
 
 #include "game/Assert.h"
 #include "game/Memory.h"
-#include "game/Grid.h"
 #include "game/Font.h"
 
 #include "stb_image/stb_image.h"

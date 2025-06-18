@@ -10,6 +10,7 @@
 #include "game/Font.h"
 #include "game/UI.h"
 #include "game/Grid.h"
+#include "game/Puzzle.h"
 #include "game/Window.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -19,6 +20,7 @@ GLFWwindow* WindowInit();
 
 //Memory
 void HeapsInit(Heap*[]);
+void PrintMemory(const Heap* const []);
 //Memory
 
 // Camera
@@ -44,8 +46,7 @@ void RenderGameScreen(const Shader* const [],
                       const UI* const,
                       const Input* const,
                       float,
-                      TextField&,
-                      float);
+                      const Puzzle* const);
 void SaveGameScreen(const Shader* const [],
                        const Camera* const,
                        const UI* const,
@@ -72,16 +73,16 @@ static void PuzzleInit(Heap* const heap) {
     Puzzle* puzzle = (Puzzle*)HeapAllocate(heap, sizeof(Puzzle));
     puzzle->grid = nullptr;
     
-    glGenVertexArrays(1, &puzzle->level.vao);
-    glGenBuffers(1, &puzzle->level.vbo);
-    glGenBuffers(1, &puzzle->level.ibo);
-    glBindVertexArray(puzzle->level.vao);
-    glBindBuffer(GL_ARRAY_BUFFER, puzzle->level.vbo);
+    glGenVertexArrays(1, &puzzle->surface.vao);
+    glGenBuffers(1, &puzzle->surface.vbo);
+    glGenBuffers(1, &puzzle->surface.ibo);
+    glBindVertexArray(puzzle->surface.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, puzzle->surface.vbo);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, TEXT_VERTEX_ATTRIBUTE_COUNT * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, TEXT_VERTEX_ATTRIBUTE_COUNT * sizeof(float), (void*)(3 * sizeof(GLfloat))); 
     glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, puzzle->level.ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, puzzle->surface.ibo);
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 };
@@ -110,10 +111,8 @@ int main() {
     PuzzleInit(heaps[(uint32_t)Heaps::Main]);
     Puzzle* const puzzle = (Puzzle*)heaps[(uint32_t)Heaps::Main]->memory;
     
-    
-    GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, 3);
+    GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, 5);
     SetText(puzzle);
-    
     
     glEnable(GL_DEPTH_TEST);
     //glDepthFunc(GL_LESS);
@@ -167,6 +166,7 @@ int main() {
             
             GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, puzzle->grid->N);
             SetText(puzzle);
+            //PrintMemory(heaps);
         }
         
         if (input->special & InputM::F1) {
@@ -203,7 +203,7 @@ int main() {
         
         for (uint32_t pass = 0; pass < camera->render_passes; pass++) {
             if (pass == FIRST_PASS) {
-                RenderGameScreen(shaders, camera, fonts, ui, input, TotalTime, puzzle->level, puzzle->grid->N);
+                RenderGameScreen(shaders, camera, fonts, ui, input, TotalTime, puzzle);
             }
             
             if (pass == SECOND_PASS) {
