@@ -10,8 +10,6 @@ struct Grid;
 struct Puzzle {
     Grid* grid;
     Overlay surface;
-    
-    std::string level;
 };
 
 #endif

@@ -134,8 +134,8 @@ GLFWwindow* WindowInit() {
     
     if (window) {
         glfwSetWindowPos(window,
-                         video_mode->width*0.5f - window_size.x*0.5f,
-                         //video_mode->width*1.5f - window_size.x*0.5f,
+                         //video_mode->width*0.5f - window_size.x*0.5f,
+                         video_mode->width*1.5f - window_size.x*0.5f,
                          video_mode->height*0.5f - window_size.y*0.5f);
         
         glfwMakeContextCurrent(window);

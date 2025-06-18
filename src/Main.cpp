@@ -179,18 +179,16 @@ int main() {
         if (input->mouse & InputM::LEFT_CLICK) {
             if (input->toggles & InputM::Toggle_LC) {
                 
-                const uint32_t N = puzzle->grid->N;
-                
                 const float NDC_X = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH;
                 const float NDC_Y =  1.0f - 2.0f * input->y_current / WINDOW_HEIGHT;
-                const float CellSize = 2.0f / float(N);
+                const float CellSize = 2.0f / float(puzzle->grid->N);
                 const uint32_t GridX = uint32_t((NDC_X + 1.0f) / CellSize);
-                const uint32_t GridY = N - uint32_t((1.0f - NDC_Y) / CellSize) - 1;
+                const uint32_t GridY = float(puzzle->grid->N) - uint32_t((1.0f - NDC_Y) / CellSize) - 1; //why? and make it work on any quad
                 
                 printf("\nMouseNDC=(%.2f, %.2f) Grid(%.3f)[%u, %u] = %u\n", NDC_X, NDC_Y,
                                                                             CellSize,
                                                                             GridX, GridY,
-                                                                            puzzle->grid->cells[GridY * N + GridX]);
+                                                                            puzzle->grid->cells[GridY * puzzle->grid->N + GridX]);
             }
             input->toggles &= ~InputM::Toggle_LC;
         } else input->toggles |= InputM::Toggle_LC;

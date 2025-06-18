@@ -14,19 +14,16 @@ static std::mt19937 gen(time(nullptr));
 
 glm::vec2 GetAtlasUV(char);
 
-static uint32_t* FillTextInfo(Puzzle* const puzzle,
+static uint32_t* FillLevelInfo(Puzzle* const puzzle,
                               const std::string& level) {
+    // TODO: That's just constants per level, make the tables instead?
     const uint32_t N = puzzle->grid->N;
-    
     uint32_t* NumberOfDigitsOnEachCell = new uint32_t[N * N];
-    
-    puzzle->level = level;
-    puzzle->surface.quads_count = 0;
-    
+    uint32_t quads = 0;
     uint32_t digits = 0;
     uint32_t CIX = 0;
     uint32_t CIY = 0;
-    for (const char &Character : puzzle->level) {
+    for (const char &Character : level) {
         if (Character == '\n') {
             NumberOfDigitsOnEachCell[CIY * N + CIX] = digits;
             CIX = 0;
@@ -40,14 +37,15 @@ static uint32_t* FillTextInfo(Puzzle* const puzzle,
             digits = 0;
             continue;
         }
-        puzzle->surface.quads_count++;
+        quads++;
         digits++;
     }
     
+    puzzle->surface.quads_count = quads;
     return NumberOfDigitsOnEachCell;
 }
 
-static string GenerateGrid(Grid* const grid) {
+static string GenerateLevel(Grid* const grid) {
     uint32_t cells_count = grid->N * grid->N;
     
     std::vector<uint32_t> numbers(cells_count);
@@ -95,9 +93,9 @@ void GridInit(Heap* const heap,
 void SetText(Puzzle* const puzzle) {
     Grid* const grid = puzzle->grid;
     
-    const string level = GenerateGrid(grid); // Maybe don't do that here. Parameter instead
+    const string level = GenerateLevel(grid);
     
-    uint32_t* NumberOfDigitsOnEachCell = FillTextInfo(puzzle, level);
+    uint32_t* NumberOfDigitsOnEachCell = FillLevelInfo(puzzle, level);
     
     const uint32_t VertexCount = puzzle->surface.quads_count * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT;
     const uint32_t IndexCount = puzzle->surface.quads_count * 6;
@@ -116,8 +114,8 @@ void SetText(Puzzle* const puzzle) {
     float CellCenterX = -1.0f + CellScale;
     float CellCenterY = -1.0f + CellScale;
     
-    for (size_t i = 0; puzzle->level[i] != '\0'; i++) {
-        const char Character = puzzle->level[i];
+    for (size_t i = 0; level[i] != '\0'; i++) {
+        const char Character = level[i];
         if (Character == '\n') {
             CIY += 1;
             CIX = 0;
