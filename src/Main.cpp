@@ -48,9 +48,12 @@ void RenderGameScreen(const Shader* const [],
                       float,
                       const Puzzle* const);
 void SaveGameScreen(const Shader* const [],
-                       const Camera* const,
-                       const UI* const,
-                       float);
+                    const Camera* const,
+                    const Font* const [],
+                    const UI* const,
+                    const Input* const,
+                    float,
+                    const Puzzle* const);
 void RenderToScreen(const Shader* const [],
                     const Camera* const,
                     const UI* const,
@@ -157,12 +160,12 @@ int main() {
             puzzle->grid->N += int(input->wheel);
             input->wheel = 0;
             
-            if (puzzle->grid->N < 1) {  // levels won't be controlled by scroll. it's uint32_t anyway..
-                puzzle->grid->N = 1;    // levels won't be controlled by scroll. it's uint32_t anyway..
-            }                   // levels won't be controlled by scroll. it's uint32_t anyway..
-            if (puzzle->grid->N > 40) { // There is enough memory for 40 levels. So that's here so we don't crash.
-                puzzle->grid->N = 1;    // There is enough memory for 40 levels. So that's here so we don't crash.
-            }                   // There is enough memory for 40 levels. So that's here so we don't crash.
+            if (puzzle->grid->N < 1) {
+                puzzle->grid->N = 1; // levels won't be controlled by scroll. it's uint32_t anyway..
+            }
+            if (puzzle->grid->N > 40) {
+                puzzle->grid->N = 1; // There is enough memory for 40 levels. So that's here so we don't crash.
+            }
             
             GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, puzzle->grid->N);
             SetText(puzzle);
@@ -183,7 +186,7 @@ int main() {
                 const float NDC_Y =  1.0f - 2.0f * input->y_current / WINDOW_HEIGHT;
                 const float CellSize = 2.0f / float(puzzle->grid->N);
                 const uint32_t GridX = uint32_t((NDC_X + 1.0f) / CellSize);
-                const uint32_t GridY = float(puzzle->grid->N) - uint32_t((1.0f - NDC_Y) / CellSize) - 1; //why? and make it work on any quad
+                const uint32_t GridY = puzzle->grid->N - uint32_t((1.0f - NDC_Y) / CellSize) - 1;
                 
                 printf("\nMouseNDC=(%.2f, %.2f) Grid(%.3f)[%u, %u] = %u\n", NDC_X, NDC_Y,
                                                                             CellSize,
@@ -205,7 +208,7 @@ int main() {
             }
             
             if (pass == SECOND_PASS) {
-                SaveGameScreen(shaders, camera, ui, TotalTime);
+                SaveGameScreen(shaders, camera, fonts, ui, input, TotalTime, puzzle);
             }
             
         }
