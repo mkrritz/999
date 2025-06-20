@@ -40,6 +40,12 @@ Input* NextRecordedInputState();
 
 // UI
 void UIInit(Heap* const);
+void HighlightCell(const Shader* const [],
+                   const Puzzle* const,
+                   const Quad* const,
+                   const Input* const,
+                   const GLuint,
+                   const float);
 void RenderGameScreen(const Shader* const [],
                       const Camera* const,
                       const Font* const [],
@@ -157,19 +163,7 @@ int main() {
         input = NextRecordedInputState();
         
         if (input->wheel) {
-            puzzle->grid->N += int(input->wheel);
             input->wheel = 0;
-            
-            if (puzzle->grid->N < 1) {
-                puzzle->grid->N = 1; // levels won't be controlled by scroll. it's uint32_t anyway..
-            }
-            if (puzzle->grid->N > 40) {
-                puzzle->grid->N = 1; // There is enough memory for 40 levels. So that's here so we don't crash.
-            }
-            
-            GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, puzzle->grid->N);
-            SetText(puzzle);
-            //PrintMemory(heaps);
         }
         
         if (input->special & InputM::F1) {
@@ -193,10 +187,22 @@ int main() {
                                                                                 CellSize,
                                                                                 GridX, GridY,
                                                                                 puzzle->grid->cells[GridY * puzzle->grid->N + GridX]);
+                    if (puzzle->grid->cells[GridY * puzzle->grid->N + GridX] == 1) {
+                        puzzle->grid->N++;
+                        if (puzzle->grid->N < 1) {
+                            puzzle->grid->N = 1; // levels won't be controlled by scroll. it's uint32_t anyway..
+                        }
+                        if (puzzle->grid->N > 40) {
+                            puzzle->grid->N = 1; // There is enough memory for 40 levels. So that's here so we don't crash.
+                        }
+                        
+                        GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, puzzle->grid->N);
+                        SetText(puzzle);
+                    }
                 }
                 
                 if (camera->render_passes == 2) {
-                    Quad& quad = ui->quads[(uint32_t)Quads::SAVED_GAME_SCREEN];
+                    Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
                     const double RegionLeft   = quad.bounds.x;
                     const double RegionBottom = quad.bounds.y;
                     const double RegionWidth  = quad.bounds.z;
@@ -207,21 +213,33 @@ int main() {
                     const double MouseNDC_Y =  1.0f - 2.0f * input->y_current / WINDOW_HEIGHT;
                     
                     const double HalfCellSize = 0.5f * RegionWidth / double(puzzle->grid->N);
-                    const double CellSizeZZZ     = 2.0f * HalfCellSize;
+                    const double CellSize     = 2.0f * HalfCellSize;
                     
                     // Clamp inside region
-                    const double NDC_XZZZ = glm::clamp(MouseNDC_X, RegionLeft, RegionLeft + RegionWidth - HalfCellSize);
-                    const double NDC_YZZZ = glm::clamp(MouseNDC_Y, RegionBottom, RegionBottom + RegionHeight - HalfCellSize);
+                    const double NDC_X = glm::clamp(MouseNDC_X, RegionLeft, RegionLeft + RegionWidth - HalfCellSize);
+                    const double NDC_Y = glm::clamp(MouseNDC_Y, RegionBottom, RegionBottom + RegionHeight - HalfCellSize);
                     
-                    const double LocalX = (NDC_XZZZ - RegionLeft) / RegionWidth;
-                    const double LocalY = (NDC_YZZZ - RegionBottom) / RegionHeight;
-                    const uint32_t GridXZZZ = uint32_t(LocalX * puzzle->grid->N);
-                    const uint32_t GridYZZZ = uint32_t(LocalY * puzzle->grid->N);
+                    const double LocalX = (NDC_X - RegionLeft) / RegionWidth;
+                    const double LocalY = (NDC_Y - RegionBottom) / RegionHeight;
+                    const uint32_t GridX = uint32_t(LocalX * puzzle->grid->N);
+                    const uint32_t GridY = uint32_t(LocalY * puzzle->grid->N);
                     
-                    printf("\nMouseNDC=(%.2f, %.2f) Grid(%.3f)[%u, %u] = %u\n", NDC_XZZZ, NDC_YZZZ,
-                                                                                CellSizeZZZ,
-                                                                                GridXZZZ, GridYZZZ,
-                                                                                puzzle->grid->cells[GridYZZZ * puzzle->grid->N + GridXZZZ]);
+                    printf("\nMouseNDC=(%.2f, %.2f) Grid(%.3f)[%u, %u] = %u\n", NDC_X, NDC_Y,
+                                                                                CellSize,
+                                                                                GridX, GridY,
+                                                                                puzzle->grid->cells[GridY * puzzle->grid->N + GridX]);
+                    if (puzzle->grid->cells[GridY * puzzle->grid->N + GridX] == 1) {
+                        puzzle->grid->N++;
+                        if (puzzle->grid->N < 1) {
+                            puzzle->grid->N = 1; // levels won't be controlled by scroll. it's uint32_t anyway..
+                        }
+                        if (puzzle->grid->N > 40) {
+                            puzzle->grid->N = 1; // There is enough memory for 40 levels. So that's here so we don't crash.
+                        }
+                        
+                        GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, puzzle->grid->N);
+                        SetText(puzzle);
+                    }
                 }
             }
             input->toggles &= ~InputM::Toggle_LC;
@@ -236,10 +254,12 @@ int main() {
         for (uint32_t pass = 0; pass < camera->render_passes; pass++) {
             if (pass == FIRST_PASS) {
                 RenderGameScreen(shaders, camera, fonts, ui, input, TotalTime, puzzle);
+                HighlightCell(shaders, puzzle, &ui->quads[(uint32_t)Quads::SCREEN], input, ui->quad_vao, TotalTime);
             }
             
             if (pass == SECOND_PASS) {
                 SaveGameScreen(shaders, camera, fonts, ui, input, TotalTime, puzzle);
+                HighlightCell(shaders, puzzle, &ui->quads[(uint32_t)Quads::GAME_SCREEN], input, ui->quad_vao, TotalTime);
             }
             
         }

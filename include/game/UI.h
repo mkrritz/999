@@ -2,8 +2,8 @@
 #define UI_HPP
 
 enum struct Quads {
+    SCREEN,
     GAME_SCREEN,
-    SAVED_GAME_SCREEN,
     // SETTINGS_SCREEN,
     // MENU_SCREEN,
     HIGHLIGHT,
