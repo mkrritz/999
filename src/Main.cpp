@@ -114,7 +114,7 @@ int main() {
     PuzzleInit(heaps[(uint32_t)Heaps::Main]);
     Puzzle* const puzzle = (Puzzle*)heaps[(uint32_t)Heaps::Main]->memory;
     
-    GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, 5);
+    GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, 3);
     SetText(puzzle);
     
     glEnable(GL_DEPTH_TEST);
@@ -182,42 +182,47 @@ int main() {
         if (input->mouse & InputM::LEFT_CLICK) {
             if (input->toggles & InputM::Toggle_LC) {
                 
-                const double NDC_X = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH;
-                const double NDC_Y =  1.0f - 2.0f * input->y_current / WINDOW_HEIGHT;
-                const double CellSize = 2.0f / float(puzzle->grid->N);
-                const uint32_t GridX = uint32_t((NDC_X + 1.0f) / CellSize);
-                const uint32_t GridY = puzzle->grid->N - uint32_t((1.0f - NDC_Y) / CellSize) - 1;
+                if (camera->render_passes == 1) {
+                    const double NDC_X = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH;
+                    const double NDC_Y =  1.0f - 2.0f * input->y_current / WINDOW_HEIGHT;
+                    const double CellSize = 2.0f / float(puzzle->grid->N);
+                    const uint32_t GridX = uint32_t((NDC_X + 1.0f) / CellSize);
+                    const uint32_t GridY = puzzle->grid->N - uint32_t((1.0f - NDC_Y) / CellSize) - 1;
+                    
+                    printf("\nMouseNDC=(%.2f, %.2f) Grid(%.3f)[%u, %u] = %u\n", NDC_X, NDC_Y,
+                                                                                CellSize,
+                                                                                GridX, GridY,
+                                                                                puzzle->grid->cells[GridY * puzzle->grid->N + GridX]);
+                }
                 
-                printf("\nMouseNDC=(%.2f, %.2f) Grid(%.3f)[%u, %u] = %u\n", NDC_X, NDC_Y,
-                                                                            CellSize,
-                                                                            GridX, GridY,
-                                                                            puzzle->grid->cells[GridY * puzzle->grid->N + GridX]);
-                
-                const double RegionLeft   = -0.65f;
-                const double RegionBottom = 0.1f;
-                const double RegionWidth  = 0.7f;
-                const double RegionHeight = 0.7f;
-                
-                // Convert mouse to NDC
-                const double MouseNDC_X = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH;
-                const double MouseNDC_Y =  1.0f - 2.0f * input->y_current / WINDOW_HEIGHT;
-                
-                const double HalfCellSize = 0.5f * RegionWidth / double(puzzle->grid->N);
-                const double CellSizeZZZ     = 2.0f * HalfCellSize;
-                
-                // Clamp inside region
-                const double NDC_XZZZ = glm::clamp(MouseNDC_X, RegionLeft, RegionLeft + RegionWidth - HalfCellSize);
-                const double NDC_YZZZ = glm::clamp(MouseNDC_Y, RegionBottom, RegionBottom + RegionHeight - HalfCellSize);
-                
-                const double LocalX = (NDC_XZZZ - RegionLeft) / RegionWidth;
-                const double LocalY = (NDC_YZZZ - RegionBottom) / RegionHeight;
-                const uint32_t GridXZZZ = uint32_t(LocalX * puzzle->grid->N);
-                const uint32_t GridYZZZ = uint32_t(LocalY * puzzle->grid->N);
-                
-                printf("\nMouseNDC=(%.2f, %.2f) Grid(%.3f)[%u, %u] = %u\n", NDC_XZZZ, NDC_YZZZ,
-                                                                            CellSizeZZZ,
-                                                                            GridXZZZ, GridYZZZ,
-                                                                            puzzle->grid->cells[GridYZZZ * puzzle->grid->N + GridXZZZ]);
+                if (camera->render_passes == 2) {
+                    Quad& quad = ui->quads[(uint32_t)Quads::SAVED_GAME_SCREEN];
+                    const double RegionLeft   = quad.bounds.x;
+                    const double RegionBottom = quad.bounds.y;
+                    const double RegionWidth  = quad.bounds.z;
+                    const double RegionHeight = quad.bounds.w;
+                    
+                    // Convert mouse to NDC
+                    const double MouseNDC_X = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH;
+                    const double MouseNDC_Y =  1.0f - 2.0f * input->y_current / WINDOW_HEIGHT;
+                    
+                    const double HalfCellSize = 0.5f * RegionWidth / double(puzzle->grid->N);
+                    const double CellSizeZZZ     = 2.0f * HalfCellSize;
+                    
+                    // Clamp inside region
+                    const double NDC_XZZZ = glm::clamp(MouseNDC_X, RegionLeft, RegionLeft + RegionWidth - HalfCellSize);
+                    const double NDC_YZZZ = glm::clamp(MouseNDC_Y, RegionBottom, RegionBottom + RegionHeight - HalfCellSize);
+                    
+                    const double LocalX = (NDC_XZZZ - RegionLeft) / RegionWidth;
+                    const double LocalY = (NDC_YZZZ - RegionBottom) / RegionHeight;
+                    const uint32_t GridXZZZ = uint32_t(LocalX * puzzle->grid->N);
+                    const uint32_t GridYZZZ = uint32_t(LocalY * puzzle->grid->N);
+                    
+                    printf("\nMouseNDC=(%.2f, %.2f) Grid(%.3f)[%u, %u] = %u\n", NDC_XZZZ, NDC_YZZZ,
+                                                                                CellSizeZZZ,
+                                                                                GridXZZZ, GridYZZZ,
+                                                                                puzzle->grid->cells[GridYZZZ * puzzle->grid->N + GridXZZZ]);
+                }
             }
             input->toggles &= ~InputM::Toggle_LC;
         } else input->toggles |= InputM::Toggle_LC;

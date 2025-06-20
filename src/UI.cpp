@@ -51,7 +51,6 @@ void RenderToScreen(const Shader* const shaders[],
         GLuint location = shader->uniform_location[U];
         switch(shader->uniform_name[U]) {
             case Uniforms::Sampler: glUniform1i(location, 0); break;
-            //case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-0.9f, -0.9f, 1.8f, 1.8f))); break;
             case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-1.0f, -1.0f, 2.0f, 2.0f))); break;
             case Uniforms::Time:   glUniform1f(location, total_time); break;
             default: SHADER_WARNING("Uniform mismatch"); break;
@@ -75,11 +74,12 @@ void SaveGameScreen(const Shader* const shaders[],
                     float TotalTime,
                     const Puzzle* const puzzle) {
     const Shader* shader;
-    const Quad* quad = &ui->quads[(uint32_t)Quads::GAME_SCREEN];
+    const Quad* source_quad = &ui->quads[(uint32_t)Quads::GAME_SCREEN];
+    const Quad* target_quad = &ui->quads[(uint32_t)Quads::SAVED_GAME_SCREEN];
     
     glBindSampler(0, camera->sampler_clamp_linear);
     
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)Quads::SAVED_GAME_SCREEN].framebuffer);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target_quad->framebuffer);
     glClearColor(0, 1, 0, 0); // Green
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
@@ -89,15 +89,14 @@ void SaveGameScreen(const Shader* const shaders[],
         GLuint location = shader->uniform_location[U];
         switch(shader->uniform_name[U]) {
             case Uniforms::Sampler: glUniform1i(location, 0); break;
-            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-0.65f, 0.1f, 0.7f, 0.7f))); break; // Store somewhere
-            //case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-0.9f, -0.8f, 1.8f, 1.5f))); break; // Do aspect too?
+            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(target_quad->bounds)); break;
             case Uniforms::Time:   glUniform1f(location, TotalTime); break;
             default: SHADER_WARNING("Uniform mismatch"); break;
         }
     }
     glBindVertexArray(ui->quad_vao);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, quad->texture);
+    glBindTexture(GL_TEXTURE_2D, source_quad->texture);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     
@@ -105,50 +104,26 @@ void SaveGameScreen(const Shader* const shaders[],
     ////////////////////////////////////////////////////////////////
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
-    /*
-             // -0.65f, 0.1f, 0.7f, 0.7f
-            *----------------------------------------------*
-            |                                              |
-            |        *-----------*                         |
-            |        |           |                         |
-            |        |           |                         |
-            |        |           |                         |
-            |        |           |                         |
-            |        *-----------*                         |
-            |                                              |
-            |                                              |
-            |                                              |
-            |                                              |
-            |                                              |
-            |                                              |
-            |                                              |
-            *----------------------------------------------*
-            
-    */
-    // Constants for your subregion in NDC
-    const double RegionLeft   = -0.65f;
-    const double RegionBottom = 0.1f;
-    const double RegionWidth  = 0.7f;
-    const double RegionHeight = 0.7f;
-
-    // Convert mouse to NDC
-    const double MouseNDC_X = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH;
-    const double MouseNDC_Y =  1.0f - 2.0f * input->y_current / WINDOW_HEIGHT;
     
-    const double HalfCellSize = 0.5f * RegionWidth / double(puzzle->grid->N);
+    const double WindowX      = target_quad->bounds.x; // do aspects too?
+    const double WindowY      = target_quad->bounds.y; // do aspects too?
+    const double WindowWidth  = target_quad->bounds.z; // do aspects too?
+    const double WindowHeight = target_quad->bounds.w; // do aspects too?
+    
+    const double HalfCellSize = WindowWidth / (2.0f * double(puzzle->grid->N));
     const double CellSize     = 2.0f * HalfCellSize;
-
-    // Clamp inside region
-    const double NDC_X = glm::clamp(MouseNDC_X, RegionLeft, RegionLeft + RegionWidth - HalfCellSize);
-    const double NDC_Y = glm::clamp(MouseNDC_Y, RegionBottom, RegionBottom + RegionHeight - HalfCellSize);
     
-    const double LocalX = (NDC_X - RegionLeft) / RegionWidth;
-    const double LocalY = (NDC_Y - RegionBottom) / RegionHeight;
-    const uint32_t GridX = uint32_t(LocalX * puzzle->grid->N);
-    const uint32_t GridY = uint32_t(LocalY * puzzle->grid->N);
-    const double HighlightX =   RegionLeft + (GridX + 0.5f) * CellSize;
-    const double HighlightY = RegionBottom + (GridY + 0.5f) * CellSize;
+    const double MouseX = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH;  // Not here?
+    const double MouseY =  1.0f - 2.0f * input->y_current / WINDOW_HEIGHT; // Not here?
     
+    const double NDC_X = glm::clamp(MouseX, WindowX, WindowX + WindowWidth  - HalfCellSize);
+    const double NDC_Y = glm::clamp(MouseY, WindowY, WindowY + WindowHeight - HalfCellSize);
+    const double CellX = (NDC_X - WindowX) / WindowWidth;
+    const double CellY = (NDC_Y - WindowY) / WindowHeight;
+    const uint32_t GridX = uint32_t(CellX * puzzle->grid->N);
+    const uint32_t GridY = uint32_t(CellY * puzzle->grid->N);
+    const double HighlightX =   WindowX + (GridX + 0.5f) * CellSize;
+    const double HighlightY = WindowY + (GridY + 0.5f) * CellSize;
     shader = shaders[(uint32_t)Shaders::Highlight];
     glUseProgram(shader->ID);
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
@@ -196,8 +171,7 @@ void RenderGameScreen(const Shader* const shaders[],
        GLuint location = shader->uniform_location[U];
        switch(shader->uniform_name[U]) {
            case Uniforms::Resolution: glUniform1f(location, puzzle->grid->N); break;
-           case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-1.0f, -1.0f, 2.0f, 2.0f))); break; // This NDC to be replaced with whatever
-           //case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-0.65f, 0.1f, 0.7f, 0.7f))); break;  // Store somewhere
+           case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-1.0f, -1.0f, 2.0f, 2.0f))); break;
            default: SHADER_WARNING("Uniform mismatch"); break;
        }
     }
@@ -223,35 +197,41 @@ void RenderGameScreen(const Shader* const shaders[],
     glDrawElements(GL_TRIANGLES, 6 * puzzle->surface.quads_count, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    
     ////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////
     // NDC & Fullscreen version
-    const float NDC_X = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH; 
-    const float NDC_Y = -1.0f + 2.0f * input->y_current / WINDOW_HEIGHT;
-    const float HalfCellSize = 1.0f / float(puzzle->grid->N);
-    const float CellSize = 2.0f * HalfCellSize;
-    const uint32_t GridX = uint32_t((NDC_X + 1.0f) / CellSize);
-    const uint32_t GridY = uint32_t((1.0f - NDC_Y) / CellSize);
-    const float HighlightX = -1.0f + (GridX + 0.5f) * CellSize;
-    const float HighlightY = -1.0f + (GridY + 0.5f) * CellSize;
-    shader = shaders[(uint32_t)Shaders::Highlight];
-    glUseProgram(shader->ID);
-    for (uint32_t U = 0; U < shader->uniforms_count; U++) {
-        GLuint location = shader->uniform_location[U];
-        switch(shader->uniform_name[U]) {
-            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(HighlightX - HalfCellSize,
-                                                                                               HighlightY - HalfCellSize,
-                                                                                               CellSize,
-                                                                                               CellSize))); break;
-            case Uniforms::Time:   glUniform1f(location, TotalTime); break;
-            default: SHADER_WARNING("Uniform mismatch"); break;
+    if (camera->render_passes == 1) {
+        const float NDC_X = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH; 
+        const float NDC_Y = -1.0f + 2.0f * input->y_current / WINDOW_HEIGHT;
+        const float HalfCellSize = 1.0f / float(puzzle->grid->N);
+        const float CellSize = 2.0f * HalfCellSize;
+        const uint32_t GridX = uint32_t((NDC_X + 1.0f) / CellSize);
+        const uint32_t GridY = uint32_t((1.0f - NDC_Y) / CellSize);
+        const float HighlightX = -1.0f + (GridX + 0.5f) * CellSize;
+        const float HighlightY = -1.0f + (GridY + 0.5f) * CellSize;
+        glDisable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        shader = shaders[(uint32_t)Shaders::Highlight];
+        glUseProgram(shader->ID);
+        for (uint32_t U = 0; U < shader->uniforms_count; U++) {
+            GLuint location = shader->uniform_location[U];
+            switch(shader->uniform_name[U]) {
+                case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(HighlightX - HalfCellSize,
+                                                                                                   HighlightY - HalfCellSize,
+                                                                                                   CellSize,
+                                                                                                   CellSize))); break;
+                case Uniforms::Time:   glUniform1f(location, TotalTime); break;
+                default: SHADER_WARNING("Uniform mismatch"); break;
+            }
         }
+        glBindVertexArray(ui->quad_vao);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glDisable(GL_BLEND);
+        glEnable(GL_DEPTH_TEST);
     }
-    glBindVertexArray(ui->quad_vao);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    
-    glDisable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
     ////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////
     
@@ -278,6 +258,8 @@ void UIInit(Heap* const heap) {
     {
         Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
         
+        // quad.bounds = glm::vec4(-0.8f, -0.8f, 1.6f, 1.6f); what does this do?
+        
         glGenTextures(1, &quad.texture);
         glBindTexture(GL_TEXTURE_2D, quad.texture);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
@@ -300,6 +282,8 @@ void UIInit(Heap* const heap) {
     {
         Quad& quad = ui->quads[(uint32_t)Quads::SAVED_GAME_SCREEN];
         
+        quad.bounds = glm::vec4(-0.8f, -0.8f, 1.6f, 1.6f);
+        
         glGenTextures(1, &quad.texture);
         glBindTexture(GL_TEXTURE_2D, quad.texture);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
@@ -321,6 +305,8 @@ void UIInit(Heap* const heap) {
     
     {
         Quad& quad = ui->quads[(uint32_t)Quads::HIGHLIGHT];
+        
+        // no bounds here at all
         
         glGenTextures(1, &quad.texture);
         glBindTexture(GL_TEXTURE_2D, quad.texture);
