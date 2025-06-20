@@ -100,20 +100,12 @@ void SaveGameScreen(const Shader* const shaders[],
     glBindTexture(GL_TEXTURE_2D, quad->texture);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
-
+    
+    ////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
-    
-    #if 0 // NDC & Fullscreen version
-    const float NDC_X = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH; 
-    const float NDC_Y =  1.0f - 2.0f * input->y_current / WINDOW_HEIGHT;
-    const float CellSize = 2.0f / float(puzzle->grid->N);
-    const uint32_t GridX = uint32_t((NDC_X + 1.0f) / CellSize);
-    const uint32_t GridY = uint32_t((1.0f - NDC_Y) / CellSize);
-    const float HighlightX = -1.0f + (GridX + 0.5f) * CellSize;
-    const float HighlightY =  1.0f - (GridY + 0.5f) * CellSize;
-    const float HighlightW = CellSize / 2.0f;
-    #else
+    #if 1
     /*
              // -0.65f, 0.1f, 0.7f, 0.7f
             *----------------------------------------------*
@@ -152,7 +144,7 @@ void SaveGameScreen(const Shader* const shaders[],
                                                                                                HighlightY - HalfCellSize,
                                                                                                CellSize,
                                                                                                CellSize))); break;
-            case Uniforms::Time:   glUniform1f(location, TotalTime); break;
+            case Uniforms::Time:   glUniform1f(location, TotalTime * 5.0f); break;
             default: SHADER_WARNING("Uniform mismatch"); break;
         }
     }
@@ -161,6 +153,8 @@ void SaveGameScreen(const Shader* const shaders[],
     
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
+    ////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////
     
     
     glBindVertexArray(0);
@@ -201,7 +195,6 @@ void RenderGameScreen(const Shader* const shaders[],
     
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
-    
     shader = shaders[(uint32_t)Shaders::SDF];
     glUseProgram(shader->ID);
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
@@ -217,6 +210,8 @@ void RenderGameScreen(const Shader* const shaders[],
     glDrawElements(GL_TRIANGLES, 6 * puzzle->surface.quads_count, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     
+    ////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////
     #if 1 // NDC & Fullscreen version
     const float NDC_X = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH; 
     const float NDC_Y =  1.0f - 2.0f * input->y_current / WINDOW_HEIGHT;
@@ -226,35 +221,6 @@ void RenderGameScreen(const Shader* const shaders[],
     const uint32_t GridY = uint32_t((1.0f - NDC_Y) / CellSize);
     const float HighlightX = -1.0f + (GridX + 0.5f) * CellSize;
     const float HighlightY =  1.0f - (GridY + 0.5f) * CellSize;
-    #else
-    /*
-             // -0.65f, 0.1f, 0.7f, 0.7f
-            *----------------------------------------------*
-            |                                              |
-            |        *-----------*                         |
-            |        |           |                         |
-            |        |           |                         |
-            |        |           |                         |
-            |        |           |                         |
-            |        *-----------*                         |
-            |                                              |
-            |                                              |
-            |                                              |
-            |                                              |
-            |                                              |
-            |                                              |
-            |                                              |
-            *----------------------------------------------*
-            
-    */
-    const float NDC_X = glm::clamp(float(-1.0f + 2.0f * input->x_current / WINDOW_WIDTH ), -0.65f, 0.05f);
-    const float NDC_Y = glm::clamp(float( 1.0f - 2.0f * input->y_current / WINDOW_HEIGHT),  0.1f,  0.8f);
-    const float HalfCellSize = 1.0f / float(puzzle->grid->N);
-    const float CellSize = 2.0f * HalfCellSize;
-    const uint32_t GridX   = uint32_t((NDC_X + 1.0f) / CellSize);
-    const uint32_t GridY   = uint32_t((1.0f - NDC_Y) / CellSize);
-    const float HighlightX =  -1.0f + (GridX + 0.5f) * CellSize;
-    const float HighlightY =   1.0f - (GridY + 0.5f) * CellSize;
     #endif
     shader = shaders[(uint32_t)Shaders::Highlight];
     glUseProgram(shader->ID);
@@ -271,9 +237,10 @@ void RenderGameScreen(const Shader* const shaders[],
     }
     glBindVertexArray(ui->quad_vao);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
+    ////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////
     
     glBindVertexArray(0);
     glBindSampler(0, 0);
