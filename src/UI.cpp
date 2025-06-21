@@ -24,7 +24,7 @@ static float QuadVertices[TOTAL_VERTEX_ATTRIBUTE_COUNT] = {
 
 void RenderToScreen(const Shader* const shaders[],
                     const Camera* const camera,
-                    const UI* const ui,
+                    const UI* const ui, // Just a framebuffer argument here will do
                     float total_time) {
     const Shader* shader;
     const Quad* quad;
@@ -58,7 +58,6 @@ void RenderToScreen(const Shader* const shaders[],
     }
     glBindTexture(GL_TEXTURE_2D, quad->texture);
     glBindVertexArray(ui->quad_vao);
-    glActiveTexture(GL_TEXTURE0);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     
@@ -113,16 +112,15 @@ void HighlightCell(const Shader* const shaders[],
     glEnable(GL_DEPTH_TEST);
 }
 
-void SaveGameScreen(const Shader* const shaders[], // render_texture_to_framebuffer
-                    const Camera* const camera,
-                    const Font* const fonts[],
-                    const UI* const ui,
-                    const Input* const input,
-                    float TotalTime,
-                    const Puzzle* const puzzle) {
+void SaveRender(const Shader* const shaders[],
+                const Camera* const camera,
+                const Font* const fonts[],
+                const UI* const ui,
+                const Input* const input,
+                float TotalTime) {
     const Shader* shader;
-    const Quad* source_quad = &ui->quads[(uint32_t)Quads::SCREEN];
-    const Quad* target_quad = &ui->quads[(uint32_t)Quads::GAME_SCREEN];
+    const Quad* source_quad = &ui->quads[(uint32_t)Quads::SCREEN];      // Do this with parameters so it can be used
+    const Quad* target_quad = &ui->quads[(uint32_t)Quads::GAME_SCREEN]; // Do this with parameters so it can be used
     
     glBindSampler(0, camera->sampler_clamp_linear);
     
@@ -142,7 +140,6 @@ void SaveGameScreen(const Shader* const shaders[], // render_texture_to_framebuf
         }
     }
     glBindVertexArray(ui->quad_vao);
-    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, source_quad->texture);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -151,13 +148,13 @@ void SaveGameScreen(const Shader* const shaders[], // render_texture_to_framebuf
     glBindSampler(0, 0);
 }
 
-void RenderGameScreen(const Shader* const shaders[],
-                      const Camera* const camera,
-                      const Font* const fonts[],
-                      const UI* const ui,
-                      const Input* const input,
-                      float TotalTime,
-                      const Puzzle* const puzzle) {
+void RenderGame(const Shader* const shaders[],
+                const Camera* const camera,
+                const Font* const fonts[],
+                const UI* const ui,
+                const Input* const input,
+                float TotalTime,
+                const Puzzle* const puzzle) {
     const Shader* shader;
     const Quad* quad = &ui->quads[(uint32_t)Quads::SCREEN];
     const Font* const font = fonts[(uint32_t)FontType::English];
@@ -222,7 +219,7 @@ void UIInit(Heap* const heap) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
     {
-        Quad& quad = ui->quads[(uint32_t)Quads::SCREEN]; // That's just SCREEN then?
+        Quad& quad = ui->quads[(uint32_t)Quads::SCREEN];
         
         quad.bounds = glm::vec4(-1.0f, -1.0f, 2.0f, 2.0f);
         
@@ -246,7 +243,7 @@ void UIInit(Heap* const heap) {
     }
     
     {
-        Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN]; // So that's the GAME_SCREEN really..
+        Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
         
         quad.bounds = glm::vec4(-0.8f, -0.8f, 1.6f, 1.6f);
         
