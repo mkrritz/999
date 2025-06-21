@@ -117,6 +117,9 @@ struct Input {
     double x_previous, y_previous;
     int wheel;
     
+    double ndc_x;
+    double ndc_y;
+    
     #if defined CONTROLLER
     int axes_count;
     const float* controller_axes;

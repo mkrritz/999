@@ -24,7 +24,7 @@ static float QuadVertices[TOTAL_VERTEX_ATTRIBUTE_COUNT] = {
 
 void RenderToScreen(const Shader* const shaders[],
                     const Camera* const camera,
-                    const UI* const ui, // Just a framebuffer argument here will do
+                    const UI* const ui, // Just a texture argument here will do
                     float total_time) {
     const Shader* shader;
     const Quad* quad;
@@ -45,7 +45,7 @@ void RenderToScreen(const Shader* const shaders[],
     glClearColor(0, 0, 1, 0); // Blue
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    shader = shaders[(uint32_t)Shaders::TripleChannelQuad];
+    shader = shaders[(uint32_t)Shaders::DrawTexture];
     glUseProgram(shader->ID);
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
         GLuint location = shader->uniform_location[U];
@@ -66,29 +66,27 @@ void RenderToScreen(const Shader* const shaders[],
 }
 
 void HighlightCell(const Shader* const shaders[],
-                   const Puzzle* const puzzle,
+                   const uint32_t resolution,
                    const Quad* const quad,
                    const Input* const input,
                    const GLuint quad_vao,
                    const float TotalTime) {
     const Shader* shader = shaders[(uint32_t)Shaders::Highlight];
     
-    const double WindowX      = quad->bounds.x; // do aspects too?
-    const double WindowY      = quad->bounds.y; // do aspects too?
-    const double WindowWidth  = quad->bounds.z; // do aspects too?
-    const double WindowHeight = quad->bounds.w; // do aspects too?
-    const double HalfCellSize = WindowWidth / (2.0f * double(puzzle->grid->N));
+    const double WindowX      = quad->bounds.x; // do aspect maths too?
+    const double WindowY      = quad->bounds.y; // do aspect maths too?
+    const double WindowWidth  = quad->bounds.z; // do aspect maths too?
+    const double WindowHeight = quad->bounds.w; // do aspect maths too?
+    const double HalfCellSize = WindowWidth / (2.0f * double(resolution));
     const double CellSize     = 2.0f * HalfCellSize;
     
-    const double MouseX = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH;  // Not here?
-    const double MouseY =  1.0f - 2.0f * input->y_current / WINDOW_HEIGHT; // Not here?
+    const double NDC_X = glm::clamp(input->ndc_x, WindowX, WindowX + WindowWidth  - HalfCellSize);
+    const double NDC_Y = glm::clamp(input->ndc_y, WindowY, WindowY + WindowHeight - HalfCellSize);
     
-    const double NDC_X = glm::clamp(MouseX, WindowX, WindowX + WindowWidth  - HalfCellSize);
-    const double NDC_Y = glm::clamp(MouseY, WindowY, WindowY + WindowHeight - HalfCellSize);
     const double CellX = (NDC_X - WindowX) / WindowWidth;
     const double CellY = (NDC_Y - WindowY) / WindowHeight;
-    const uint32_t GridX = uint32_t(CellX * puzzle->grid->N);
-    const uint32_t GridY = uint32_t(CellY * puzzle->grid->N);
+    const uint32_t GridX = uint32_t(CellX * resolution);
+    const uint32_t GridY = uint32_t(CellY * resolution);
     const double HighlightX =   WindowX + (GridX + 0.5f) * CellSize;
     const double HighlightY = WindowY + (GridY + 0.5f) * CellSize;
     
@@ -128,7 +126,7 @@ void SaveRender(const Shader* const shaders[],
     glClearColor(0, 1, 0, 0); // Green
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    shader = shaders[(uint32_t)Shaders::TripleChannelQuad];
+    shader = shaders[(uint32_t)Shaders::DrawTexture];
     glUseProgram(shader->ID);
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
         GLuint location = shader->uniform_location[U];
@@ -165,7 +163,7 @@ void RenderGame(const Shader* const shaders[],
     glClearColor(1, 0, 0, 0); // Red
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    shader = shaders[(uint32_t)Shaders::SingleChannelQuad];
+    shader = shaders[(uint32_t)Shaders::Grid];
     glUseProgram(shader->ID);
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
        GLuint location = shader->uniform_location[U];
@@ -245,7 +243,7 @@ void UIInit(Heap* const heap) {
     {
         Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
         
-        quad.bounds = glm::vec4(-0.8f, -0.8f, 1.6f, 1.6f);
+        quad.bounds = glm::vec4(-0.5f, -0.5f, 1.1f, 1.1f);
         
         glGenTextures(1, &quad.texture);
         glBindTexture(GL_TEXTURE_2D, quad.texture);
