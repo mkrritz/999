@@ -122,11 +122,11 @@ int main() {
     GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, 3);
     SetText(puzzle);
     
-    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_DEPTH_TEST);
     //glDepthFunc(GL_LESS);
     //glDepthFunc(GL_LEQUAL);
     //glEnable(GL_CULL_FACE);
-    //glEnable(GL_BLEND);
+    glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBlendEquation(GL_FUNC_ADD);
     glPointSize(5);
@@ -192,11 +192,8 @@ int main() {
                 const double HalfCellSize = 0.5f * WindowWidth / double(puzzle->grid->N);
                 const double CellSize     = 2.0f * HalfCellSize;
                 
-                const double MouseNDC_X = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH;  // not here?
-                const double MouseNDC_Y =  1.0f - 2.0f * input->y_current / WINDOW_HEIGHT; // not here?
-                
-                const double NDC_X = glm::clamp(MouseNDC_X, WindowX, WindowX + WindowWidth - HalfCellSize);
-                const double NDC_Y = glm::clamp(MouseNDC_Y, WindowY, WindowY + WindowHeight - HalfCellSize);
+                const double NDC_X = glm::clamp(input->ndc_x, WindowX, WindowX + WindowWidth - HalfCellSize);
+                const double NDC_Y = glm::clamp(input->ndc_y, WindowY, WindowY + WindowHeight - HalfCellSize);
                 const double LocalX = (NDC_X - WindowX) / WindowWidth;
                 const double LocalY = (NDC_Y - WindowY) / WindowHeight;
                 const uint32_t GridX = uint32_t(LocalX * puzzle->grid->N);
@@ -227,12 +224,13 @@ int main() {
             AccumulatorTime -= dt;
             FixedUpdateCount += 1;
             
-            input->ndc_x = -1.0f + 2.0f * input->x_current / WINDOW_WIDTH;
-            input->ndc_y =  1.0f - 2.0f * input->y_current / WINDOW_HEIGHT;
             
         }
         
         RenderGame(shaders, camera, fonts, ui, input, TotalTime, puzzle);
+        if (camera->render_passes == 1) { // Sanity render
+            HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::SCREEN], input, ui->quad_vao, TotalTime);
+        }
         SaveRender(shaders, camera, fonts, ui, input, TotalTime);
         HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::GAME_SCREEN], input, ui->quad_vao, TotalTime);
         

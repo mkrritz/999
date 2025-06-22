@@ -80,17 +80,15 @@ void HighlightCell(const Shader* const shaders[],
     const double HalfCellSize = WindowWidth / (2.0f * double(resolution));
     const double CellSize     = 2.0f * HalfCellSize;
     
-    const double NDC_X = glm::clamp(input->ndc_x, WindowX, WindowX + WindowWidth  - HalfCellSize);
-    const double NDC_Y = glm::clamp(input->ndc_y, WindowY, WindowY + WindowHeight - HalfCellSize);
-    
-    const double CellX = (NDC_X - WindowX) / WindowWidth;
-    const double CellY = (NDC_Y - WindowY) / WindowHeight;
-    const uint32_t GridX = uint32_t(CellX * resolution);
-    const uint32_t GridY = uint32_t(CellY * resolution);
-    const double HighlightX =   WindowX + (GridX + 0.5f) * CellSize;
+    const double NDC_X      = glm::clamp(input->ndc_x, WindowX, WindowX + WindowWidth  - HalfCellSize);
+    const double NDC_Y      = glm::clamp(input->ndc_y, WindowY, WindowY + WindowHeight - HalfCellSize);
+    const double CellX      = (NDC_X - WindowX) / WindowWidth;
+    const double CellY      = (NDC_Y - WindowY) / WindowHeight;
+    const uint32_t GridX    = uint32_t(CellX * resolution);
+    const uint32_t GridY    = uint32_t(CellY * resolution);
+    const double HighlightX = WindowX + (GridX + 0.5f) * CellSize;
     const double HighlightY = WindowY + (GridY + 0.5f) * CellSize;
     
-    glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glUseProgram(shader->ID);
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
@@ -107,7 +105,6 @@ void HighlightCell(const Shader* const shaders[],
     glBindVertexArray(quad_vao);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glDisable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
 }
 
 void SaveRender(const Shader* const shaders[],
@@ -142,6 +139,21 @@ void SaveRender(const Shader* const shaders[],
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     
+    glEnable(GL_BLEND);
+    shader = shaders[(uint32_t)Shaders::Timer];
+    glUseProgram(shader->ID);
+    for (uint32_t U = 0; U < shader->uniforms_count; U++) {
+       GLuint location = shader->uniform_location[U];
+       switch(shader->uniform_name[U]) {
+           case Uniforms::Time: glUniform1f(location, TotalTime); break;
+           case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-0.9f, 0.85f, 1.8f, 0.1f))); break;
+           default: SHADER_WARNING("Uniform mismatch"); break;
+       }
+    }
+    glBindVertexArray(ui->quad_vao);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glDisable(GL_BLEND);
+    
     glBindVertexArray(0);
     glBindSampler(0, 0);
 }
@@ -175,9 +187,7 @@ void RenderGame(const Shader* const shaders[],
     }
     glBindVertexArray(ui->quad_vao);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
     
-    glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     shader = shaders[(uint32_t)Shaders::SDF];
     glUseProgram(shader->ID);
@@ -194,7 +204,6 @@ void RenderGame(const Shader* const shaders[],
     glDrawElements(GL_TRIANGLES, 6 * puzzle->surface.quads_count, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glDisable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
     
     glBindVertexArray(0);
     glBindSampler(0, 0);
@@ -243,7 +252,7 @@ void UIInit(Heap* const heap) {
     {
         Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
         
-        quad.bounds = glm::vec4(-0.5f, -0.5f, 1.1f, 1.1f);
+        quad.bounds = glm::vec4(-0.8f, -0.8f, 1.6f, 1.6f);
         
         glGenTextures(1, &quad.texture);
         glBindTexture(GL_TEXTURE_2D, quad.texture);

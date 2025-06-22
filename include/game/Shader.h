@@ -27,6 +27,7 @@ enum struct Shaders {
     Grid,
     Highlight,
     SDF,
+    Timer,
     Count // Not really a shader.
 };
 
@@ -98,6 +99,7 @@ const ShaderConfig SHADERS_CONFIG[] = {
     { "Quad.vs", nullptr, "Grid.fs", nullptr, nullptr, nullptr, (const char*[]){"Resolution", "PositionAndSize"}, 2, nullptr, 0 },
     { "Quad.vs", nullptr, "Highlight.fs", nullptr, nullptr, nullptr, (const char*[]){"PositionAndSize", "Time"}, 2, nullptr, 0 },
     { "SDF.vs", nullptr, "SDF.fs", nullptr, nullptr, nullptr, (const char*[]){"Time", "Sampler"}, 2, nullptr, 0 },
+    { "Quad.vs", nullptr, "Timer.fs", nullptr, nullptr, nullptr, (const char*[]){"Time", "PositionAndSize"}, 2, nullptr, 0 },
 };
 
 #endif
