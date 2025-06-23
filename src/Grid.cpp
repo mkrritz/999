@@ -107,6 +107,8 @@ void SetText(Puzzle* const puzzle) {
     const float HalfCellScale = CellScale / 2.0f;
     const float VerticalPadding = 0.6f;
     
+    // TODO put them in quad bounds too
+    
     uint32_t CIX = 0;
     uint32_t CIY = 0;
     float CharacterScale = 1.0f + 1.0f / float(NumberOfDigitsOnEachCell[CIY * grid->N + CIX]);

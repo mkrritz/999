@@ -22,12 +22,13 @@ static float QuadVertices[TOTAL_VERTEX_ATTRIBUTE_COUNT] = {
     1.0f, 1.0f
 };
 
-void RenderToScreen(const Shader* const shaders[],
-                    const Camera* const camera,
-                    const UI* const ui,
-                    const Quad* const quad,
-                    float total_time) {
-    const Shader* shader;
+void RenderQuadToScreen(const Shader* const shaders[],
+                        const Camera* const camera,
+                        const GLuint quad_vao,
+                        const Quad* const quad,
+                        float total_time) {
+    const Shader* shader; // static these too?
+    static const glm::vec4 screen_quad(-1.0f, -1.0f, 2.0f, 2.0f);
     
     glBindSampler(0, camera->sampler_clamp_linear);
     
@@ -41,13 +42,13 @@ void RenderToScreen(const Shader* const shaders[],
         GLuint location = shader->uniform_location[U];
         switch(shader->uniform_name[U]) {
             case Uniforms::Sampler: glUniform1i(location, 0); break;
-            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-1.0f, -1.0f, 2.0f, 2.0f))); break;
+            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(screen_quad)); break;
             case Uniforms::Time:   glUniform1f(location, total_time); break;
             default: SHADER_WARNING("Uniform mismatch"); break;
         }
     }
     glBindTexture(GL_TEXTURE_2D, quad->texture);
-    glBindVertexArray(ui->quad_vao);
+    glBindVertexArray(quad_vao);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     
@@ -99,17 +100,15 @@ void HighlightCell(const Shader* const shaders[],
 
 void SaveRender(const Shader* const shaders[],
                 const Camera* const camera,
-                const Font* const fonts[],
-                const UI* const ui,
-                const Input* const input,
+                const GLuint quad_vao,
+                const Quad* const source,
+                const Quad* const target,
                 float TotalTime) {
     const Shader* shader;
-    const Quad* source_quad = &ui->quads[(uint32_t)Quads::SCREEN];      // Do this with parameters so it can be used
-    const Quad* target_quad = &ui->quads[(uint32_t)Quads::GAME_SCREEN]; // Do this with parameters so it can be used
     
     glBindSampler(0, camera->sampler_clamp_linear);
     
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target_quad->framebuffer);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target->framebuffer);
     glClearColor(0, 1, 0, 0); // Green
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
@@ -119,13 +118,13 @@ void SaveRender(const Shader* const shaders[],
         GLuint location = shader->uniform_location[U];
         switch(shader->uniform_name[U]) {
             case Uniforms::Sampler: glUniform1i(location, 0); break;
-            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(target_quad->bounds)); break;
+            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(target->bounds)); break;
             case Uniforms::Time:   glUniform1f(location, TotalTime); break;
             default: SHADER_WARNING("Uniform mismatch"); break;
         }
     }
-    glBindVertexArray(ui->quad_vao);
-    glBindTexture(GL_TEXTURE_2D, source_quad->texture);
+    glBindVertexArray(quad_vao);
+    glBindTexture(GL_TEXTURE_2D, source->texture);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     
@@ -140,7 +139,7 @@ void SaveRender(const Shader* const shaders[],
            default: SHADER_WARNING("Uniform mismatch"); break;
        }
     }
-    glBindVertexArray(ui->quad_vao);
+    glBindVertexArray(quad_vao);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glDisable(GL_BLEND);
     
@@ -151,12 +150,12 @@ void SaveRender(const Shader* const shaders[],
 void RenderGame(const Shader* const shaders[],
                 const Camera* const camera,
                 const Font* const fonts[],
-                const UI* const ui,
+                const Quad* const quad,
+                const GLuint quad_vao,
                 const Input* const input,
                 float TotalTime,
                 const Puzzle* const puzzle) {
     const Shader* shader;
-    const Quad* quad = &ui->quads[(uint32_t)Quads::SCREEN];
     const Font* const font = fonts[(uint32_t)FontType::English];
     
     glBindSampler(0, camera->sampler_clamp_linear);
@@ -175,11 +174,11 @@ void RenderGame(const Shader* const shaders[],
            default: SHADER_WARNING("Uniform mismatch"); break;
        }
     }
-    glBindVertexArray(ui->quad_vao);
+    glBindVertexArray(quad_vao);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     
     glEnable(GL_BLEND);
-    shader = shaders[(uint32_t)Shaders::SDF];
+    shader = shaders[(uint32_t)Shaders::SDF]; // Text is in NDC too
     glUseProgram(shader->ID);
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
         GLuint location = shader->uniform_location[U];

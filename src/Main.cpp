@@ -46,24 +46,25 @@ void HighlightCell(const Shader* const [],
                    const Input* const,
                    const GLuint,
                    const float);
-void RenderGame(const Shader* const [],
-                      const Camera* const,
-                      const Font* const [],
-                      const UI* const,
-                      const Input* const,
-                      float,
-                      const Puzzle* const);
+void RenderGame(const Shader* const shaders[],
+                const Camera* const camera,
+                const Font* const fonts[],
+                const Quad* const quad,
+                const GLuint quad_vao,
+                const Input* const input,
+                float TotalTime,
+                const Puzzle* const puzzle);
 void SaveRender(const Shader* const [],
                 const Camera* const,
-                const Font* const [],
-                const UI* const,
-                const Input* const,
+                const GLuint,
+                const Quad* const,
+                const Quad* const,
                 float);
-void RenderToScreen(const Shader* const [],
-                    const Camera* const,
-                    const UI* const,
-                    const Quad* const,
-                    float);
+void RenderQuadToScreen(const Shader* const [],
+                        const Camera* const,
+                        const GLuint,
+                        const Quad* const,
+                        float);
 // UI
 
 // Font
@@ -120,7 +121,7 @@ int main() {
     PuzzleInit(heaps[(uint32_t)Heaps::Main]);
     Puzzle* const puzzle = (Puzzle*)heaps[(uint32_t)Heaps::Main]->memory;
     
-    GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, 3);
+    GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, 1);
     SetText(puzzle);
     
     glDisable(GL_DEPTH_TEST);
@@ -143,7 +144,6 @@ int main() {
     uint32_t UpdateCount= 0;
     uint32_t FixedUpdateCount= 0;
     
-    const Quad* OUT_QUAD = &ui->quads[(uint32_t)Quads::GAME_SCREEN];
     while (!(input->special & InputM::ESC)) {
         CurrectTime = glfwGetTime();
         DeltaTime = CurrectTime - LastTime;
@@ -170,17 +170,6 @@ int main() {
         if (input->special & InputM::F1) {
             if (input->toggles & InputM::Toggle_F1) {
                 camera->render_passes = camera->render_passes % 2 + 1;
-                
-                switch(camera->render_passes) {
-                    case 1: {
-                        OUT_QUAD = &ui->quads[(uint32_t)Quads::SCREEN];
-                        break;
-                    }
-                    case 2: {
-                        OUT_QUAD = &ui->quads[(uint32_t)Quads::GAME_SCREEN];
-                        break;
-                    }
-                }
                 
             }
             input->toggles &= ~InputM::Toggle_F1;
@@ -219,13 +208,14 @@ int main() {
                                                                             puzzle->grid->cells[GridY * puzzle->grid->N + GridX]);
                 if (puzzle->grid->cells[GridY * puzzle->grid->N + GridX] == 1) {
                     puzzle->grid->N++;
-                    if (puzzle->grid->N < 1) {
-                        puzzle->grid->N = 1; // levels won't be controlled by scroll. it's uint32_t anyway..
-                    }
                     if (puzzle->grid->N > 10) {
                         //ui->quads[(uint32_t)Quads::GAME_SCREEN].bounds /= 2.0f;
                         puzzle->grid->N = 1; // There is enough memory for 40 levels. So that's here so we don't crash.
+                        
+                        // a way to level up
+                        ui->quads[(uint32_t)Quads::SCREEN].bounds = glm::vec4(-0.5f, -0.5f, 1.0f, 1.0f);
                     }
+                    
                     
                     GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, puzzle->grid->N);
                     SetText(puzzle);
@@ -241,14 +231,20 @@ int main() {
             
         }
         
-        RenderGame(shaders, camera, fonts, ui, input, TotalTime, puzzle);
-        if (camera->render_passes == 1) { // Sanity render
+        RenderGame(shaders, camera, fonts, &ui->quads[(uint32_t)Quads::SCREEN], ui->quad_vao, input, TotalTime, puzzle);
+        if (camera->render_passes == 1) {
             HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::SCREEN], input, ui->quad_vao, TotalTime);
         }
-        SaveRender(shaders, camera, fonts, ui, input, TotalTime);
-        HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::GAME_SCREEN], input, ui->quad_vao, TotalTime);
         
-        RenderToScreen(shaders, camera, ui, OUT_QUAD, TotalTime);
+        SaveRender(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN], &ui->quads[(uint32_t)Quads::GAME_SCREEN], TotalTime); // <<<------
+                                                                                                                                                    //  |
+        if (camera->render_passes == 1) {                                                                                                           //  |
+            RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN], TotalTime);                                      //  |
+        } else {                                                                                                                                    //  |
+            HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::GAME_SCREEN], input, ui->quad_vao, TotalTime); // This is done on this-- (todo formalizing)
+            RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::GAME_SCREEN], TotalTime);
+        }
+        
         glfwSwapBuffers(window);
     }
     
