@@ -62,6 +62,7 @@ void SaveRender(const Shader* const [],
 void RenderToScreen(const Shader* const [],
                     const Camera* const,
                     const UI* const,
+                    const Quad* const,
                     float);
 // UI
 
@@ -142,6 +143,7 @@ int main() {
     uint32_t UpdateCount= 0;
     uint32_t FixedUpdateCount= 0;
     
+    const Quad* OUT_QUAD = &ui->quads[(uint32_t)Quads::GAME_SCREEN];
     while (!(input->special & InputM::ESC)) {
         CurrectTime = glfwGetTime();
         DeltaTime = CurrectTime - LastTime;
@@ -168,6 +170,18 @@ int main() {
         if (input->special & InputM::F1) {
             if (input->toggles & InputM::Toggle_F1) {
                 camera->render_passes = camera->render_passes % 2 + 1;
+                
+                switch(camera->render_passes) {
+                    case 1: {
+                        OUT_QUAD = &ui->quads[(uint32_t)Quads::SCREEN];
+                        break;
+                    }
+                    case 2: {
+                        OUT_QUAD = &ui->quads[(uint32_t)Quads::GAME_SCREEN];
+                        break;
+                    }
+                }
+                
             }
             input->toggles &= ~InputM::Toggle_F1;
         } else input->toggles |= InputM::Toggle_F1;
@@ -234,7 +248,7 @@ int main() {
         SaveRender(shaders, camera, fonts, ui, input, TotalTime);
         HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::GAME_SCREEN], input, ui->quad_vao, TotalTime);
         
-        RenderToScreen(shaders, camera, ui, TotalTime);
+        RenderToScreen(shaders, camera, ui, OUT_QUAD, TotalTime);
         glfwSwapBuffers(window);
     }
     

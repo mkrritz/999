@@ -6,7 +6,7 @@ out vec4 FragColor;
 uniform float Time; // Time in seconds
 
 // Constants
-const float DURATION = 2.0;
+const float DURATION = 10.0;
 const vec4 color1 = vec4(1.0, 0.0, 0.0, 1.0); // Red
 const vec4 color2 = vec4(1.0, 1.0, 0.0, 1.0); // Yellow
 
@@ -31,6 +31,6 @@ void main()
     vec4 color = getGradientValue(UV.x);
 
     // Apply alpha based on whether this pixel is within progress region
-    float alpha = smoothstep(0.0, 1.0,  uvX - progress);
+    float alpha = smoothstep(0.01, 0.05,  uvX - progress);
     FragColor = vec4(color.rgb, color.a * alpha);
 }

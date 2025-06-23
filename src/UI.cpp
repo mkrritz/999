@@ -24,20 +24,10 @@ static float QuadVertices[TOTAL_VERTEX_ATTRIBUTE_COUNT] = {
 
 void RenderToScreen(const Shader* const shaders[],
                     const Camera* const camera,
-                    const UI* const ui, // Just a texture argument here will do
+                    const UI* const ui,
+                    const Quad* const quad,
                     float total_time) {
     const Shader* shader;
-    const Quad* quad;
-    switch(camera->render_passes) {
-        case 1: {
-            quad = &ui->quads[(uint32_t)Quads::SCREEN];
-            break;
-        }
-        case 2: {
-            quad = &ui->quads[(uint32_t)Quads::GAME_SCREEN];
-            break;
-        }
-    }
     
     glBindSampler(0, camera->sampler_clamp_linear);
     
