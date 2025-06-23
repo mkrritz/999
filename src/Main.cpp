@@ -178,14 +178,14 @@ int main() {
         if (input->mouse & InputM::LEFT_CLICK) {
             if (input->toggles & InputM::Toggle_LC) {
                 const Quad* quad;
-                switch(camera->render_passes) {                             // delete this
-                    case 1: {                                               // delete this
-                        quad = &ui->quads[(uint32_t)Quads::SCREEN];         // delete this
-                        break;                                              // delete this
-                    }                                                       // delete this
-                    case 2: {                                               // delete this
-                        quad = &ui->quads[(uint32_t)Quads::GAME_SCREEN];    // delete this
-                        break;                                              // delete this
+                switch(camera->render_passes) {                             // delete this. use desired quad managed by level ups and stuff
+                    case 1: {                                               // delete this. use desired quad managed by level ups and stuff
+                        quad = &ui->quads[(uint32_t)Quads::SCREEN];         // delete this. use desired quad managed by level ups and stuff
+                        break;                                              // delete this. use desired quad managed by level ups and stuff
+                    }                                                       // delete this. use desired quad managed by level ups and stuff
+                    case 2: {                                               // delete this. use desired quad managed by level ups and stuff
+                        quad = &ui->quads[(uint32_t)Quads::GAME_SCREEN];    // delete this. use desired quad managed by level ups and stuff
+                        break;                                              // delete this. use desired quad managed by level ups and stuff
                     }
                 }
                 const double WindowX      = quad->bounds.x;
@@ -236,12 +236,13 @@ int main() {
             HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::SCREEN], input, ui->quad_vao, TotalTime);
         }
         
-        SaveRender(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN], &ui->quads[(uint32_t)Quads::GAME_SCREEN], TotalTime); // <<<------
-                                                                                                                                                    //  |
-        if (camera->render_passes == 1) {                                                                                                           //  |
-            RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN], TotalTime);                                      //  |
-        } else {                                                                                                                                    //  |
-            HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::GAME_SCREEN], input, ui->quad_vao, TotalTime); // This is done on this-- (todo formalizing)
+        SaveRender(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN], &ui->quads[(uint32_t)Quads::GAME_SCREEN], TotalTime); // <<<---------
+                                                                                                                                                       //  |
+        if (camera->render_passes == 1) {                                                                                                              //  |
+            RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN], TotalTime);      // Why is this like this?          //  |
+            RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::GAME_SCREEN], TotalTime); // Why is this like this?          //  |
+        } else {                                                                                                                                       //  |
+            HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::GAME_SCREEN], input, ui->quad_vao, TotalTime); // This is done on this------ (todo better)
             RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::GAME_SCREEN], TotalTime);
         }
         

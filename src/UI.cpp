@@ -128,6 +128,7 @@ void SaveRender(const Shader* const shaders[],
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     
+    // Not here please.
     glEnable(GL_BLEND);
     shader = shaders[(uint32_t)Shaders::Timer];
     glUseProgram(shader->ID);
@@ -215,7 +216,7 @@ void UIInit(Heap* const heap) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
     {
-        Quad& quad = ui->quads[(uint32_t)Quads::SCREEN];
+        Quad& quad = ui->quads[(uint32_t)Quads::SCREEN]; // Rename to SCREEN_1 to make sense
         
         quad.bounds = glm::vec4(-1.0f, -1.0f, 2.0f, 2.0f);
         
@@ -239,7 +240,7 @@ void UIInit(Heap* const heap) {
     }
     
     {
-        Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
+        Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN]; // Rename to SCREEN_2 to make sense
         
         quad.bounds = glm::vec4(-0.8f, -0.8f, 1.6f, 1.6f);
         
@@ -265,7 +266,12 @@ void UIInit(Heap* const heap) {
     {
         Quad& quad = ui->quads[(uint32_t)Quads::HIGHLIGHT];
         
-        // no bounds here at all
+        // no bounds here at all Maybe not a SCREEN_* but still, a texture is required. Maybe not the framebuffer because
+        // a texture can just be rendered on the currectly bound framebuffer
+        
+        // SaveRender renders from a source texture, to the target framebuffer. // TODO documentation inside finished functions
+        
+        // Maybe do better because not every framebuffer needs depth, or bounds, or whatever else..
         
         glGenTextures(1, &quad.texture);
         glBindTexture(GL_TEXTURE_2D, quad.texture);
