@@ -54,11 +54,13 @@ void RenderQuadToScreen(const Shader* const shaders[],
     
     glBindVertexArray(0);
     glBindSampler(0, 0);
+    
+    // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // Restore previous bound framebuffer here?
 }
 
 void HighlightCell(const Shader* const shaders[],
                    const uint32_t resolution,
-                   const Quad* const quad,
+                   const Quad* const quad, // Just bounds here, not quad
                    const Input* const input,
                    const GLuint quad_vao,
                    const float TotalTime) {
@@ -104,7 +106,6 @@ void SaveRender(const Shader* const shaders[],
                 const Quad* const source,
                 const Quad* const target,
                 float TotalTime) {
-    // Drawing source->texture to the target framebuffer
     const Shader* shader;
     
     glBindSampler(0, camera->sampler_clamp_linear);
@@ -128,6 +129,8 @@ void SaveRender(const Shader* const shaders[],
     glBindTexture(GL_TEXTURE_2D, source->texture);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
+    
+    // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, source->framebuffer); // Is this really happening?
     
     glBindVertexArray(0);
     glBindSampler(0, 0);
@@ -153,8 +156,7 @@ void RenderTimer(const Shader* const shaders[],
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glDisable(GL_BLEND);
     
-    glBindVertexArray(0);
-    glBindSampler(0, 0);
+    glBindVertexArray(0); // Not really required, if all rendering is quads anyway. Grouping them later maybe.
 }
 
 void RenderGame(const Shader* const shaders[],
@@ -225,7 +227,7 @@ void UIInit(Heap* const heap) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
     {
-        Quad& quad = ui->quads[(uint32_t)Quads::SCREEN]; // Rename to SCREEN_1 to make sense
+        Quad& quad = ui->quads[(uint32_t)Quads::SCREEN_1]; // Rename to SCREEN_1 to make sense
         
         quad.bounds = glm::vec4(-1.0f, -1.0f, 2.0f, 2.0f);
         
@@ -249,7 +251,7 @@ void UIInit(Heap* const heap) {
     }
     
     {
-        Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN]; // Rename to SCREEN_2 to make sense
+        Quad& quad = ui->quads[(uint32_t)Quads::SCREEN_2]; // Rename to SCREEN_2 to make sense
         
         quad.bounds = glm::vec4(-0.8f, -0.8f, 1.6f, 1.6f);
         

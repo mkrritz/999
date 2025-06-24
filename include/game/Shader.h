@@ -23,7 +23,7 @@
 */
 
 enum struct Shaders {
-    DrawTexture, // Rename to purpose?
+    DrawTexture,
     Grid,
     Highlight,
     SDF,

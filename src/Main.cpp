@@ -189,11 +189,11 @@ int main() {
                 const Quad* quad;
                 switch(camera->render_passes) {                             // delete this. use desired quad managed by level ups and stuff
                     case 1: {                                               // delete this. use desired quad managed by level ups and stuff
-                        quad = &ui->quads[(uint32_t)Quads::SCREEN];         // delete this. use desired quad managed by level ups and stuff
+                        quad = &ui->quads[(uint32_t)Quads::SCREEN_1];         // delete this. use desired quad managed by level ups and stuff
                         break;                                              // delete this. use desired quad managed by level ups and stuff
                     }                                                       // delete this. use desired quad managed by level ups and stuff
                     case 2: {                                               // delete this. use desired quad managed by level ups and stuff
-                        quad = &ui->quads[(uint32_t)Quads::GAME_SCREEN];    // delete this. use desired quad managed by level ups and stuff
+                        quad = &ui->quads[(uint32_t)Quads::SCREEN_2];    // delete this. use desired quad managed by level ups and stuff
                         break;                                              // delete this. use desired quad managed by level ups and stuff
                     }
                 }
@@ -222,7 +222,7 @@ int main() {
                         puzzle->grid->N = 1; // There is enough memory for 40 levels. So that's here so we don't crash.
                         
                         // a way to level up
-                        ui->quads[(uint32_t)Quads::SCREEN].bounds = glm::vec4(-0.5f, -0.5f, 1.0f, 1.0f);
+                        ui->quads[(uint32_t)Quads::SCREEN_1].bounds = glm::vec4(-0.5f, -0.5f, 1.0f, 1.0f);
                         
                         at_least_once = true;
                     }
@@ -242,30 +242,30 @@ int main() {
             
         }
         
-        RenderGame(shaders, camera, fonts, &ui->quads[(uint32_t)Quads::SCREEN], ui->quad_vao, input, TotalTime, puzzle);
+        RenderGame(shaders, camera, fonts, &ui->quads[(uint32_t)Quads::SCREEN_1], ui->quad_vao, input, TotalTime, puzzle);
         //if (camera->render_passes == 1) {
-        //    HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::SCREEN], input, ui->quad_vao, TotalTime);
+        //    HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::SCREEN_1], input, ui->quad_vao, TotalTime);
         //}
         
         //RenderTimer(shaders, ui->quad_vao, TotalTime);
         
         
         if (camera->render_passes == 1) {
-            HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::SCREEN], input, ui->quad_vao, TotalTime);
+            HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::SCREEN_1], input, ui->quad_vao, TotalTime);
         }
         
-        SaveRender(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN], &ui->quads[(uint32_t)Quads::GAME_SCREEN], TotalTime);
+        SaveRender(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN_1], &ui->quads[(uint32_t)Quads::SCREEN_2], TotalTime);
         RenderTimer(shaders, ui->quad_vao, TotalTime);
         
         if (camera->render_passes == 2) {
-            HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::GAME_SCREEN], input, ui->quad_vao, TotalTime);
+            HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::SCREEN_2], input, ui->quad_vao, TotalTime);
         }
         
         if (camera->render_passes == 1) {
-            RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN], TotalTime); // GAME_SCREEN
+            RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN_1], TotalTime);
         }
         if (camera->render_passes == 2) {
-            RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::GAME_SCREEN], TotalTime);
+            RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN_2], TotalTime);
         }
         
         glfwSwapBuffers(window);
