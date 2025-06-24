@@ -46,13 +46,13 @@ void HighlightCell(const Shader* const [],
                    const Input* const,
                    const GLuint,
                    const float);
-void RenderGame(const Shader* const shaders[],
-                const Camera* const camera,
-                const Font* const fonts[],
-                const Quad* const quad,
-                const GLuint quad_vao,
-                const Input* const input,
-                float TotalTime,
+void RenderGame(const Shader* const [],
+                const Camera* const,
+                const Font* const [],
+                const Quad* const,
+                const GLuint,
+                const Input* const,
+                float,
                 const Puzzle* const puzzle);
 void SaveRender(const Shader* const [],
                 const Camera* const,
@@ -60,6 +60,9 @@ void SaveRender(const Shader* const [],
                 const Quad* const,
                 const Quad* const,
                 float);
+void RenderTimer(const Shader* const [],
+                 const GLuint,
+                 float);
 void RenderQuadToScreen(const Shader* const [],
                         const Camera* const,
                         const GLuint,
@@ -144,6 +147,7 @@ int main() {
     uint32_t UpdateCount= 0;
     uint32_t FixedUpdateCount= 0;
     
+    bool at_least_once = false;
     while (!(input->special & InputM::ESC)) {
         CurrectTime = glfwGetTime();
         DeltaTime = CurrectTime - LastTime;
@@ -169,7 +173,12 @@ int main() {
         
         if (input->special & InputM::F1) {
             if (input->toggles & InputM::Toggle_F1) {
-                camera->render_passes = camera->render_passes % 2 + 1;
+                
+                if (at_least_once) {
+                 
+                    camera->render_passes = camera->render_passes % 2 + 1;
+                
+                }
                 
             }
             input->toggles &= ~InputM::Toggle_F1;
@@ -214,6 +223,8 @@ int main() {
                         
                         // a way to level up
                         ui->quads[(uint32_t)Quads::SCREEN].bounds = glm::vec4(-0.5f, -0.5f, 1.0f, 1.0f);
+                        
+                        at_least_once = true;
                     }
                     
                     
@@ -232,17 +243,28 @@ int main() {
         }
         
         RenderGame(shaders, camera, fonts, &ui->quads[(uint32_t)Quads::SCREEN], ui->quad_vao, input, TotalTime, puzzle);
+        //if (camera->render_passes == 1) {
+        //    HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::SCREEN], input, ui->quad_vao, TotalTime);
+        //}
+        
+        //RenderTimer(shaders, ui->quad_vao, TotalTime);
+        
+        
         if (camera->render_passes == 1) {
             HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::SCREEN], input, ui->quad_vao, TotalTime);
         }
         
-        SaveRender(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN], &ui->quads[(uint32_t)Quads::GAME_SCREEN], TotalTime); // <<<---------
-                                                                                                                                                       //  |
-        if (camera->render_passes == 1) {                                                                                                              //  |
-            RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN], TotalTime);      // Why is this like this?          //  |
-            RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::GAME_SCREEN], TotalTime); // Why is this like this?          //  |
-        } else {                                                                                                                                       //  |
-            HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::GAME_SCREEN], input, ui->quad_vao, TotalTime); // This is done on this------ (todo better)
+        SaveRender(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN], &ui->quads[(uint32_t)Quads::GAME_SCREEN], TotalTime);
+        RenderTimer(shaders, ui->quad_vao, TotalTime);
+        
+        if (camera->render_passes == 2) {
+            HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::GAME_SCREEN], input, ui->quad_vao, TotalTime);
+        }
+        
+        if (camera->render_passes == 1) {
+            RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN], TotalTime); // GAME_SCREEN
+        }
+        if (camera->render_passes == 2) {
             RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::GAME_SCREEN], TotalTime);
         }
         

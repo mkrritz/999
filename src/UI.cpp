@@ -104,6 +104,7 @@ void SaveRender(const Shader* const shaders[],
                 const Quad* const source,
                 const Quad* const target,
                 float TotalTime) {
+    // Drawing source->texture to the target framebuffer
     const Shader* shader;
     
     glBindSampler(0, camera->sampler_clamp_linear);
@@ -128,7 +129,15 @@ void SaveRender(const Shader* const shaders[],
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     
-    // Not here please.
+    glBindVertexArray(0);
+    glBindSampler(0, 0);
+}
+
+void RenderTimer(const Shader* const shaders[],
+                 const GLuint quad_vao,
+                 float TotalTime) {
+    const Shader* shader;
+    
     glEnable(GL_BLEND);
     shader = shaders[(uint32_t)Shaders::Timer];
     glUseProgram(shader->ID);
@@ -179,7 +188,7 @@ void RenderGame(const Shader* const shaders[],
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     
     glEnable(GL_BLEND);
-    shader = shaders[(uint32_t)Shaders::SDF]; // Text is in NDC too
+    shader = shaders[(uint32_t)Shaders::SDF]; // Text is in NDC too, maybe do at whatever based on quad->bounds something for variety
     glUseProgram(shader->ID);
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
         GLuint location = shader->uniform_location[U];
