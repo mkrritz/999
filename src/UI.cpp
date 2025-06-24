@@ -58,6 +58,42 @@ void RenderQuadToScreen(const Shader* const shaders[],
     // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // Restore previous bound framebuffer here?
 }
 
+void SaveRender(const Shader* const shaders[],
+                const Camera* const camera,
+                const GLuint quad_vao,
+                const Quad* const source,
+                const Quad* const target,
+                float TotalTime) {
+    const Shader* shader;
+    
+    glBindSampler(0, camera->sampler_clamp_linear);
+    
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target->framebuffer);
+    glClearColor(0, 1, 0, 0); // Green
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    shader = shaders[(uint32_t)Shaders::DrawTexture];
+    glUseProgram(shader->ID);
+    for (uint32_t U = 0; U < shader->uniforms_count; U++) {
+        GLuint location = shader->uniform_location[U];
+        switch(shader->uniform_name[U]) {
+            case Uniforms::Sampler: glUniform1i(location, 0); break;
+            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(target->bounds)); break;
+            case Uniforms::Time:   glUniform1f(location, TotalTime); break;
+            default: SHADER_WARNING("Uniform mismatch"); break;
+        }
+    }
+    glBindVertexArray(quad_vao);
+    glBindTexture(GL_TEXTURE_2D, source->texture);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    
+    // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, source->framebuffer); // Is this really happening?
+    
+    glBindVertexArray(0);
+    glBindSampler(0, 0);
+}
+
 void HighlightCell(const Shader* const shaders[],
                    const uint32_t resolution,
                    const Quad* const quad, // Just bounds here, not quad
@@ -98,42 +134,8 @@ void HighlightCell(const Shader* const shaders[],
     glBindVertexArray(quad_vao);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glDisable(GL_BLEND);
-}
-
-void SaveRender(const Shader* const shaders[],
-                const Camera* const camera,
-                const GLuint quad_vao,
-                const Quad* const source,
-                const Quad* const target,
-                float TotalTime) {
-    const Shader* shader;
     
-    glBindSampler(0, camera->sampler_clamp_linear);
-    
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target->framebuffer);
-    glClearColor(0, 1, 0, 0); // Green
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
-    shader = shaders[(uint32_t)Shaders::DrawTexture];
-    glUseProgram(shader->ID);
-    for (uint32_t U = 0; U < shader->uniforms_count; U++) {
-        GLuint location = shader->uniform_location[U];
-        switch(shader->uniform_name[U]) {
-            case Uniforms::Sampler: glUniform1i(location, 0); break;
-            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(target->bounds)); break;
-            case Uniforms::Time:   glUniform1f(location, TotalTime); break;
-            default: SHADER_WARNING("Uniform mismatch"); break;
-        }
-    }
-    glBindVertexArray(quad_vao);
-    glBindTexture(GL_TEXTURE_2D, source->texture);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    
-    // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, source->framebuffer); // Is this really happening?
-    
-    glBindVertexArray(0);
-    glBindSampler(0, 0);
+    glBindVertexArray(0); // Not really required, if all rendering is quads anyway. Grouping them later maybe.
 }
 
 void RenderTimer(const Shader* const shaders[],
@@ -190,7 +192,7 @@ void RenderGame(const Shader* const shaders[],
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     
     glEnable(GL_BLEND);
-    shader = shaders[(uint32_t)Shaders::SDF]; // Text is in NDC too, maybe do at whatever based on quad->bounds something for variety
+    shader = shaders[(uint32_t)Shaders::SDF]; // Text is in NDC too...
     glUseProgram(shader->ID);
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
         GLuint location = shader->uniform_location[U];
@@ -227,7 +229,7 @@ void UIInit(Heap* const heap) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
     {
-        Quad& quad = ui->quads[(uint32_t)Quads::SCREEN_1]; // Rename to SCREEN_1 to make sense
+        Quad& quad = ui->quads[(uint32_t)Quads::SCREEN_1];
         
         quad.bounds = glm::vec4(-1.0f, -1.0f, 2.0f, 2.0f);
         
@@ -251,7 +253,7 @@ void UIInit(Heap* const heap) {
     }
     
     {
-        Quad& quad = ui->quads[(uint32_t)Quads::SCREEN_2]; // Rename to SCREEN_2 to make sense
+        Quad& quad = ui->quads[(uint32_t)Quads::SCREEN_2];
         
         quad.bounds = glm::vec4(-0.8f, -0.8f, 1.6f, 1.6f);
         

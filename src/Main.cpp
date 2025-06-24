@@ -16,6 +16,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image/stb_image.h"
 
+static std::mt19937 gen(time(nullptr));
+static std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
+
 GLFWwindow* WindowInit();
 
 //Memory
@@ -147,7 +150,6 @@ int main() {
     uint32_t UpdateCount= 0;
     uint32_t FixedUpdateCount= 0;
     
-    bool at_least_once = false;
     while (!(input->special & InputM::ESC)) {
         CurrectTime = glfwGetTime();
         DeltaTime = CurrectTime - LastTime;
@@ -171,32 +173,17 @@ int main() {
             input->wheel = 0;
         }
         
-        if (input->special & InputM::F1) {
-            if (input->toggles & InputM::Toggle_F1) {
+        // if (input->special & InputM::F1) {
+            // if (input->toggles & InputM::Toggle_F1) {
                 
-                if (at_least_once) {
-                 
-                    camera->render_passes = camera->render_passes % 2 + 1;
-                
-                }
-                
-            }
-            input->toggles &= ~InputM::Toggle_F1;
-        } else input->toggles |= InputM::Toggle_F1;
+            // }
+            // input->toggles &= ~InputM::Toggle_F1;
+        // } else input->toggles |= InputM::Toggle_F1;
         
         if (input->mouse & InputM::LEFT_CLICK) {
             if (input->toggles & InputM::Toggle_LC) {
-                const Quad* quad;
-                switch(camera->render_passes) {                             // delete this. use desired quad managed by level ups and stuff
-                    case 1: {                                               // delete this. use desired quad managed by level ups and stuff
-                        quad = &ui->quads[(uint32_t)Quads::SCREEN_1];         // delete this. use desired quad managed by level ups and stuff
-                        break;                                              // delete this. use desired quad managed by level ups and stuff
-                    }                                                       // delete this. use desired quad managed by level ups and stuff
-                    case 2: {                                               // delete this. use desired quad managed by level ups and stuff
-                        quad = &ui->quads[(uint32_t)Quads::SCREEN_2];    // delete this. use desired quad managed by level ups and stuff
-                        break;                                              // delete this. use desired quad managed by level ups and stuff
-                    }
-                }
+                const Quad* quad = &ui->quads[(uint32_t)Quads::SCREEN_2]; // Connect with rendering?
+                
                 const double WindowX      = quad->bounds.x;
                 const double WindowY      = quad->bounds.y;
                 const double WindowWidth  = quad->bounds.z;
@@ -221,15 +208,15 @@ int main() {
                         //ui->quads[(uint32_t)Quads::GAME_SCREEN].bounds /= 2.0f;
                         puzzle->grid->N = 1; // There is enough memory for 40 levels. So that's here so we don't crash.
                         
-                        // a way to level up
-                        ui->quads[(uint32_t)Quads::SCREEN_1].bounds = glm::vec4(-0.5f, -0.5f, 1.0f, 1.0f);
-                        
-                        at_least_once = true;
+                        float x = -0.99f + ((dist(gen) + 1.0f) * 0.49f / 2.0f);
+                        float y = -0.99f + ((dist(gen) + 1.0f) * 0.49f / 2.0f);
+                        float z = 0.4f + ((dist(gen) + 1.0f) * 1.0f / 2.0f);
+                        float w = z; // 0.4f + ((dist(gen) + 1.0f) * 1.0f / 2.0f); // TODO aspect
+                        ui->quads[(uint32_t)Quads::SCREEN_2].bounds = glm::vec4(x, y, z, w);
                     }
                     
-                    
                     GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, puzzle->grid->N);
-                    SetText(puzzle);
+                    SetText(puzzle); // shuffle as level up or something
                 }
             }
             input->toggles &= ~InputM::Toggle_LC;
@@ -239,34 +226,17 @@ int main() {
             AccumulatorTime -= dt;
             FixedUpdateCount += 1;
             
-            
+            // What can even happen here?
         }
         
         RenderGame(shaders, camera, fonts, &ui->quads[(uint32_t)Quads::SCREEN_1], ui->quad_vao, input, TotalTime, puzzle);
-        //if (camera->render_passes == 1) {
-        //    HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::SCREEN_1], input, ui->quad_vao, TotalTime);
-        //}
-        
-        //RenderTimer(shaders, ui->quad_vao, TotalTime);
-        
-        
-        if (camera->render_passes == 1) {
-            HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::SCREEN_1], input, ui->quad_vao, TotalTime);
-        }
-        
         SaveRender(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN_1], &ui->quads[(uint32_t)Quads::SCREEN_2], TotalTime);
-        RenderTimer(shaders, ui->quad_vao, TotalTime);
+        RenderTimer(shaders, ui->quad_vao, TotalTime); // do something for the framebuffer state
         
-        if (camera->render_passes == 2) {
-            HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::SCREEN_2], input, ui->quad_vao, TotalTime);
-        }
+        // Calculate here the appropriate bounds the be used in HighlightCell because more things need to be taken into account it seems.
+        HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::SCREEN_2], input, ui->quad_vao, TotalTime);
         
-        if (camera->render_passes == 1) {
-            RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN_1], TotalTime);
-        }
-        if (camera->render_passes == 2) {
-            RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN_2], TotalTime);
-        }
+        RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN_2], TotalTime);
         
         glfwSwapBuffers(window);
     }

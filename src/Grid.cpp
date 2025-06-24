@@ -9,7 +9,6 @@
 
 using std::string;
 
-static std::random_device rd;
 static std::mt19937 gen(time(nullptr));
 
 glm::vec2 GetAtlasUV(char);
@@ -107,7 +106,7 @@ void SetText(Puzzle* const puzzle) {
     const float HalfCellScale = CellScale / 2.0f;
     const float VerticalPadding = 0.6f;
     
-    // TODO put them in quad bounds too
+    // TODO put them in quad bounds too. what?
     
     uint32_t CIX = 0;
     uint32_t CIY = 0;
