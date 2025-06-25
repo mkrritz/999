@@ -145,32 +145,32 @@ void SetText(Puzzle* const puzzle) {
         CharacterIndex += 1;
         
         // BL
-        Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellCenterX + (LocalX * VerticalPadding - CharacterScale) * HalfCellScale;
-        Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellCenterY - CharacterScale * HalfCellScale;
-        Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2 ] = 0.0f;
-        Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3 ] = UV.x;
-        Vertices[ CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4 ] = UV.y;
+        Vertices[CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0] = CellCenterX + (LocalX * VerticalPadding - CharacterScale) * HalfCellScale;
+        Vertices[CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1] = CellCenterY - CharacterScale * HalfCellScale;
+        Vertices[CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2] = 0.0f;
+        Vertices[CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3] = UV.x;
+        Vertices[CellVerticesIndex + (0 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4] = UV.y;
         
         // TL
-        Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellCenterX + (LocalX * VerticalPadding - CharacterScale) * HalfCellScale;
-        Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellCenterY + CharacterScale * HalfCellScale;
-        Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2 ] = 0.0f;
-        Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3 ] = UV.x;
-        Vertices[ CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4 ] = UV.y + 0.125f;
-
+        Vertices[CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0] = CellCenterX + (LocalX * VerticalPadding - CharacterScale) * HalfCellScale;
+        Vertices[CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1] = CellCenterY + CharacterScale * HalfCellScale;
+        Vertices[CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2] = 0.0f;
+        Vertices[CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3] = UV.x;
+        Vertices[CellVerticesIndex + (1 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4] = UV.y + 0.125f;
+        
         // BR
-        Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellCenterX + (LocalX * VerticalPadding + CharacterScale) * HalfCellScale;
-        Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellCenterY - CharacterScale * HalfCellScale;
-        Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2 ] = 0.0f;
-        Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3 ] = UV.x + 0.125f;
-        Vertices[ CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4 ] = UV.y;
-
+        Vertices[CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0] = CellCenterX + (LocalX * VerticalPadding + CharacterScale) * HalfCellScale;
+        Vertices[CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1] = CellCenterY - CharacterScale * HalfCellScale;
+        Vertices[CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2] = 0.0f;
+        Vertices[CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3] = UV.x + 0.125f;
+        Vertices[CellVerticesIndex + (2 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4] = UV.y;
+        
         // TR
-        Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0 ] = CellCenterX + (LocalX * VerticalPadding + CharacterScale) * HalfCellScale;
-        Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1 ] = CellCenterY + CharacterScale * HalfCellScale;
-        Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2 ] = 0.0f;
-        Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3 ] = UV.x + 0.125f;
-        Vertices[ CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4 ] = UV.y + 0.125f;
+        Vertices[CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 0] = CellCenterX + (LocalX * VerticalPadding + CharacterScale) * HalfCellScale;
+        Vertices[CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 1] = CellCenterY + CharacterScale * HalfCellScale;
+        Vertices[CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 2] = 0.0f;
+        Vertices[CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 3] = UV.x + 0.125f;
+        Vertices[CellVerticesIndex + (3 * TEXT_VERTEX_ATTRIBUTE_COUNT) + 4] = UV.y + 0.125f;
         
         Indices[CellIndicesIndex + 0] = 1 + IndexOffset;
         Indices[CellIndicesIndex + 1] = 0 + IndexOffset;

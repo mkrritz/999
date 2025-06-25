@@ -119,8 +119,6 @@ struct Input {
     
     double ndc_x;
     double ndc_y;
-    uint32_t grid_x;
-    uint32_t grid_y;
     
     #if defined CONTROLLER
     int axes_count;
