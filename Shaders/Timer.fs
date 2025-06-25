@@ -34,3 +34,5 @@ void main()
     float alpha = smoothstep(0.01, 0.05,  uvX - progress);
     FragColor = vec4(color.rgb, color.a * alpha);
 }
+
+// TODO: correct times, like 5 seconds in 5 seconds and such

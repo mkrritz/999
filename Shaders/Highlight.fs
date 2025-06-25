@@ -14,8 +14,10 @@ void main()
     float a_2 = 0.1 * sin(Time * 4.0);
     float a_3 = a_2 * abs(a_1);
     
-    float a_4 = clamp(abs(a_3), 0.25, 0.75); // validate this
+    float a_4 = clamp(abs(a_3), 0.25, 0.75); // do better
     vec3 highlight = vec3(a_1, a_2, a_3);
     
     FragColor = vec4(FILL_COLOR + highlight, 0.5 + a_4);
+    
+    //FragColor = vec4(UV, 0, 1);
 }

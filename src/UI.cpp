@@ -58,6 +58,52 @@ void RenderQuadToScreen(const Shader* const shaders[],
     // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // Restore previous bound framebuffer here?
 }
 
+void HighlightCell(const Shader* const shaders[],
+                   const glm::vec4& bounds,
+                   const GLuint quad_vao,
+                   const float TotalTime) {
+    const Shader* shader = shaders[(uint32_t)Shaders::Highlight];
+    
+    glEnable(GL_BLEND);
+    glUseProgram(shader->ID);
+    for (uint32_t U = 0; U < shader->uniforms_count; U++) {
+        GLuint location = shader->uniform_location[U];
+        switch(shader->uniform_name[U]) {
+            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(bounds)); break;
+            case Uniforms::Time:   glUniform1f(location, TotalTime); break;
+            default: SHADER_WARNING("Uniform mismatch"); break;
+        }
+    }
+    glBindVertexArray(quad_vao);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glDisable(GL_BLEND);
+    
+    glBindVertexArray(0); // Not really required, if all rendering is quads anyway. Grouping them later maybe.
+}
+
+void RenderTimer(const Shader* const shaders[],
+                 const GLuint quad_vao,
+                 float TotalTime) {
+    const Shader* shader;
+    
+    glEnable(GL_BLEND);
+    shader = shaders[(uint32_t)Shaders::Timer];
+    glUseProgram(shader->ID);
+    for (uint32_t U = 0; U < shader->uniforms_count; U++) {
+       GLuint location = shader->uniform_location[U];
+       switch(shader->uniform_name[U]) {
+           case Uniforms::Time: glUniform1f(location, TotalTime); break;
+           case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-0.9f, 0.85f, 1.8f, 0.1f))); break;
+           default: SHADER_WARNING("Uniform mismatch"); break;
+       }
+    }
+    glBindVertexArray(quad_vao);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glDisable(GL_BLEND);
+    
+    glBindVertexArray(0); // Not really required, if all rendering is quads anyway. Grouping them later maybe.
+}
+
 void SaveRender(const Shader* const shaders[],
                 const Camera* const camera,
                 const GLuint quad_vao,
@@ -92,73 +138,6 @@ void SaveRender(const Shader* const shaders[],
     
     glBindVertexArray(0);
     glBindSampler(0, 0);
-}
-
-void HighlightCell(const Shader* const shaders[],
-                   const uint32_t resolution,
-                   const Quad* const quad, // Just bounds here, not quad
-                   const Input* const input,
-                   const GLuint quad_vao,
-                   const float TotalTime) {
-    const Shader* shader = shaders[(uint32_t)Shaders::Highlight];
-    
-    const double WindowX      = quad->bounds.x; // do aspect maths too?
-    const double WindowY      = quad->bounds.y; // do aspect maths too?
-    const double WindowWidth  = quad->bounds.z; // do aspect maths too?
-    const double WindowHeight = quad->bounds.w; // do aspect maths too?
-    const double HalfCellSize = WindowWidth / (2.0f * double(resolution));
-    const double CellSize     = 2.0f * HalfCellSize;
-    
-    const double NDC_X      = glm::clamp(input->ndc_x, WindowX, WindowX + WindowWidth  - HalfCellSize);
-    const double NDC_Y      = glm::clamp(input->ndc_y, WindowY, WindowY + WindowHeight - HalfCellSize);
-    const double CellX      = (NDC_X - WindowX) / WindowWidth;
-    const double CellY      = (NDC_Y - WindowY) / WindowHeight;
-    const uint32_t GridX    = uint32_t(CellX * resolution);
-    const uint32_t GridY    = uint32_t(CellY * resolution);
-    const double HighlightX = WindowX + (GridX + 0.5f) * CellSize;
-    const double HighlightY = WindowY + (GridY + 0.5f) * CellSize;
-    
-    glEnable(GL_BLEND);
-    glUseProgram(shader->ID);
-    for (uint32_t U = 0; U < shader->uniforms_count; U++) {
-        GLuint location = shader->uniform_location[U];
-        switch(shader->uniform_name[U]) {
-            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(HighlightX - HalfCellSize,
-                                                                                               HighlightY - HalfCellSize,
-                                                                                               CellSize,
-                                                                                               CellSize))); break;
-            case Uniforms::Time:   glUniform1f(location, TotalTime); break;
-            default: SHADER_WARNING("Uniform mismatch"); break;
-        }
-    }
-    glBindVertexArray(quad_vao);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    glDisable(GL_BLEND);
-    
-    glBindVertexArray(0); // Not really required, if all rendering is quads anyway. Grouping them later maybe.
-}
-
-void RenderTimer(const Shader* const shaders[],
-                 const GLuint quad_vao,
-                 float TotalTime) {
-    const Shader* shader;
-    
-    glEnable(GL_BLEND);
-    shader = shaders[(uint32_t)Shaders::Timer];
-    glUseProgram(shader->ID);
-    for (uint32_t U = 0; U < shader->uniforms_count; U++) {
-       GLuint location = shader->uniform_location[U];
-       switch(shader->uniform_name[U]) {
-           case Uniforms::Time: glUniform1f(location, TotalTime); break;
-           case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-0.9f, 0.85f, 1.8f, 0.1f))); break;
-           default: SHADER_WARNING("Uniform mismatch"); break;
-       }
-    }
-    glBindVertexArray(quad_vao);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    glDisable(GL_BLEND);
-    
-    glBindVertexArray(0); // Not really required, if all rendering is quads anyway. Grouping them later maybe.
 }
 
 void RenderGame(const Shader* const shaders[],

@@ -13,7 +13,7 @@ enum struct Quads {
 struct Quad {
     GLuint framebuffer;
     GLuint texture, depthbuffer;
-    glm::vec4 bounds;
+    glm::vec4 bounds; // Maybe not really a part of quad, move elsewhere.
 };
 
 struct UI {

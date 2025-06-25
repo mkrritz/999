@@ -14,5 +14,7 @@ void main() {
     int y = int(Resolution * UV.y);
     int c = (x + y) & 1;
     FragColor = vec4(c * Color1 + (1-c) * (1-Color2), 1.0);
+    
+    //FragColor = vec4(UV, 0, 1);
 }
 

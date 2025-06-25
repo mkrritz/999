@@ -44,9 +44,7 @@ Input* NextRecordedInputState();
 // UI
 void UIInit(Heap* const);
 void HighlightCell(const Shader* const [],
-                   const uint32_t,
-                   const Quad* const,
-                   const Input* const,
+                   const glm::vec4&,
                    const GLuint,
                    const float);
 void RenderGame(const Shader* const [],
@@ -169,72 +167,71 @@ int main() {
         
         input = NextRecordedInputState();
         
-        if (input->wheel) {
-            input->wheel = 0;
-        }
-        
-        // if (input->special & InputM::F1) {
-            // if (input->toggles & InputM::Toggle_F1) {
-                
-            // }
-            // input->toggles &= ~InputM::Toggle_F1;
-        // } else input->toggles |= InputM::Toggle_F1;
-        
-        if (input->mouse & InputM::LEFT_CLICK) {
-            if (input->toggles & InputM::Toggle_LC) {
-                const Quad* quad = &ui->quads[(uint32_t)Quads::SCREEN_2]; // Connect with rendering?
-                
-                const double WindowX      = quad->bounds.x;
-                const double WindowY      = quad->bounds.y;
-                const double WindowWidth  = quad->bounds.z;
-                const double WindowHeight = quad->bounds.w;
-                const double HalfCellSize = 0.5f * WindowWidth / double(puzzle->grid->N);
-                const double CellSize     = 2.0f * HalfCellSize;
-                
-                const double NDC_X = glm::clamp(input->ndc_x, WindowX, WindowX + WindowWidth - HalfCellSize);
-                const double NDC_Y = glm::clamp(input->ndc_y, WindowY, WindowY + WindowHeight - HalfCellSize);
-                const double LocalX = (NDC_X - WindowX) / WindowWidth;
-                const double LocalY = (NDC_Y - WindowY) / WindowHeight;
-                const uint32_t GridX = uint32_t(LocalX * puzzle->grid->N);
-                const uint32_t GridY = uint32_t(LocalY * puzzle->grid->N);
-                
-                printf("\nMouseNDC=(%.2f, %.2f) Grid(%.3f)[%u, %u] = %u\n", NDC_X, NDC_Y,
-                                                                            CellSize,
-                                                                            GridX, GridY,
-                                                                            puzzle->grid->cells[GridY * puzzle->grid->N + GridX]);
-                if (puzzle->grid->cells[GridY * puzzle->grid->N + GridX] == 1) {
-                    puzzle->grid->N++;
-                    if (puzzle->grid->N > 10) {
-                        //ui->quads[(uint32_t)Quads::GAME_SCREEN].bounds /= 2.0f;
-                        puzzle->grid->N = 1; // There is enough memory for 40 levels. So that's here so we don't crash.
-                        
-                        float x = -0.99f + ((dist(gen) + 1.0f) * 0.49f / 2.0f);
-                        float y = -0.99f + ((dist(gen) + 1.0f) * 0.49f / 2.0f);
-                        float z = 0.4f + ((dist(gen) + 1.0f) * 1.0f / 2.0f);
-                        float w = z; // 0.4f + ((dist(gen) + 1.0f) * 1.0f / 2.0f); // TODO aspect
-                        ui->quads[(uint32_t)Quads::SCREEN_2].bounds = glm::vec4(x, y, z, w);
-                    }
-                    
-                    GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, puzzle->grid->N);
-                    SetText(puzzle); // shuffle as level up or something
-                }
-            }
-            input->toggles &= ~InputM::Toggle_LC;
-        } else input->toggles |= InputM::Toggle_LC;
+        Quad& quad = ui->quads[(uint32_t)Quads::SCREEN_2];
+        const double WindowX      = quad.bounds.x;
+        const double WindowY      = quad.bounds.y;
+        const double WindowWidth  = quad.bounds.z;
+        const double WindowHeight = quad.bounds.w;
+        const double HalfCellSize = 0.5f * WindowWidth / double(puzzle->grid->N);
+        const double CellSize     = 2.0f * HalfCellSize;
         
         while(AccumulatorTime >= dt) {
             AccumulatorTime -= dt;
             FixedUpdateCount += 1;
             
-            // What can even happen here?
+            const double NDC_X = glm::clamp(input->ndc_x, WindowX, WindowX + WindowWidth - HalfCellSize);
+            const double NDC_Y = glm::clamp(input->ndc_y, WindowY, WindowY + WindowHeight - HalfCellSize);
+            const double LocalX = (NDC_X - WindowX) / WindowWidth;
+            const double LocalY = (NDC_Y - WindowY) / WindowHeight;
+            input->grid_x = uint32_t(LocalX * puzzle->grid->N);
+            input->grid_y = uint32_t(LocalY * puzzle->grid->N);
+            
+            if (input->wheel) {
+                input->wheel = 0;
+            }
+            
+            if (input->mouse & InputM::LEFT_CLICK) {
+                if (input->toggles & InputM::Toggle_LC) {
+                    
+                    
+                    printf("\nMouseNDC=(%.2f, %.2f) Grid[%u, %u] = %u\n", NDC_X, NDC_Y,
+                                                                          input->grid_x, input->grid_y,
+                                                                          puzzle->grid->cells[input->grid_y * puzzle->grid->N + input->grid_x]);
+                    
+                    if (puzzle->grid->cells[input->grid_y * puzzle->grid->N + input->grid_x] == 1) {
+                        puzzle->grid->N++;
+                        if (puzzle->grid->N > 10) {
+                            //ui->quads[(uint32_t)Quads::GAME_SCREEN].bounds /= 2.0f;
+                            puzzle->grid->N = 1; // There is enough memory for 40 levels. So that's here so we don't crash.
+                            
+                            float x = -0.99f + ((dist(gen) + 1.0f) * 0.49f / 2.0f);
+                            float y = -0.99f + ((dist(gen) + 1.0f) * 0.49f / 2.0f);
+                            float z = 0.1f + ((dist(gen) + 1.0f) * 1.0f / 2.0f) * 1.4f;
+                            float w = z; // 0.4f + ((dist(gen) + 1.0f) * 1.0f / 2.0f); // TODO aspect
+                            quad.bounds = glm::vec4(x, y, z, w);
+                        }
+                        
+                        GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, puzzle->grid->N);
+                        SetText(puzzle); // shuffle as level up or something
+                    }
+                }
+                input->toggles &= ~InputM::Toggle_LC;
+            } else input->toggles |= InputM::Toggle_LC;
+            
         }
         
         RenderGame(shaders, camera, fonts, &ui->quads[(uint32_t)Quads::SCREEN_1], ui->quad_vao, input, TotalTime, puzzle);
         SaveRender(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN_1], &ui->quads[(uint32_t)Quads::SCREEN_2], TotalTime);
-        RenderTimer(shaders, ui->quad_vao, TotalTime); // do something for the framebuffer state
         
-        // Calculate here the appropriate bounds the be used in HighlightCell because more things need to be taken into account it seems.
-        HighlightCell(shaders, puzzle->grid->N, &ui->quads[(uint32_t)Quads::SCREEN_2], input, ui->quad_vao, TotalTime);
+        const double HighlightX = WindowX + (input->grid_x + 0.5f) * CellSize;
+        const double HighlightY = WindowY + (input->grid_y + 0.5f) * CellSize;
+        const glm::vec4 PositionAndSize(HighlightX - HalfCellSize,
+                                        HighlightY - HalfCellSize,
+                                        CellSize,
+                                        CellSize);
+        
+        HighlightCell(shaders, PositionAndSize, ui->quad_vao, TotalTime);
+        RenderTimer(shaders, ui->quad_vao, TotalTime);
         
         RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN_2], TotalTime);
         
