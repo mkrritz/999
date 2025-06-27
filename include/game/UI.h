@@ -2,8 +2,8 @@
 #define UI_HPP
 
 enum struct Quads {
-    SCREEN_1,
-    SCREEN_2,
+    SCREEN,
+    GAME_SCREEN,
     // SETTINGS_SCREEN,
     // MENU_SCREEN,
     Count
@@ -12,7 +12,8 @@ enum struct Quads {
 struct Quad {
     GLuint framebuffer;
     GLuint texture, depthbuffer;
-    glm::vec4 position_and_size;
+    glm::vec2 position;
+    glm::vec2 size;
 };
 
 struct UI {

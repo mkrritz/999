@@ -28,7 +28,6 @@ void RenderQuadToScreen(const Shader* const shaders[],
                         const Quad* const quad,
                         float total_time) {
     const Shader* shader; // static these too?
-    static const glm::vec4 screen_quad(-1.0f, -1.0f, 2.0f, 2.0f);
     
     glBindSampler(0, camera->sampler_clamp_linear);
     
@@ -42,8 +41,9 @@ void RenderQuadToScreen(const Shader* const shaders[],
         GLuint location = shader->uniform_location[U];
         switch(shader->uniform_name[U]) {
             case Uniforms::Sampler: glUniform1i(location, 0); break;
-            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(screen_quad)); break;
-            case Uniforms::Time:   glUniform1f(location, total_time); break;
+            case Uniforms::Position: glUniform2fv(location, 1, glm::value_ptr(glm::vec2(-1.0f, -1.0f))); break;
+            case Uniforms::Size:     glUniform2fv(location, 1, glm::value_ptr(glm::vec2( 2.0f,  2.0f))); break;
+            case Uniforms::Time:     glUniform1f(location, total_time); break;
             default: SHADER_WARNING("Uniform mismatch"); break;
         }
     }
@@ -59,7 +59,8 @@ void RenderQuadToScreen(const Shader* const shaders[],
 }
 
 void HighlightCell(const Shader* const shaders[],
-                   const glm::vec4& position_and_size,
+                   const glm::vec2& position,
+                   const glm::vec2& size,
                    const GLuint quad_vao,
                    const float TotalTime) {
     const Shader* shader = shaders[(uint32_t)Shaders::Highlight];
@@ -69,8 +70,9 @@ void HighlightCell(const Shader* const shaders[],
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
         GLuint location = shader->uniform_location[U];
         switch(shader->uniform_name[U]) {
-            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(position_and_size)); break;
-            case Uniforms::Time:   glUniform1f(location, TotalTime); break;
+            case Uniforms::Position: glUniform2fv(location, 1, glm::value_ptr(position)); break;
+            case Uniforms::Size:     glUniform2fv(location, 1, glm::value_ptr(size)); break;
+            case Uniforms::Time:     glUniform1f(location, TotalTime); break;
             default: SHADER_WARNING("Uniform mismatch"); break;
         }
     }
@@ -93,7 +95,8 @@ void RenderTimer(const Shader* const shaders[],
        GLuint location = shader->uniform_location[U];
        switch(shader->uniform_name[U]) {
            case Uniforms::Time: glUniform1f(location, TotalTime); break;
-           case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(glm::vec4(-0.9f, 0.85f, 1.8f, 0.1f))); break;
+           case Uniforms::Position: glUniform2fv(location, 1, glm::value_ptr(glm::vec2(-0.9f, 0.85f))); break;
+           case Uniforms::Size:     glUniform2fv(location, 1, glm::value_ptr(glm::vec2( 1.8f, 0.1f))); break;
            default: SHADER_WARNING("Uniform mismatch"); break;
        }
     }
@@ -123,9 +126,10 @@ void SaveRender(const Shader* const shaders[],
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
         GLuint location = shader->uniform_location[U];
         switch(shader->uniform_name[U]) {
-            case Uniforms::Sampler: glUniform1i(location, 0); break;
-            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(target->position_and_size)); break;
-            case Uniforms::Time:   glUniform1f(location, TotalTime); break;
+            case Uniforms::Sampler:  glUniform1i(location, 0); break;
+            case Uniforms::Position: glUniform2fv(location, 1, glm::value_ptr(target->position)); break;
+            case Uniforms::Size:     glUniform2fv(location, 1, glm::value_ptr(target->size)); break;
+            case Uniforms::Time:     glUniform1f(location, TotalTime); break;
             default: SHADER_WARNING("Uniform mismatch"); break;
         }
     }
@@ -164,7 +168,8 @@ void RenderGame(const Shader* const shaders[],
        GLuint location = shader->uniform_location[U];
        switch(shader->uniform_name[U]) {
            case Uniforms::Resolution: glUniform1f(location, resolution); break;
-           case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(quad->position_and_size)); break;
+           case Uniforms::Position:   glUniform2fv(location, 1, glm::value_ptr(quad->position)); break;
+           case Uniforms::Size:       glUniform2fv(location, 1, glm::value_ptr(quad->size)); break;
            default: SHADER_WARNING("Uniform mismatch"); break;
        }
     }
@@ -209,9 +214,10 @@ void UIInit(Heap* const heap) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
     {
-        Quad& quad = ui->quads[(uint32_t)Quads::SCREEN_1];
+        Quad& quad = ui->quads[(uint32_t)Quads::SCREEN];
         
-        quad.position_and_size = glm::vec4(-1.0f, -1.0f, 2.0f, 2.0f);
+        quad.position = glm::vec2(-1.0f, -1.0f);
+        quad.size     = glm::vec2(2.0f, 2.0f);
         
         glGenTextures(1, &quad.texture);
         glBindTexture(GL_TEXTURE_2D, quad.texture);
@@ -233,9 +239,10 @@ void UIInit(Heap* const heap) {
     }
     
     {
-        Quad& quad = ui->quads[(uint32_t)Quads::SCREEN_2];
+        Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
         
-        quad.position_and_size = glm::vec4(-0.8f, -0.8f, 1.6f, 1.6f);
+        quad.position = glm::vec2(-0.8f, -0.8f);
+        quad.size     = glm::vec2(1.6f, 1.6f);
         
         glGenTextures(1, &quad.texture);
         glBindTexture(GL_TEXTURE_2D, quad.texture);

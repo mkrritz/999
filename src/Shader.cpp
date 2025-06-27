@@ -21,7 +21,7 @@ static Uniforms StringToEnum(const string& name) {
         {"Position", Uniforms::Position},
         {"Resolution", Uniforms::Resolution},
         {"Right", Uniforms::Right},
-        {"PositionAndSize", Uniforms::PositionAndSize},
+        {"Size", Uniforms::Size},
     };
     return map.at(name);
 }

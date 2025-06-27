@@ -43,7 +43,8 @@ Input* NextRecordedInputState();
 // UI
 void UIInit(Heap* const);
 void HighlightCell(const Shader* const [],
-                   const glm::vec4&,
+                   const glm::vec2&,
+                   const glm::vec2&,
                    const GLuint,
                    const float);
 void RenderGame(const Shader* const [],
@@ -170,23 +171,22 @@ int main() {
         
         input = NextRecordedInputState();
         
-        Quad& quad = ui->quads[(uint32_t)Quads::SCREEN_2]; // GRID_QUAD
-        const double GX     = quad.position_and_size.x;
-        const double GY     = quad.position_and_size.y;
-        const double GW     = quad.position_and_size.z;
-        const double GH     = quad.position_and_size.w;
-        const double HCS    = 0.5f * GW / double(RESOLUTION);
-        const double CS     = 2.0f * HCS;
-        const double NDC_X  = glm::clamp(input->ndc_x, GX, GX + GW - HCS);
-        const double NDC_Y  = glm::clamp(input->ndc_y, GY, GY + GH - HCS);
-        const double LocalX = (NDC_X - GX) / GW;
-        const double LocalY = (NDC_Y - GY) / GH;
+        // COMMENTING THESE..
+        Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN]; // GRID_QUAD
+        const double GX      = quad.position.x;
+        const double GY      = quad.position.y;
+        const double GW      = quad.size.x;
+        const double GH      = quad.size.y;
+        const double HCS     = 0.5f * GW / double(RESOLUTION);
+        const double CS      = 2.0f * HCS;
+        const double NDC_X   = glm::clamp(input->ndc_x, GX, GX + GW - HCS);
+        const double NDC_Y   = glm::clamp(input->ndc_y, GY, GY + GH - HCS);
+        const double LocalX  = (NDC_X - GX) / GW;
+        const double LocalY  = (NDC_Y - GY) / GH;
         const uint32_t GridX = uint32_t(LocalX * RESOLUTION);
         const uint32_t GridY = uint32_t(LocalY * RESOLUTION);
-        
-        const double CellX = GX + (GridX + 0.5f) * CS - HCS;
-        const double CellY = GY + (GridY + 0.5f) * CS - HCS;
-        // Where do all these go?
+        const double CellX   = GX + (GridX + 0.5f) * CS - HCS;
+        const double CellY   = GY + (GridY + 0.5f) * CS - HCS;
         
         while(AccumulatorTime >= dt) {
             AccumulatorTime -= dt;
@@ -208,7 +208,8 @@ int main() {
                             float y = -0.99f + ((dist(gen) + 1.0f) * 0.49f / 2.0f);    // do better maths, so it can be small and top right
                             float z = 0.1f + ((dist(gen) + 1.0f) * 1.0f / 2.0f) * 1.4f;
                             float w = z; // 0.4f + ((dist(gen) + 1.0f) * 1.0f / 2.0f); // TODO aspect
-                            quad.position_and_size = glm::vec4(x, y, z, w);
+                            quad.position = glm::vec2(x, y);
+                            quad.size     = glm::vec2(z, w);
                         }
                         
                         GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, RESOLUTION);
@@ -220,15 +221,14 @@ int main() {
             
         }
         
-        RenderGame(shaders, camera, fonts, &ui->quads[(uint32_t)Quads::SCREEN_1], ui->quad_vao, input, TotalTime, puzzle, RESOLUTION);
-        SaveRender(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN_1], &ui->quads[(uint32_t)Quads::SCREEN_2], TotalTime);
+        RenderGame(shaders, camera, fonts, &ui->quads[(uint32_t)Quads::SCREEN], ui->quad_vao, input, TotalTime, puzzle, RESOLUTION);
+        SaveRender(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN], &ui->quads[(uint32_t)Quads::GAME_SCREEN], TotalTime);
         
-        const glm::vec4 position_and_size(CellX, CellY, CS, CS); // do aspect?
-        HighlightCell(shaders, position_and_size, ui->quad_vao, TotalTime);
+        HighlightCell(shaders, glm::vec2(CellX, CellY), glm::vec2(CS, CS), ui->quad_vao, TotalTime);
         
         RenderTimer(shaders, ui->quad_vao, TotalTime);
         
-        RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN_2], TotalTime);
+        RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::GAME_SCREEN], TotalTime);
         
         glfwSwapBuffers(window);
     }
