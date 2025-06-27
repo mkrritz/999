@@ -23,7 +23,6 @@ GLFWwindow* WindowInit();
 
 //Memory
 void HeapsInit(Heap*[]);
-void PrintMemory(const Heap* const []);
 //Memory
 
 // Camera
@@ -168,18 +167,18 @@ int main() {
         input = NextRecordedInputState();
         
         Quad& quad = ui->quads[(uint32_t)Quads::SCREEN_2];
-        const double NDC_GridX        = quad.bounds.x;
-        const double NDC_GridY        = quad.bounds.y;
-        const double WindowWidth  = quad.bounds.z;
-        const double WindowHeight = quad.bounds.w;
-        const double HalfCellSize = 0.5f * WindowWidth / double(puzzle->grid->N);
-        const double CellSize     = 2.0f * HalfCellSize;
-        const double NDC_X = glm::clamp(input->ndc_x, NDC_GridX, NDC_GridX + WindowWidth - HalfCellSize);
-        const double NDC_Y = glm::clamp(input->ndc_y, NDC_GridY, NDC_GridY + WindowHeight - HalfCellSize);
-        const double LocalX = (NDC_X - NDC_GridX) / WindowWidth;
-        const double LocalY = (NDC_Y - NDC_GridY) / WindowHeight;
-        const uint32_t GridX = uint32_t(LocalX * puzzle->grid->N);
-        const uint32_t GridY = uint32_t(LocalY * puzzle->grid->N);
+        const double GX     = quad.position_and_size.x;
+        const double GY     = quad.position_and_size.y;
+        const double GW     = quad.position_and_size.z;
+        const double GH     = quad.position_and_size.w;
+        const double HCS    = 0.5f * GW / double(puzzle->grid->N);
+        //const double CS     = 2.0f * HCS;
+        const double NDC_X  = glm::clamp(input->ndc_x, GX, GX + GW - HCS);
+        const double NDC_Y  = glm::clamp(input->ndc_y, GY, GY + GH - HCS);
+        const double LocalX = (NDC_X - GX) / GW;
+        const double LocalY = (NDC_Y - GY) / GH;
+        const uint32_t GridX = uint32_t(LocalX * puzzle->grid->N); // That's needed for indexing to grid and checking number
+        const uint32_t GridY = uint32_t(LocalY * puzzle->grid->N); // That's needed for indexing to grid and checking number
         // Where do all these go?
         
         while(AccumulatorTime >= dt) {
@@ -193,22 +192,17 @@ int main() {
             if (input->mouse & InputM::LEFT_CLICK) {
                 if (input->toggles & InputM::Toggle_LC) {
                     
-                    
-                    // printf("\n MouseNDC=(%.2f, %.2f) Grid[%u, %u] = %u ", NDC_X, NDC_Y,
-                    //                                                       GridX, input->grid_y,
-                    //                                                       puzzle->grid->cells[input->grid_y * puzzle->grid->N + GridX]);
-                    
                     if (puzzle->grid->cells[GridY * puzzle->grid->N + GridX] == 1) {
                         puzzle->grid->N++;
                         if (puzzle->grid->N > 10) {
-                            //ui->quads[(uint32_t)Quads::GAME_SCREEN].bounds /= 2.0f;
+                            //ui->quads[(uint32_t)Quads::GAME_SCREEN].position_and_size /= 2.0f;
                             puzzle->grid->N = 1; // There is enough memory for 40 levels. So that's here so we don't crash.
                             
                             float x = -0.99f + ((dist(gen) + 1.0f) * 0.49f / 2.0f);    // do better maths, so it can be small and top right 
                             float y = -0.99f + ((dist(gen) + 1.0f) * 0.49f / 2.0f);    // do better maths, so it can be small and top right 
                             float z = 0.1f + ((dist(gen) + 1.0f) * 1.0f / 2.0f) * 1.4f;
                             float w = z; // 0.4f + ((dist(gen) + 1.0f) * 1.0f / 2.0f); // TODO aspect
-                            quad.bounds = glm::vec4(x, y, z, w);
+                            quad.position_and_size = glm::vec4(x, y, z, w);
                         }
                         
                         GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, puzzle->grid->N);
@@ -222,15 +216,20 @@ int main() {
         
         RenderGame(shaders, camera, fonts, &ui->quads[(uint32_t)Quads::SCREEN_1], ui->quad_vao, input, TotalTime, puzzle);
         SaveRender(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN_1], &ui->quads[(uint32_t)Quads::SCREEN_2], TotalTime);
+        {
+        Quad& quad = ui->quads[(uint32_t)Quads::SCREEN_2];
+        const double GX  = quad.position_and_size.x;
+        const double GY  = quad.position_and_size.y;
+        const double GW  = quad.position_and_size.z;
+        //const double GH  = quad.position_and_size.w; // aspect?
+        const double HCS = 0.5f * GW / double(puzzle->grid->N);
+        const double CS  = 2.0f * HCS;
         
-        const double CellX = NDC_GridX + (GridX + 0.5f) * CellSize;
-        const double CellY = NDC_GridY + (GridY + 0.5f) * CellSize;
-        const glm::vec4 PositionAndSize(CellX - HalfCellSize,
-                                        CellY - HalfCellSize,
-                                        CellSize,
-                                        CellSize);
-        
+        const double CellX = GX + (GridX + 0.5f) * CS - HCS;
+        const double CellY = GY + (GridY + 0.5f) * CS - HCS;
+        const glm::vec4 PositionAndSize(CellX, CellY, CS, CS); // No need to calculate this every frame too..
         HighlightCell(shaders, PositionAndSize, ui->quad_vao, TotalTime);
+        }
         RenderTimer(shaders, ui->quad_vao, TotalTime);
         
         RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN_2], TotalTime);

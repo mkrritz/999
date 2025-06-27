@@ -6,14 +6,13 @@ enum struct Quads {
     SCREEN_2,
     // SETTINGS_SCREEN,
     // MENU_SCREEN,
-    HIGHLIGHT,
     Count
 };
 
 struct Quad {
     GLuint framebuffer;
     GLuint texture, depthbuffer;
-    glm::vec4 bounds; // Maybe not really a part of quad, move elsewhere.
+    glm::vec4 position_and_size;
 };
 
 struct UI {

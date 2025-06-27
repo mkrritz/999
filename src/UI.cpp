@@ -59,7 +59,7 @@ void RenderQuadToScreen(const Shader* const shaders[],
 }
 
 void HighlightCell(const Shader* const shaders[],
-                   const glm::vec4& bounds,
+                   const glm::vec4& position_and_size,
                    const GLuint quad_vao,
                    const float TotalTime) {
     const Shader* shader = shaders[(uint32_t)Shaders::Highlight];
@@ -69,7 +69,7 @@ void HighlightCell(const Shader* const shaders[],
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
         GLuint location = shader->uniform_location[U];
         switch(shader->uniform_name[U]) {
-            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(bounds)); break;
+            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(position_and_size)); break;
             case Uniforms::Time:   glUniform1f(location, TotalTime); break;
             default: SHADER_WARNING("Uniform mismatch"); break;
         }
@@ -124,7 +124,7 @@ void SaveRender(const Shader* const shaders[],
         GLuint location = shader->uniform_location[U];
         switch(shader->uniform_name[U]) {
             case Uniforms::Sampler: glUniform1i(location, 0); break;
-            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(target->bounds)); break;
+            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(target->position_and_size)); break;
             case Uniforms::Time:   glUniform1f(location, TotalTime); break;
             default: SHADER_WARNING("Uniform mismatch"); break;
         }
@@ -163,7 +163,7 @@ void RenderGame(const Shader* const shaders[],
        GLuint location = shader->uniform_location[U];
        switch(shader->uniform_name[U]) {
            case Uniforms::Resolution: glUniform1f(location, puzzle->grid->N); break;
-           case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(quad->bounds)); break;
+           case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(quad->position_and_size)); break;
            default: SHADER_WARNING("Uniform mismatch"); break;
        }
     }
@@ -210,7 +210,7 @@ void UIInit(Heap* const heap) {
     {
         Quad& quad = ui->quads[(uint32_t)Quads::SCREEN_1];
         
-        quad.bounds = glm::vec4(-1.0f, -1.0f, 2.0f, 2.0f);
+        quad.position_and_size = glm::vec4(-1.0f, -1.0f, 2.0f, 2.0f);
         
         glGenTextures(1, &quad.texture);
         glBindTexture(GL_TEXTURE_2D, quad.texture);
@@ -234,7 +234,7 @@ void UIInit(Heap* const heap) {
     {
         Quad& quad = ui->quads[(uint32_t)Quads::SCREEN_2];
         
-        quad.bounds = glm::vec4(-0.8f, -0.8f, 1.6f, 1.6f);
+        quad.position_and_size = glm::vec4(-0.8f, -0.8f, 1.6f, 1.6f);
         
         glGenTextures(1, &quad.texture);
         glBindTexture(GL_TEXTURE_2D, quad.texture);
@@ -254,36 +254,6 @@ void UIInit(Heap* const heap) {
         if(glCheckFramebufferStatus(GL_FRAMEBUFFER)!=GL_FRAMEBUFFER_COMPLETE) printf("\nFramebuffer Error\n");
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
     }
-    
-    {
-        Quad& quad = ui->quads[(uint32_t)Quads::HIGHLIGHT];
-        
-        // no bounds here at all Maybe not a SCREEN_* but still, a texture is required. Maybe not the framebuffer because
-        // a texture can just be rendered on the currectly bound framebuffer
-        
-        // SaveRender renders from a source texture, to the target framebuffer. // TODO documentation inside finished functions
-        
-        // Maybe do better because not every framebuffer needs depth, or bounds, or whatever else..
-        
-        glGenTextures(1, &quad.texture);
-        glBindTexture(GL_TEXTURE_2D, quad.texture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        
-        glGenTextures(1, &quad.depthbuffer);
-        glBindTexture(GL_TEXTURE_2D, quad.depthbuffer);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, WINDOW_WIDTH, WINDOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-        glBindTexture(GL_TEXTURE_2D, 0);
-    
-        glGenFramebuffers(1, &quad.framebuffer);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, quad.framebuffer);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, quad.texture, 0);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, quad.depthbuffer, 0);
-        
-        if(glCheckFramebufferStatus(GL_FRAMEBUFFER)!=GL_FRAMEBUFFER_COMPLETE) printf("\nFramebuffer Error\n");
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    }
-    
     
 }
 

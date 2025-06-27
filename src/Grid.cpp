@@ -82,7 +82,7 @@ static string GenerateLevel(Grid* const grid) {
 
 void GridInit(Heap* const heap,
               Puzzle* const puzzle,
-              const uint32_t resolution) {
+              const uint32_t resolution) { // Rename to N? what about InputM::N?
     HeapReset(heap);
     puzzle->grid = (Grid*)HeapAllocate(heap, sizeof(Grid));
     puzzle->grid->N = resolution;
@@ -106,7 +106,7 @@ void SetText(Puzzle* const puzzle) {
     const float HalfCellScale = CellScale / 2.0f;
     const float VerticalPadding = 0.6f;
     
-    // TODO put them in quad bounds too. what?
+    // TODO put them in quad position_and_size too. what?
     
     uint32_t CIX = 0;
     uint32_t CIY = 0;
