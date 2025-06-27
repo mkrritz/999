@@ -147,7 +147,8 @@ void RenderGame(const Shader* const shaders[],
                 const GLuint quad_vao,
                 const Input* const input,
                 float TotalTime,
-                const Puzzle* const puzzle) {
+                const Puzzle* const puzzle,
+                float resolution) {
     const Shader* shader;
     const Font* const font = fonts[(uint32_t)FontType::English];
     
@@ -162,7 +163,7 @@ void RenderGame(const Shader* const shaders[],
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
        GLuint location = shader->uniform_location[U];
        switch(shader->uniform_name[U]) {
-           case Uniforms::Resolution: glUniform1f(location, puzzle->grid->N); break;
+           case Uniforms::Resolution: glUniform1f(location, resolution); break;
            case Uniforms::PositionAndSize: glUniform4fv(location, 1, glm::value_ptr(quad->position_and_size)); break;
            default: SHADER_WARNING("Uniform mismatch"); break;
        }

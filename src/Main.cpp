@@ -53,7 +53,8 @@ void RenderGame(const Shader* const [],
                 const GLuint,
                 const Input* const,
                 float,
-                const Puzzle* const puzzle);
+                const Puzzle* const puzzle,
+                float);
 void SaveRender(const Shader* const [],
                 const Camera* const,
                 const GLuint,
@@ -79,7 +80,8 @@ void FontsInit(Heap* const,
 void GridInit(Heap* const,
               Puzzle* const,
               const uint32_t);
-void SetText(Puzzle* const);
+void SetText(Puzzle* const,
+             const uint32_t);
 // Grid
 
 static void PuzzleInit(Heap* const heap) {
@@ -124,8 +126,9 @@ int main() {
     PuzzleInit(heaps[(uint32_t)Heaps::Main]);
     Puzzle* const puzzle = (Puzzle*)heaps[(uint32_t)Heaps::Main]->memory;
     
-    GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, 1);
-    SetText(puzzle);
+    uint32_t RESOLUTION = 1;
+    GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, RESOLUTION);
+    SetText(puzzle, RESOLUTION);
     
     glDisable(GL_DEPTH_TEST);
     //glDepthFunc(GL_LESS);
@@ -147,6 +150,7 @@ int main() {
     uint32_t UpdateCount= 0;
     uint32_t FixedUpdateCount= 0;
     
+    
     while (!(input->special & InputM::ESC)) {
         CurrectTime = glfwGetTime();
         DeltaTime = CurrectTime - LastTime;
@@ -166,19 +170,22 @@ int main() {
         
         input = NextRecordedInputState();
         
-        Quad& quad = ui->quads[(uint32_t)Quads::SCREEN_2];
+        Quad& quad = ui->quads[(uint32_t)Quads::SCREEN_2]; // GRID_QUAD
         const double GX     = quad.position_and_size.x;
         const double GY     = quad.position_and_size.y;
         const double GW     = quad.position_and_size.z;
         const double GH     = quad.position_and_size.w;
-        const double HCS    = 0.5f * GW / double(puzzle->grid->N);
-        //const double CS     = 2.0f * HCS;
+        const double HCS    = 0.5f * GW / double(RESOLUTION);
+        const double CS     = 2.0f * HCS;
         const double NDC_X  = glm::clamp(input->ndc_x, GX, GX + GW - HCS);
         const double NDC_Y  = glm::clamp(input->ndc_y, GY, GY + GH - HCS);
         const double LocalX = (NDC_X - GX) / GW;
         const double LocalY = (NDC_Y - GY) / GH;
-        const uint32_t GridX = uint32_t(LocalX * puzzle->grid->N); // That's needed for indexing to grid and checking number
-        const uint32_t GridY = uint32_t(LocalY * puzzle->grid->N); // That's needed for indexing to grid and checking number
+        const uint32_t GridX = uint32_t(LocalX * RESOLUTION);
+        const uint32_t GridY = uint32_t(LocalY * RESOLUTION);
+        
+        const double CellX = GX + (GridX + 0.5f) * CS - HCS;
+        const double CellY = GY + (GridY + 0.5f) * CS - HCS;
         // Where do all these go?
         
         while(AccumulatorTime >= dt) {
@@ -192,21 +199,20 @@ int main() {
             if (input->mouse & InputM::LEFT_CLICK) {
                 if (input->toggles & InputM::Toggle_LC) {
                     
-                    if (puzzle->grid->cells[GridY * puzzle->grid->N + GridX] == 1) {
-                        puzzle->grid->N++;
-                        if (puzzle->grid->N > 10) {
-                            //ui->quads[(uint32_t)Quads::GAME_SCREEN].position_and_size /= 2.0f;
-                            puzzle->grid->N = 1; // There is enough memory for 40 levels. So that's here so we don't crash.
+                    if (puzzle->grid->cells[GridY * RESOLUTION + GridX] == 1) {
+                        RESOLUTION++;
+                        if (RESOLUTION > 10) {
+                            RESOLUTION = 1;
                             
-                            float x = -0.99f + ((dist(gen) + 1.0f) * 0.49f / 2.0f);    // do better maths, so it can be small and top right 
-                            float y = -0.99f + ((dist(gen) + 1.0f) * 0.49f / 2.0f);    // do better maths, so it can be small and top right 
+                            float x = -0.99f + ((dist(gen) + 1.0f) * 0.49f / 2.0f);    // do better maths, so it can be small and top right
+                            float y = -0.99f + ((dist(gen) + 1.0f) * 0.49f / 2.0f);    // do better maths, so it can be small and top right
                             float z = 0.1f + ((dist(gen) + 1.0f) * 1.0f / 2.0f) * 1.4f;
                             float w = z; // 0.4f + ((dist(gen) + 1.0f) * 1.0f / 2.0f); // TODO aspect
                             quad.position_and_size = glm::vec4(x, y, z, w);
                         }
                         
-                        GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, puzzle->grid->N);
-                        SetText(puzzle); // shuffle as level up or something
+                        GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, RESOLUTION);
+                        SetText(puzzle, RESOLUTION); // shuffle as level up or something
                     }
                 }
                 input->toggles &= ~InputM::Toggle_LC;
@@ -214,22 +220,12 @@ int main() {
             
         }
         
-        RenderGame(shaders, camera, fonts, &ui->quads[(uint32_t)Quads::SCREEN_1], ui->quad_vao, input, TotalTime, puzzle);
+        RenderGame(shaders, camera, fonts, &ui->quads[(uint32_t)Quads::SCREEN_1], ui->quad_vao, input, TotalTime, puzzle, RESOLUTION);
         SaveRender(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN_1], &ui->quads[(uint32_t)Quads::SCREEN_2], TotalTime);
-        {
-        Quad& quad = ui->quads[(uint32_t)Quads::SCREEN_2];
-        const double GX  = quad.position_and_size.x;
-        const double GY  = quad.position_and_size.y;
-        const double GW  = quad.position_and_size.z;
-        //const double GH  = quad.position_and_size.w; // aspect?
-        const double HCS = 0.5f * GW / double(puzzle->grid->N);
-        const double CS  = 2.0f * HCS;
         
-        const double CellX = GX + (GridX + 0.5f) * CS - HCS;
-        const double CellY = GY + (GridY + 0.5f) * CS - HCS;
-        const glm::vec4 PositionAndSize(CellX, CellY, CS, CS); // No need to calculate this every frame too..
-        HighlightCell(shaders, PositionAndSize, ui->quad_vao, TotalTime);
-        }
+        const glm::vec4 position_and_size(CellX, CellY, CS, CS); // do aspect?
+        HighlightCell(shaders, position_and_size, ui->quad_vao, TotalTime);
+        
         RenderTimer(shaders, ui->quad_vao, TotalTime);
         
         RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN_2], TotalTime);

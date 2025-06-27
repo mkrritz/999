@@ -14,24 +14,24 @@ static std::mt19937 gen(time(nullptr));
 glm::vec2 GetAtlasUV(char);
 
 static uint32_t* FillLevelInfo(Puzzle* const puzzle,
-                              const std::string& level) {
+                              const std::string& level,
+                              const uint32_t resolution) {
     // TODO: That's just constants per level, make the tables instead?
-    const uint32_t N = puzzle->grid->N;
-    uint32_t* NumberOfDigitsOnEachCell = new uint32_t[N * N];
+    uint32_t* NumberOfDigitsOnEachCell = new uint32_t[resolution * resolution];
     uint32_t quads = 0;
     uint32_t digits = 0;
     uint32_t CIX = 0;
     uint32_t CIY = 0;
     for (const char &Character : level) {
         if (Character == '\n') {
-            NumberOfDigitsOnEachCell[CIY * N + CIX] = digits;
+            NumberOfDigitsOnEachCell[CIY * resolution + CIX] = digits;
             CIX = 0;
             CIY++;
             digits = 0;
             continue;
         }
         if (Character == ' ') {
-            NumberOfDigitsOnEachCell[CIY * N + CIX] = digits;
+            NumberOfDigitsOnEachCell[CIY * resolution + CIX] = digits;
             CIX++;
             digits = 0;
             continue;
@@ -44,8 +44,9 @@ static uint32_t* FillLevelInfo(Puzzle* const puzzle,
     return NumberOfDigitsOnEachCell;
 }
 
-static string GenerateLevel(Grid* const grid) {
-    uint32_t cells_count = grid->N * grid->N;
+static string GenerateLevel(Grid* const grid,
+                            const uint32_t resolution) {
+    const uint32_t cells_count = resolution * resolution;
     
     std::vector<uint32_t> numbers(cells_count);
     for (uint32_t i = 0; i < cells_count; ++i) {
@@ -67,7 +68,7 @@ static string GenerateLevel(Grid* const grid) {
             digits += digitCount;
         //}
         
-        if (((i + 1) % grid->N == 0) && i != (cells_count-1)) {
+        if (((i + 1) % resolution == 0) && i != (cells_count-1)) {
             level += '\n';
             digits += '\n';
         } else {
@@ -82,19 +83,19 @@ static string GenerateLevel(Grid* const grid) {
 
 void GridInit(Heap* const heap,
               Puzzle* const puzzle,
-              const uint32_t resolution) { // Rename to N? what about InputM::N?
+              const uint32_t resolution) {
     HeapReset(heap);
     puzzle->grid = (Grid*)HeapAllocate(heap, sizeof(Grid));
-    puzzle->grid->N = resolution;
-    puzzle->grid->cells = (uint32_t*)HeapAllocate(heap, puzzle->grid->N * puzzle->grid->N * sizeof(uint32_t));
+    puzzle->grid->cells = (uint32_t*)HeapAllocate(heap, resolution * resolution * sizeof(uint32_t));
 }
 
-void SetText(Puzzle* const puzzle) {
+void SetText(Puzzle* const puzzle,
+             const uint32_t resolution) {
     Grid* const grid = puzzle->grid;
     
-    const string level = GenerateLevel(grid);
+    const string level = GenerateLevel(grid, resolution);
     
-    uint32_t* NumberOfDigitsOnEachCell = FillLevelInfo(puzzle, level);
+    uint32_t* NumberOfDigitsOnEachCell = FillLevelInfo(puzzle, level, resolution);
     
     const uint32_t VertexCount = puzzle->surface.quads_count * 4 * TEXT_VERTEX_ATTRIBUTE_COUNT;
     const uint32_t IndexCount = puzzle->surface.quads_count * 6;
@@ -102,16 +103,14 @@ void SetText(Puzzle* const puzzle) {
     uint32_t* Indices = new uint32_t[IndexCount];
     uint32_t IndexOffset = 0, CharacterIndex = 0;
     
-    const float CellScale = 1.0f / float(grid->N);
+    const float CellScale = 1.0f / float(resolution);
     const float HalfCellScale = CellScale / 2.0f;
     const float VerticalPadding = 0.6f;
     
-    // TODO put them in quad position_and_size too. what?
-    
     uint32_t CIX = 0;
     uint32_t CIY = 0;
-    float CharacterScale = 1.0f + 1.0f / float(NumberOfDigitsOnEachCell[CIY * grid->N + CIX]);
-    float LocalX = -CharacterScale * ((float(NumberOfDigitsOnEachCell[CIY * grid->N + CIX]) - 1.0f) / 2.0f);
+    float CharacterScale = 1.0f + 1.0f / float(NumberOfDigitsOnEachCell[CIY * resolution + CIX]);
+    float LocalX = -CharacterScale * ((float(NumberOfDigitsOnEachCell[CIY * resolution + CIX]) - 1.0f) / 2.0f);
     float CellCenterX = -1.0f + CellScale;
     float CellCenterY = -1.0f + CellScale;
     
@@ -120,8 +119,8 @@ void SetText(Puzzle* const puzzle) {
         if (Character == '\n') {
             CIY += 1;
             CIX = 0;
-            CharacterScale = 1.0f + 1.0f / float(NumberOfDigitsOnEachCell[CIY * grid->N + CIX]);
-            LocalX = -CharacterScale * ((float(NumberOfDigitsOnEachCell[CIY * grid->N + CIX]) - 1.0f) / 2.0f);
+            CharacterScale = 1.0f + 1.0f / float(NumberOfDigitsOnEachCell[CIY * resolution + CIX]);
+            LocalX = -CharacterScale * ((float(NumberOfDigitsOnEachCell[CIY * resolution + CIX]) - 1.0f) / 2.0f);
             
             CellCenterX = -1.0f + CellScale;
             CellCenterY += 2.0f * CellScale;
@@ -129,8 +128,8 @@ void SetText(Puzzle* const puzzle) {
         }
         if (Character == ' ') {
             CIX += 1;
-            CharacterScale = 1.0f + 1.0f / float(NumberOfDigitsOnEachCell[CIY * grid->N + CIX]);
-            LocalX = -CharacterScale * ((float(NumberOfDigitsOnEachCell[CIY * grid->N + CIX]) - 1.0f) / 2.0f);
+            CharacterScale = 1.0f + 1.0f / float(NumberOfDigitsOnEachCell[CIY * resolution + CIX]);
+            LocalX = -CharacterScale * ((float(NumberOfDigitsOnEachCell[CIY * resolution + CIX]) - 1.0f) / 2.0f);
             
             CellCenterX += 2.0f * CellScale;
             continue;

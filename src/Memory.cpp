@@ -24,7 +24,7 @@ void HeapsInit(Heap* heaps[]) {
     heaps[(uint32_t)Heaps::Main]       = HeapInit(64);
     
     // Stores 'struct Grid'.
-    heaps[(uint32_t)Heaps::Grid]       = HeapInit(8 + 4 * 10 * 10); // Memory for max level 10. 
+    heaps[(uint32_t)Heaps::Grid]       = HeapInit(8 + 4 * 10 * 10); // Memory for max level 10. do this 24?
 }
 
 void* HeapAllocate(Heap* const heap, size_t size) {
