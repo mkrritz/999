@@ -18,6 +18,7 @@
 
 static std::mt19937 gen(time(nullptr));
 static std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
+static std::uniform_real_distribution<float> dist01(0.0f, 1.0f);
 
 GLFWwindow* WindowInit();
 
@@ -171,18 +172,19 @@ int main() {
         
         input = NextRecordedInputState();
         
-        // COMMENTING THESE..
-        Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN]; // GRID_QUAD
-        const double GX      = quad.position.x;
-        const double GY      = quad.position.y;
-        const double GW      = quad.size.x;
-        const double GH      = quad.size.y;
-        const double HCS     = 0.5f * GW / double(RESOLUTION);
-        const double CS      = 2.0f * HCS;
-        const double NDC_X   = glm::clamp(input->ndc_x, GX, GX + GW - HCS);
-        const double NDC_Y   = glm::clamp(input->ndc_y, GY, GY + GH - HCS);
-        const double LocalX  = (NDC_X - GX) / GW;
-        const double LocalY  = (NDC_Y - GY) / GH;
+        // TODO: scale under mouse, like severance
+        // TODO: Aspect cells?
+        Quad& game_screen_quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
+        const double GX      = game_screen_quad.position.x; // Grid x position in [-1, 1]
+        const double GY      = game_screen_quad.position.y; // Grid y position in [-1, 1]
+        const double GW      = game_screen_quad.size.x; // Grid width size in (0, 2] range
+        const double GH      = game_screen_quad.size.y; // Grid height size in (0, 2] range
+        const double HCS     = 0.5f * GW / double(RESOLUTION); // Half cell size
+        const double CS      = 2.0f * HCS; // Cell size (Pefrect square grid)
+        const double MOUSE_NDC_X   = glm::clamp(input->ndc_x, GX, GX + GW - HCS); // Clamped to respond to the window containing the first render pass
+        const double MOUSE_NDC_Y   = glm::clamp(input->ndc_y, GY, GY + GH - HCS); // Clamped to respond to the window containing the first render pass
+        const double LocalX  = (MOUSE_NDC_X - GX) / GW;
+        const double LocalY  = (MOUSE_NDC_Y - GY) / GH;
         const uint32_t GridX = uint32_t(LocalX * RESOLUTION);
         const uint32_t GridY = uint32_t(LocalY * RESOLUTION);
         const double CellX   = GX + (GridX + 0.5f) * CS - HCS;
@@ -201,15 +203,15 @@ int main() {
                     
                     if (puzzle->grid->cells[GridY * RESOLUTION + GridX] == 1) {
                         RESOLUTION++;
-                        if (RESOLUTION > 10) {
+                        if (RESOLUTION > 5) {
                             RESOLUTION = 1;
                             
-                            float x = -0.99f + ((dist(gen) + 1.0f) * 0.49f / 2.0f);    // do better maths, so it can be small and top right
-                            float y = -0.99f + ((dist(gen) + 1.0f) * 0.49f / 2.0f);    // do better maths, so it can be small and top right
-                            float z = 0.1f + ((dist(gen) + 1.0f) * 1.0f / 2.0f) * 1.4f;
-                            float w = z; // 0.4f + ((dist(gen) + 1.0f) * 1.0f / 2.0f); // TODO aspect
-                            quad.position = glm::vec2(x, y);
-                            quad.size     = glm::vec2(z, w);
+                            float x = -0.7f + dist01(gen) * 1.4f; // do better maths
+                            float y = -0.7f + dist01(gen) * 1.4f; // do better maths
+                            float z =  0.1f + dist01(gen) * 0.2f; // 0.2 to become max based on size above
+                            float w = z; // 0.4f + ((dist(gen) + 1.0f) * 1.0f / 2.0f); // TODO aspect?
+                            game_screen_quad.position = glm::vec2(x, y);
+                            game_screen_quad.size     = glm::vec2(z, w);
                         }
                         
                         GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, RESOLUTION);
@@ -222,13 +224,15 @@ int main() {
         }
         
         RenderGame(shaders, camera, fonts, &ui->quads[(uint32_t)Quads::SCREEN], ui->quad_vao, input, TotalTime, puzzle, RESOLUTION);
-        SaveRender(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN], &ui->quads[(uint32_t)Quads::GAME_SCREEN], TotalTime);
+        SaveRender(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN], &game_screen_quad, TotalTime);
+        // Not really SaveRender, do it BlitGameScreen
         
         HighlightCell(shaders, glm::vec2(CellX, CellY), glm::vec2(CS, CS), ui->quad_vao, TotalTime);
         
-        RenderTimer(shaders, ui->quad_vao, TotalTime);
+        RenderTimer(shaders, ui->quad_vao, TotalTime); // Make this a circle and render this
+        // over the green area and then on top of that render the game screen
         
-        RenderQuadToScreen(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::GAME_SCREEN], TotalTime);
+        RenderQuadToScreen(shaders, camera, ui->quad_vao, &game_screen_quad, TotalTime);
         
         glfwSwapBuffers(window);
     }

@@ -12,16 +12,7 @@
 #include "game/Camera.h"
 #include "game/Window.h"
 
-#define QUAD_VERTEX_ATTRIBUTE_COUNT 2
-#define TOTAL_VERTEX_ATTRIBUTE_COUNT (4 * QUAD_VERTEX_ATTRIBUTE_COUNT)
-static uint32_t QuadIndices[6] = {1, 0, 2, 1, 2, 3};
-static float QuadVertices[TOTAL_VERTEX_ATTRIBUTE_COUNT] = {
-    0.0f, 0.0f,
-    0.0f, 1.0f,
-    1.0f, 0.0f,
-    1.0f, 1.0f
-};
-
+// Where to put these? 
 void RenderQuadToScreen(const Shader* const shaders[],
                         const Camera* const camera,
                         const GLuint quad_vao,
@@ -31,9 +22,9 @@ void RenderQuadToScreen(const Shader* const shaders[],
     
     glBindSampler(0, camera->sampler_clamp_linear);
     
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    glClearColor(0, 0, 1, 0); // Blue
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);           // Not here
+    glClearColor(0, 0, 1, 0); // Blue                    // Not here
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  // Not here
     
     shader = shaders[(uint32_t)Shaders::DrawTexture];
     glUseProgram(shader->ID);
@@ -107,7 +98,7 @@ void RenderTimer(const Shader* const shaders[],
     glBindVertexArray(0); // Not really required, if all rendering is quads anyway. Grouping them later maybe.
 }
 
-void SaveRender(const Shader* const shaders[],
+void SaveRender(const Shader* const shaders[], // Rename to Blit or something
                 const Camera* const camera,
                 const GLuint quad_vao,
                 const Quad* const source,
@@ -117,9 +108,9 @@ void SaveRender(const Shader* const shaders[],
     
     glBindSampler(0, camera->sampler_clamp_linear);
     
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target->framebuffer);
-    glClearColor(0, 1, 0, 0); // Green
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target->framebuffer);  // Not here
+    glClearColor(0, 1, 0, 0); // Green                            // Not here
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);           // Not here
     
     shader = shaders[(uint32_t)Shaders::DrawTexture];
     glUseProgram(shader->ID);
@@ -144,7 +135,7 @@ void SaveRender(const Shader* const shaders[],
     glBindSampler(0, 0);
 }
 
-void RenderGame(const Shader* const shaders[],
+void RenderGame(const Shader* const shaders[], // Move to Grid.cpp
                 const Camera* const camera,
                 const Font* const fonts[],
                 const Quad* const quad,
@@ -158,9 +149,9 @@ void RenderGame(const Shader* const shaders[],
     
     glBindSampler(0, camera->sampler_clamp_linear);
     
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, quad->framebuffer);
-    glClearColor(1, 0, 0, 0); // Red
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, quad->framebuffer);  // Not here
+    glClearColor(1, 0, 0, 0); // Red                            // Not here
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);         // Not here
     
     shader = shaders[(uint32_t)Shaders::Grid];
     glUseProgram(shader->ID);
@@ -196,6 +187,17 @@ void RenderGame(const Shader* const shaders[],
     glBindVertexArray(0);
     glBindSampler(0, 0);
 }
+// Where to put these?
+
+#define QUAD_VERTEX_ATTRIBUTE_COUNT 2
+#define TOTAL_VERTEX_ATTRIBUTE_COUNT (4 * QUAD_VERTEX_ATTRIBUTE_COUNT)
+static uint32_t QuadIndices[6] = {1, 0, 2, 1, 2, 3};
+static float QuadVertices[TOTAL_VERTEX_ATTRIBUTE_COUNT] = {
+    0.0f, 0.0f,
+    0.0f, 1.0f,
+    1.0f, 0.0f,
+    1.0f, 1.0f
+};
 
 void UIInit(Heap* const heap) {
     UI* ui = (UI*)HeapAllocate(heap, sizeof(UI));
@@ -216,8 +218,8 @@ void UIInit(Heap* const heap) {
     {
         Quad& quad = ui->quads[(uint32_t)Quads::SCREEN];
         
-        quad.position = glm::vec2(-1.0f, -1.0f);
-        quad.size     = glm::vec2(2.0f, 2.0f);
+        quad.position = glm::vec2(-1.0f, -1.0f); // define these
+        quad.size     = glm::vec2(2.0f, 2.0f);   // define these
         
         glGenTextures(1, &quad.texture);
         glBindTexture(GL_TEXTURE_2D, quad.texture);
@@ -241,8 +243,9 @@ void UIInit(Heap* const heap) {
     {
         Quad& quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
         
-        quad.position = glm::vec2(-0.8f, -0.8f);
-        quad.size     = glm::vec2(1.6f, 1.6f);
+        quad.position = glm::vec2(GAME_SCREEN_WINDOW_X, GAME_SCREEN_WINDOW_Y);
+        quad.size     = glm::vec2(GAME_SCREEN_WINDOW_W, GAME_SCREEN_WINDOW_H);
+        // Add the above so that max sizes is fixed and then spawn points are bounded and scaled properly
         
         glGenTextures(1, &quad.texture);
         glBindTexture(GL_TEXTURE_2D, quad.texture);

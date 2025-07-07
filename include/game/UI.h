@@ -1,6 +1,11 @@
 #ifndef UI_HPP
 #define UI_HPP
 
+#define GAME_SCREEN_WINDOW_X -0.8f
+#define GAME_SCREEN_WINDOW_Y -0.8f
+#define GAME_SCREEN_WINDOW_W  1.6f
+#define GAME_SCREEN_WINDOW_H  1.6f
+
 enum struct Quads {
     SCREEN,
     GAME_SCREEN,

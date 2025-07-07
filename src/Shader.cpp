@@ -167,7 +167,7 @@ static Shader* LoadShaders(Heap* const heap,
             glDetachShader(temp.ID, csID);
             glDeleteShader(csID);
         }
-
+        
         glGetProgramiv(temp.ID, GL_INFO_LOG_LENGTH, &ErrorLogLength);
         if (!(problem || (ErrorLogLength > 0))) {
             for (uint32_t i = 0; i < config.uniforms_count; i++) {
@@ -195,7 +195,7 @@ static Shader* LoadShaders(Heap* const heap,
 static void CheckForReload(Heap* const heap) {
     /*
         When any file is modified,
-        this thread will loop over all loaded shader programs
+        the thread will loop over all loaded shader programs
         to find the ones that need reloading.
     */
     const Shader* const shaders = (const Shader*)heap->memory;

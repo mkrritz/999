@@ -19,7 +19,6 @@ static GLuint Sampler(GLuint wrap, GLuint filter) {
 
 void CameraInit(Heap* const heap) {
     Camera* camera = (Camera*)HeapAllocate(heap, sizeof(Camera));
-    camera->render_passes = 2;
     camera->sampler_clamp_nearest  = Sampler(GL_CLAMP_TO_EDGE, GL_NEAREST);
     camera->sampler_clamp_linear   = Sampler(GL_CLAMP_TO_EDGE, GL_LINEAR);
     camera->sampler_repeat_linear  = Sampler(GL_REPEAT, GL_LINEAR);
