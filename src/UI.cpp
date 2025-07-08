@@ -6,34 +6,27 @@
 #include "game/UI.h"
 #include "game/Font.h"
 #include "game/Input.h"
-#include "game/Puzzle.h"
-#include "game/Grid.h"
 #include "game/Shader.h"
 #include "game/Camera.h"
 #include "game/Window.h"
 
-// Where to put these? 
 void RenderQuadToScreen(const Shader* const shaders[],
                         const Camera* const camera,
                         const GLuint quad_vao,
                         const Quad* const quad,
                         float total_time) {
-    const Shader* shader; // static these too?
+    const Shader* shader;
     
     glBindSampler(0, camera->sampler_clamp_linear);
-    
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);           // Not here
-    glClearColor(0, 0, 1, 0); // Blue                    // Not here
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  // Not here
     
     shader = shaders[(uint32_t)Shaders::DrawTexture];
     glUseProgram(shader->ID);
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
         GLuint location = shader->uniform_location[U];
         switch(shader->uniform_name[U]) {
-            case Uniforms::Sampler: glUniform1i(location, 0); break;
-            case Uniforms::Position: glUniform2fv(location, 1, glm::value_ptr(glm::vec2(-1.0f, -1.0f))); break;
-            case Uniforms::Size:     glUniform2fv(location, 1, glm::value_ptr(glm::vec2( 2.0f,  2.0f))); break;
+            case Uniforms::Sampler:  glUniform1i(location, 0); break;
+            case Uniforms::Position: glUniform2fv(location, 1, glm::value_ptr(glm::vec2(SCREEN_WINDOW_X, SCREEN_WINDOW_Y))); break;
+            case Uniforms::Size:     glUniform2fv(location, 1, glm::value_ptr(glm::vec2(SCREEN_WINDOW_W, SCREEN_WINDOW_H))); break;
             case Uniforms::Time:     glUniform1f(location, total_time); break;
             default: SHADER_WARNING("Uniform mismatch"); break;
         }
@@ -45,8 +38,6 @@ void RenderQuadToScreen(const Shader* const shaders[],
     
     glBindVertexArray(0);
     glBindSampler(0, 0);
-    
-    // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // Restore previous bound framebuffer here?
 }
 
 void HighlightCell(const Shader* const shaders[],
@@ -98,19 +89,17 @@ void RenderTimer(const Shader* const shaders[],
     glBindVertexArray(0); // Not really required, if all rendering is quads anyway. Grouping them later maybe.
 }
 
-void SaveRender(const Shader* const shaders[], // Rename to Blit or something
-                const Camera* const camera,
-                const GLuint quad_vao,
-                const Quad* const source,
-                const Quad* const target,
-                float TotalTime) {
+void BlitGameScreen(const Shader* const shaders[],
+                    const Camera* const camera,
+                    const GLuint quad_vao,
+                    const Quad* const source,
+                    const Quad* const target,
+                    float TotalTime) {
     const Shader* shader;
-    
-    glBindSampler(0, camera->sampler_clamp_linear);
-    
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, target->framebuffer);  // Not here
-    glClearColor(0, 1, 0, 0); // Green                            // Not here
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);           // Not here
+    // Not really a blit, but a quad rendered at some position with some size
+    // with an already drawn texture to sample from and cover the entire quad.
+    //glBindSampler(0, camera->sampler_clamp_linear);
+    glBindSampler(0, camera->sampler_repeat_linear);
     
     shader = shaders[(uint32_t)Shaders::DrawTexture];
     glUseProgram(shader->ID);
@@ -129,65 +118,9 @@ void SaveRender(const Shader* const shaders[], // Rename to Blit or something
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindTexture(GL_TEXTURE_2D, 0);
     
-    // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, source->framebuffer); // Is this really happening?
-    
     glBindVertexArray(0);
     glBindSampler(0, 0);
 }
-
-void RenderGame(const Shader* const shaders[], // Move to Grid.cpp
-                const Camera* const camera,
-                const Font* const fonts[],
-                const Quad* const quad,
-                const GLuint quad_vao,
-                const Input* const input,
-                float TotalTime,
-                const Puzzle* const puzzle,
-                float resolution) {
-    const Shader* shader;
-    const Font* const font = fonts[(uint32_t)FontType::English];
-    
-    glBindSampler(0, camera->sampler_clamp_linear);
-    
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, quad->framebuffer);  // Not here
-    glClearColor(1, 0, 0, 0); // Red                            // Not here
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);         // Not here
-    
-    shader = shaders[(uint32_t)Shaders::Grid];
-    glUseProgram(shader->ID);
-    for (uint32_t U = 0; U < shader->uniforms_count; U++) {
-       GLuint location = shader->uniform_location[U];
-       switch(shader->uniform_name[U]) {
-           case Uniforms::Resolution: glUniform1f(location, resolution); break;
-           case Uniforms::Position:   glUniform2fv(location, 1, glm::value_ptr(quad->position)); break;
-           case Uniforms::Size:       glUniform2fv(location, 1, glm::value_ptr(quad->size)); break;
-           default: SHADER_WARNING("Uniform mismatch"); break;
-       }
-    }
-    glBindVertexArray(quad_vao);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    
-    glEnable(GL_BLEND);
-    shader = shaders[(uint32_t)Shaders::SDF]; // Text is in NDC too...
-    glUseProgram(shader->ID);
-    for (uint32_t U = 0; U < shader->uniforms_count; U++) {
-        GLuint location = shader->uniform_location[U];
-        switch(shader->uniform_name[U]) {
-            case Uniforms::Time: glUniform1f(location, TotalTime); break;
-            case Uniforms::Sampler: glUniform1i(location, 0); break;
-            default: SHADER_WARNING("Uniform mismatch"); break;
-        }
-    }
-    glBindTexture(GL_TEXTURE_2D, font->texture);
-    glBindVertexArray(puzzle->surface.vao);
-    glDrawElements(GL_TRIANGLES, 6 * puzzle->surface.quads_count, GL_UNSIGNED_INT, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glDisable(GL_BLEND);
-    
-    glBindVertexArray(0);
-    glBindSampler(0, 0);
-}
-// Where to put these?
 
 #define QUAD_VERTEX_ATTRIBUTE_COUNT 2
 #define TOTAL_VERTEX_ATTRIBUTE_COUNT (4 * QUAD_VERTEX_ATTRIBUTE_COUNT)
@@ -218,8 +151,8 @@ void UIInit(Heap* const heap) {
     {
         Quad& quad = ui->quads[(uint32_t)Quads::SCREEN];
         
-        quad.position = glm::vec2(-1.0f, -1.0f); // define these
-        quad.size     = glm::vec2(2.0f, 2.0f);   // define these
+        quad.position = glm::vec2(SCREEN_WINDOW_X, SCREEN_WINDOW_Y);
+        quad.size     = glm::vec2(SCREEN_WINDOW_W, SCREEN_WINDOW_H);
         
         glGenTextures(1, &quad.texture);
         glBindTexture(GL_TEXTURE_2D, quad.texture);
@@ -245,7 +178,6 @@ void UIInit(Heap* const heap) {
         
         quad.position = glm::vec2(GAME_SCREEN_WINDOW_X, GAME_SCREEN_WINDOW_Y);
         quad.size     = glm::vec2(GAME_SCREEN_WINDOW_W, GAME_SCREEN_WINDOW_H);
-        // Add the above so that max sizes is fixed and then spawn points are bounded and scaled properly
         
         glGenTextures(1, &quad.texture);
         glBindTexture(GL_TEXTURE_2D, quad.texture);

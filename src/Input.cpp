@@ -14,14 +14,14 @@ static int normalize(int k) {
     }else if (k >= GLFW_KEY_F1 && k <= GLFW_KEY_F12) {
         k = 1 << (k - GLFW_KEY_F1 + 10);
     }else if (k == GLFW_KEY_ESCAPE) {
-        k = 1 << (k - GLFW_KEY_ESCAPE + 22);    
+        k = 1 << (k - GLFW_KEY_ESCAPE + 22);
     } else {
         k = 0;
     }
     return k;
 }
 
-Input _input;
+static Input _input;
 
 Input* NextRecordedInputState() {
     return &_input;

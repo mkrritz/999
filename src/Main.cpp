@@ -57,12 +57,12 @@ void RenderGame(const Shader* const [],
                 float,
                 const Puzzle* const puzzle,
                 float);
-void SaveRender(const Shader* const [],
-                const Camera* const,
-                const GLuint,
-                const Quad* const,
-                const Quad* const,
-                float);
+void BlitGameScreen(const Shader* const [],
+                    const Camera* const,
+                    const GLuint,
+                    const Quad* const,
+                    const Quad* const,
+                    float);
 void RenderTimer(const Shader* const [],
                  const GLuint,
                  float);
@@ -172,6 +172,8 @@ int main() {
         
         input = NextRecordedInputState();
         
+        Quad& screen_quad = ui->quads[(uint32_t)Quads::SCREEN];
+        
         // TODO: scale under mouse, like severance
         // TODO: Aspect cells?
         Quad& game_screen_quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
@@ -206,12 +208,17 @@ int main() {
                         if (RESOLUTION > 5) {
                             RESOLUTION = 1;
                             
-                            float x = -0.7f + dist01(gen) * 1.4f; // do better maths
-                            float y = -0.7f + dist01(gen) * 1.4f; // do better maths
-                            float z =  0.1f + dist01(gen) * 0.2f; // 0.2 to become max based on size above
+                            float x = -0.7f + dist01(gen) * 0.7f; // do better maths
+                            float y = -0.7f + dist01(gen) * 0.7f; // do better maths
+                            float z =  0.3f + dist01(gen) * 0.2f; // 0.2 to become max based on size above
                             float w = z; // 0.4f + ((dist(gen) + 1.0f) * 1.0f / 2.0f); // TODO aspect?
                             game_screen_quad.position = glm::vec2(x, y);
                             game_screen_quad.size     = glm::vec2(z, w);
+                            
+                            float asd = -1.0f + dist01(gen) * 0.5f;
+                            float rewfwe = z;
+                            //screen_quad.position = glm::vec2(asd, asd);
+                            //screen_quad.size     = glm::vec2(rewfwe, rewfwe);
                         }
                         
                         GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, RESOLUTION);
@@ -223,15 +230,24 @@ int main() {
             
         }
         
-        RenderGame(shaders, camera, fonts, &ui->quads[(uint32_t)Quads::SCREEN], ui->quad_vao, input, TotalTime, puzzle, RESOLUTION);
-        SaveRender(shaders, camera, ui->quad_vao, &ui->quads[(uint32_t)Quads::SCREEN], &game_screen_quad, TotalTime);
-        // Not really SaveRender, do it BlitGameScreen
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, screen_quad.framebuffer);
+        glClearColor(1, 0, 0, 0); // Red
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        RenderGame(shaders, camera, fonts, &screen_quad, ui->quad_vao, input, TotalTime, puzzle, RESOLUTION);
         
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, game_screen_quad.framebuffer);
+        glClearColor(0, 1, 0, 0); // Green
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        RenderTimer(shaders, ui->quad_vao, TotalTime); // Do this circle
+        
+        BlitGameScreen(shaders, camera, ui->quad_vao, &screen_quad, &game_screen_quad, TotalTime);
         HighlightCell(shaders, glm::vec2(CellX, CellY), glm::vec2(CS, CS), ui->quad_vao, TotalTime);
         
-        RenderTimer(shaders, ui->quad_vao, TotalTime); // Make this a circle and render this
-        // over the green area and then on top of that render the game screen
         
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+        glClearColor(0, 0, 1, 0); // Blue
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         RenderQuadToScreen(shaders, camera, ui->quad_vao, &game_screen_quad, TotalTime);
         
         glfwSwapBuffers(window);
