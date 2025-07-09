@@ -77,8 +77,8 @@ void RenderTimer(const Shader* const shaders[],
        GLuint location = shader->uniform_location[U];
        switch(shader->uniform_name[U]) {
            case Uniforms::Time: glUniform1f(location, TotalTime); break;
-           case Uniforms::Position: glUniform2fv(location, 1, glm::value_ptr(glm::vec2(-0.9f, 0.85f))); break;
-           case Uniforms::Size:     glUniform2fv(location, 1, glm::value_ptr(glm::vec2( 1.8f, 0.1f))); break;
+           case Uniforms::Position: glUniform2fv(location, 1, glm::value_ptr(glm::vec2(-1.0f, -1.0f))); break;
+           case Uniforms::Size:     glUniform2fv(location, 1, glm::value_ptr(glm::vec2( 2.0f, 2.0f))); break;
            default: SHADER_WARNING("Uniform mismatch"); break;
        }
     }

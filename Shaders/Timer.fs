@@ -3,36 +3,42 @@
 in vec2 UV;
 out vec4 FragColor;
 
-uniform float Time; // Time in seconds
+uniform float Time;
 
-// Constants
-const float DURATION = 10.0;
-const vec4 color1 = vec4(1.0, 0.0, 0.0, 1.0); // Red
-const vec4 color2 = vec4(1.0, 1.0, 0.0, 1.0); // Yellow
+const float DURATION = 6.0;
+const float radius = 0.475;
+const float thickness = 0.0125;
+const vec3 color1 = vec3(1.0, 0.0, 0.0); // Red
+const vec3 color2 = vec3(1.0, 1.0, 0.0); // Yellow
+const float TWOPI = 6.2831850;
+const float PI    = 3.1415925;
 
-// Gradient function
-vec4 getGradientValue(float x)
-{
-    float val = clamp((x + 1.0) * 0.5, 0.0, 1.0); // Map UV.x from [-1,1] to [0,1]
-    vec4 color = mix(color1, color2, val);
-    color.a = clamp(color.a, min(color1.a, color2.a), max(color1.a, color2.a));
-    return color;
+void main() {
+    vec2 centerUV = UV - 0.5;
+    float dist = length(centerUV);
+
+    // Ring band mask
+    float inner = radius - thickness;
+    float outer = radius + thickness;
+    float edge  = fwidth(dist);
+    float ringMask = smoothstep(1*inner - 5*edge, 1*inner + 5*edge, 1*dist) *
+              (1.0 - smoothstep(1*outer - 1*edge, 1*outer + 1*edge, 1*dist));
+
+    // --- Angle calculations ---
+    float fragAngle = atan(centerUV.y, centerUV.x); // [-π, π]
+    if (fragAngle < 0.0) fragAngle += TWOPI;
+
+    float startAngle = PI / 2.0;
+    float endAngle = mod((DURATION - Time )/ DURATION, 1.0) * TWOPI;
+
+    // Clockwise angular distance from startAngle to fragment
+    float delta = startAngle - fragAngle;
+    if (delta < 0.0) delta += TWOPI;
+
+    // Alpha is 1 inside the sector from 12 o'clock to moving hand
+    float alpha = step(delta, endAngle); // 1.0 if frag is within sweep
+
+    // Final color
+    vec3 color = mix(color1, color2, ringMask);
+    FragColor = vec4(color, ringMask * alpha);
 }
-
-void main()
-{
-    // Calculate progress from 0 to 1 over 5 seconds
-    float progress = clamp(mod(Time, DURATION) / DURATION, 0.0, 1.0);
-
-    // Convert UV.x from [-1, 1] to [0, 1]
-    float uvX = (UV.x + 1.0) * 0.5;
-
-    // Compute base color from gradient
-    vec4 color = getGradientValue(UV.x);
-
-    // Apply alpha based on whether this pixel is within progress region
-    float alpha = smoothstep(0.01, 0.05,  uvX - progress);
-    FragColor = vec4(color.rgb, color.a * alpha);
-}
-
-// TODO: correct times, like 5 seconds in 5 seconds and such
