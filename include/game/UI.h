@@ -1,14 +1,14 @@
 #ifndef UI_HPP
 #define UI_HPP
 
-static const float SCREEN_WINDOW_X = -1.0f; // Engine constants
-static const float SCREEN_WINDOW_Y = -1.0f; // Engine constants
-static const float SCREEN_WINDOW_W =  2.0f; // Engine constants
-static const float SCREEN_WINDOW_H =  2.0f; // Engine constants
+static const float SCREEN_WINDOW_X = -1.0f;
+static const float SCREEN_WINDOW_Y = -1.0f;
+static const float SCREEN_WINDOW_W =  2.0f;
+static const float SCREEN_WINDOW_H =  2.0f;
 
 // The gameplay screen can be placed wherever, so these remain defines
 // The whole renderer here works pretty much exclusively in NDC space
-// The grid is a quad the needs to cover the eniter screen so it can
+// The grid is a quad the needs to cover the entire screen so it can
 // overlap with the text, which is a bunch of quads, also with vertices
 // in NDC space.
 #define GAME_SCREEN_WINDOW_X -0.8f
