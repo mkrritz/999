@@ -96,10 +96,6 @@ void BlitGameScreen(const Shader* const shaders[],
                     const Quad* const target,
                     float TotalTime) {
     const Shader* shader;
-    // Not really a blit, but a quad rendered at some position with some size
-    // with an already drawn texture to sample from and cover the entire quad.
-    // Which works just fine for the current setup of generating the text for
-    // the grid. Maybe bound text generation in a subset of NDC, based on quad size too.
     //glBindSampler(0, camera->sampler_clamp_linear);
     glBindSampler(0, camera->sampler_repeat_linear);
     

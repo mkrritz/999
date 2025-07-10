@@ -217,7 +217,7 @@ static void CheckForReload(Heap* const heap) {
 }
 
 static void* ObserveDirectoryChanges(void* arg) {
-    const wchar_t* path = SHADERS_DIRECTORY.wstring().c_str(); // How can this be anything other that SHADERS_DIRECTORY ?? Why was it "font_1.png"?
+    const wchar_t* path = SHADERS_DIRECTORY.wstring().c_str();
     printf("\n--Tracking changes for '%ls' directory on a seperate thread.\n\n", path);
     
     HANDLE directory_handle = CreateFileW(path,
@@ -229,7 +229,7 @@ static void* ObserveDirectoryChanges(void* arg) {
                                           nullptr);
     if (directory_handle == INVALID_HANDLE_VALUE) {
         printf("  How is it possible for the path to not be 'Shaders/'?\n  Why is the path '%ls'?\n", path);
-        return nullptr;
+        return nullptr; // FIX THIS SOMETIME
     }
     
     double last_time = 0;

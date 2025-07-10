@@ -5,7 +5,7 @@ out vec4 FragColor;
 
 uniform float Time;
 
-const float DURATION = 6.0;
+const float DURATION = 60.0;
 const float radius = 0.475;
 const float thickness = 0.0125;
 const vec3 color1 = vec3(1.0, 0.0, 0.0); // Red
@@ -27,18 +27,18 @@ void main() {
     // --- Angle calculations ---
     float fragAngle = atan(centerUV.y, centerUV.x); // [-π, π]
     if (fragAngle < 0.0) fragAngle += TWOPI;
-
     float startAngle = PI / 2.0;
     float endAngle = mod((DURATION - Time )/ DURATION, 1.0) * TWOPI;
-
-    // Clockwise angular distance from startAngle to fragment
     float delta = startAngle - fragAngle;
     if (delta < 0.0) delta += TWOPI;
 
-    // Alpha is 1 inside the sector from 12 o'clock to moving hand
-    float alpha = step(delta, endAngle); // 1.0 if frag is within sweep
+    float alpha = step(delta, endAngle);
 
     // Final color
     vec3 color = mix(color1, color2, ringMask);
     FragColor = vec4(color, ringMask * alpha);
 }
+
+// Clamp somehow so that if Time is more than DURATION
+// Then alpha = 1 for the ring.
+// Or maybe many different color layers.

@@ -153,10 +153,19 @@ int main() {
     uint32_t FixedUpdateCount= 0;
     
     // Levels:
-    //     PulseEffect, WaveEffect
-    //     Changing target position every frame
-    //     Skip various numbers at level generation
-    //     
+    //      PulseEffect, WaveEffect
+    //      Changing target position every frame. (Moving grid around)
+    //      Skip various numbers at level generation.
+    //      Do fonts other than numbers. Emojis and such.
+    // Score:
+    //      Cell value = RESOLUTION²:
+    //          Add value to score.
+    //      Cell value = 1:
+    //          Add 1 second to timer.
+    // Powerups:
+    //      999:
+    //          
+    //
     
     
     while (!(input->special & InputM::ESC)) {
@@ -209,7 +218,7 @@ int main() {
             if (input->mouse & InputM::LEFT_CLICK) {
                 if (input->toggles & InputM::Toggle_LC) {
                     
-                    if (puzzle->grid->cells[GridY * RESOLUTION + GridX] == 1) {
+                    if (puzzle->grid->cells[GridY * RESOLUTION + GridX] == 1) { // R*R and switching between modes with keyboard
                         RESOLUTION++;
                         if (RESOLUTION > 5) {
                             RESOLUTION = 1;
@@ -221,14 +230,16 @@ int main() {
                             game_screen_quad.position = glm::vec2(x, y);
                             game_screen_quad.size     = glm::vec2(z, w);
                             
-                            float asd = -1.0f + dist01(gen) * 0.5f;
-                            float rewfwe = z;
+                            //float asd = -1.0f + dist01(gen) * 0.5f;
+                            //float rewfwe = z;
                             //screen_quad.position = glm::vec2(asd, asd);
                             //screen_quad.size     = glm::vec2(rewfwe, rewfwe);
                         }
                         
                         GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, RESOLUTION);
                         SetText(puzzle, RESOLUTION); // shuffle as level up or something
+                        
+                        //TotalTime -= 1.0f; // Add cell number as seconds to the timer, or 1 everytime or whatever
                     }
                 }
                 input->toggles &= ~InputM::Toggle_LC;
