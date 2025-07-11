@@ -47,7 +47,6 @@ void HighlightCell(const Shader* const shaders[],
                    const float TotalTime) {
     const Shader* shader = shaders[(uint32_t)Shaders::Highlight];
     
-    glEnable(GL_BLEND);
     glUseProgram(shader->ID);
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
         GLuint location = shader->uniform_location[U];
@@ -60,7 +59,6 @@ void HighlightCell(const Shader* const shaders[],
     }
     glBindVertexArray(quad_vao);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    glDisable(GL_BLEND);
     
     glBindVertexArray(0); // Not really required, if all rendering is quads anyway. Grouping them later maybe.
 }
@@ -70,7 +68,6 @@ void RenderTimer(const Shader* const shaders[],
                  float TotalTime) {
     const Shader* shader;
     
-    glEnable(GL_BLEND);
     shader = shaders[(uint32_t)Shaders::Timer];
     glUseProgram(shader->ID);
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
@@ -84,7 +81,6 @@ void RenderTimer(const Shader* const shaders[],
     }
     glBindVertexArray(quad_vao);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    glDisable(GL_BLEND);
     
     glBindVertexArray(0); // Not really required, if all rendering is quads anyway. Grouping them later maybe.
 }

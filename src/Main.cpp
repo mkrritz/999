@@ -188,10 +188,10 @@ int main() {
         input = NextRecordedInputState();
         
         Quad& screen_quad = ui->quads[(uint32_t)Quads::SCREEN];
+        Quad& game_screen_quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
         
         // TODO: scale under mouse, like severance
         // TODO: Aspect cells?
-        Quad& game_screen_quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
         const double GX      = game_screen_quad.position.x; // Grid x position in [-1, 1]
         const double GY      = game_screen_quad.position.y; // Grid y position in [-1, 1]
         const double GW      = game_screen_quad.size.x; // Grid width size in (0, 2] range
@@ -234,12 +234,17 @@ int main() {
                             //float rewfwe = z;
                             //screen_quad.position = glm::vec2(asd, asd);
                             //screen_quad.size     = glm::vec2(rewfwe, rewfwe);
+                            // This won't align because text in placed on whole NDC
+                            // not bounded by the quad. Maybe fix maybe not.
+                            // RenderGame can remain on full NDC space, it's just two
+                            // quads anyway. The grid and the text.
                         }
                         
                         GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, RESOLUTION);
                         SetText(puzzle, RESOLUTION); // shuffle as level up or something
                         
-                        //TotalTime -= 1.0f; // Add cell number as seconds to the timer, or 1 everytime or whatever
+                        TotalTime -= 1.0f; // Add cell number as seconds to the timer, or 1 everytime or whatever
+                        // Do thi with another variable.
                     }
                 }
                 input->toggles &= ~InputM::Toggle_LC;
@@ -257,9 +262,11 @@ int main() {
         glClearColor(0, 1, 0, 0); // Green
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
+        glEnable(GL_BLEND);
         RenderTimer(shaders, ui->quad_vao, TotalTime); // Do this circle
         BlitGameScreen(shaders, camera, ui->quad_vao, &screen_quad, &game_screen_quad, TotalTime);
         HighlightCell(shaders, glm::vec2(CellX, CellY), glm::vec2(CS, CS), ui->quad_vao, TotalTime);
+        glDisable(GL_BLEND);
         
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         glClearColor(0, 0, 1, 0); // Blue

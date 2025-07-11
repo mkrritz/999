@@ -5,38 +5,42 @@ out vec4 FragColor;
 
 uniform float Time;
 
-const float DURATION = 60.0;
-const float radius = 0.475;
-const float thickness = 0.0125;
-const vec3 color1 = vec3(1.0, 0.0, 0.0); // Red
-const vec3 color2 = vec3(1.0, 1.0, 0.0); // Yellow
+const float DURATION = 6.0;
+const float R = 0.45; // circle radius
+const float T = 0.025;  // circle thickness
+const vec3 color1 = vec3(1.0, 0.0, 0.0);
+const vec3 color2 = vec3(1.0, 1.0, 0.0);
 const float TWOPI = 6.2831850;
 const float PI    = 3.1415925;
+const float HPI   = 1.5707963;
+
+const float INNER_CIRCLE = R - T;
+const float OUTER_CIRCLE = R + T;
+const float START_ANGLE = HPI;
 
 void main() {
     vec2 centerUV = UV - 0.5;
     float dist = length(centerUV);
-
+    
     // Ring band mask
-    float inner = radius - thickness;
-    float outer = radius + thickness;
     float edge  = fwidth(dist);
-    float ringMask = smoothstep(1*inner - 5*edge, 1*inner + 5*edge, 1*dist) *
-              (1.0 - smoothstep(1*outer - 1*edge, 1*outer + 1*edge, 1*dist));
-
+    float RING  = smoothstep(1*INNER_CIRCLE - 5*edge, 1*INNER_CIRCLE + 5*edge, 1*dist) *
+              (1.0 - smoothstep(1*OUTER_CIRCLE - 1*edge, 1*OUTER_CIRCLE + 1*edge, 1*dist));
+    
     // --- Angle calculations ---
-    float fragAngle = atan(centerUV.y, centerUV.x); // [-π, π]
+    float fragAngle = atan(centerUV.y, centerUV.x);
     if (fragAngle < 0.0) fragAngle += TWOPI;
-    float startAngle = PI / 2.0;
-    float endAngle = mod((DURATION - Time )/ DURATION, 1.0) * TWOPI;
-    float delta = startAngle - fragAngle;
+    float endAngle = fract((DURATION - Time) / DURATION) * TWOPI;
+    float delta = START_ANGLE - fragAngle;
     if (delta < 0.0) delta += TWOPI;
-
-    float alpha = step(delta, endAngle);
-
-    // Final color
-    vec3 color = mix(color1, color2, ringMask);
-    FragColor = vec4(color, ringMask * alpha);
+    float TIMER = step(delta, endAngle);
+    
+    //FragColor = vec4(UV, 0, 1);
+    //FragColor = vec4(centerUV, 0, 1);
+    //FragColor = vec4(UV, 0, RING);
+    //FragColor = vec4(centerUV, 0, TIMER);
+    FragColor = vec4(mix(color1, color2, dist), RING * TIMER);
+    //FragColor = vec4(dist,dist,dist, RING * TIMER);
 }
 
 // Clamp somehow so that if Time is more than DURATION

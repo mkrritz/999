@@ -16,6 +16,7 @@ void main()
     
     //Color.x = 1 - Color.x;
     FragColor = Color;
+    //FragColor.a = 0.25;
     
     //FragColor = vec4(UV, 0, 1);
 }
