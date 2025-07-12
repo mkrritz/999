@@ -114,7 +114,7 @@ int main() {
     HeapsInit(heaps);
     
     Shader* shaders[(uint32_t)Shaders::Count] = {nullptr};
-    ShadersInit(heaps[(uint32_t)Heaps::Shader], shaders, true);
+    ShadersInit(heaps[(uint32_t)Heaps::Shader], shaders, true); // Parameter to control which project shaders to load.. maybe not..
     
     CameraInit(heaps[(uint32_t)Heaps::Camera]);
     Camera* const camera = (Camera*)heaps[(uint32_t)Heaps::Camera]->memory;
@@ -218,7 +218,7 @@ int main() {
             if (input->mouse & InputM::LEFT_CLICK) {
                 if (input->toggles & InputM::Toggle_LC) {
                     
-                    if (puzzle->grid->cells[GridY * RESOLUTION + GridX] == 1) { // R*R and switching between modes with keyboard
+                    if (puzzle->grid->cells[GridY * RESOLUTION + GridX] == 1) { // R*R and switching between modes
                         RESOLUTION++;
                         if (RESOLUTION > 5) {
                             RESOLUTION = 1;
