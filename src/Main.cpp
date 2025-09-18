@@ -114,7 +114,7 @@ int main() {
     HeapsInit(heaps);
     
     Shader* shaders[(uint32_t)Shaders::Count] = {nullptr};
-    ShadersInit(heaps[(uint32_t)Heaps::Shader], shaders, true); // Parameter to control which project shaders to load.. maybe not..
+    ShadersInit(heaps[(uint32_t)Heaps::Shader], shaders, true);
     
     CameraInit(heaps[(uint32_t)Heaps::Camera]);
     Camera* const camera = (Camera*)heaps[(uint32_t)Heaps::Camera]->memory;
