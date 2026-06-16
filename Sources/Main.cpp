@@ -47,7 +47,7 @@ void HighlightCell(const Shader* const [],
                    const glm::vec2&,
                    const glm::vec2&,
                    const GLuint,
-                   const float);
+                   GLuint);
 void RenderGame(const Shader* const [],
                 const Camera* const,
                 const Font* const [],
@@ -56,21 +56,21 @@ void RenderGame(const Shader* const [],
                 const Input* const,
                 float,
                 const Puzzle* const puzzle,
-                float);
+                GLuint);
 void BlitGameScreen(const Shader* const [],
                     const Camera* const,
                     const GLuint,
                     const Quad* const,
                     const Quad* const,
-                    float);
+                    GLuint);
 void RenderTimer(const Shader* const [],
                  const GLuint,
-                 float);
+                 GLuint);
 void RenderQuadToScreen(const Shader* const [],
                         const Camera* const,
                         const GLuint,
                         const Quad* const,
-                        float);
+                        GLuint);
 // UI
 
 // Font
@@ -104,6 +104,11 @@ static void PuzzleInit(Heap* const heap) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 };
 
+
+struct SceneUBO {
+    glm::vec4 timers;
+};
+
 int main() {
     GLFWwindow* window;
     window = WindowInit();
@@ -131,6 +136,18 @@ int main() {
     uint32_t RESOLUTION = 1;
     GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, RESOLUTION);
     SetText(puzzle, RESOLUTION);
+    
+    GLuint scene_ubo_handle;
+    glCreateBuffers(1, &scene_ubo_handle);
+    glNamedBufferStorage(scene_ubo_handle,
+                         sizeof(SceneUBO),
+                         nullptr,
+                         CPU_CAN_WRITE);
+    SceneUBO* scene_ubo = (SceneUBO*)glMapNamedBufferRange(scene_ubo_handle,
+                                                           0,
+                                                           sizeof(SceneUBO),
+                                                           CPU_CAN_WRITE);
+    scene_ubo->timers.y = RESOLUTION; // Another
     
     glDisable(GL_DEPTH_TEST);
     //glDepthFunc(GL_LESS);
@@ -175,6 +192,7 @@ int main() {
         AccumulatorTime += DeltaTime;
         TotalTime += DeltaTime;
         EveryTwoSeconds += DeltaTime;
+        scene_ubo->timers.x = TotalTime;
         
         UpdateCount += 1;
         glfwPollEvents();
@@ -186,6 +204,11 @@ int main() {
         }
         
         input = NextRecordedInputState();
+        
+        // UIUBOs required: ???
+        //  Highlight UBO
+        //  FullScreen UBO
+        //  Grid UBO    (That's game_screen_quad)
         
         Quad& screen_quad = ui->quads[(uint32_t)Quads::SCREEN];
         Quad& game_screen_quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
@@ -206,6 +229,7 @@ int main() {
         const uint32_t GridY = uint32_t(LocalY * RESOLUTION);
         const double CellX   = GX + (GridX + 0.5f) * CS - HCS;
         const double CellY   = GY + (GridY + 0.5f) * CS - HCS;
+        // CellX and CellY are for highlight so these are stored in the highlight UIUBO
         
         while(AccumulatorTime >= dt) {
             AccumulatorTime -= dt;
@@ -239,7 +263,7 @@ int main() {
                             // RenderGame can remain on full NDC space, it's just two
                             // quads anyway. The grid and the text.
                         }
-                        
+                        scene_ubo->timers.y = RESOLUTION;
                         GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, RESOLUTION);
                         SetText(puzzle, RESOLUTION); // shuffle as level up or something
                         
@@ -256,16 +280,16 @@ int main() {
         glClearColor(1, 0, 0, 0); // Red
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        RenderGame(shaders, camera, fonts, &screen_quad, ui->quad_vao, input, TotalTime, puzzle, RESOLUTION);
+        RenderGame(shaders, camera, fonts, &screen_quad, ui->quad_vao, input, TotalTime, puzzle, scene_ubo_handle);
         
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, game_screen_quad.framebuffer);
         glClearColor(0, 1, 0, 0); // Green
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         glEnable(GL_BLEND);
-        RenderTimer(shaders, ui->quad_vao, TotalTime); // Do this circle
-        BlitGameScreen(shaders, camera, ui->quad_vao, &screen_quad, &game_screen_quad, TotalTime);
-        HighlightCell(shaders, glm::vec2(CellX, CellY), glm::vec2(CS, CS), ui->quad_vao, TotalTime);
+        RenderTimer(shaders, ui->quad_vao, scene_ubo_handle); // Do this circle
+        BlitGameScreen(shaders, camera, ui->quad_vao, &screen_quad, &game_screen_quad, scene_ubo_handle);
+        HighlightCell(shaders, glm::vec2(CellX, CellY), glm::vec2(CS, CS), ui->quad_vao, scene_ubo_handle);
         glDisable(GL_BLEND);
         
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);

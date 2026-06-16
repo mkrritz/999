@@ -6,13 +6,13 @@
 layout(location = 0) in vec3 _Position;
 layout(location = 1) in vec2 _UV;
 
-uniform float Time;
+#include "UniformBufferObjects/Scene.glsl"
 
 out vec2 UV;
 
 vec3 PulseEffect() {
     float period = 2.0;
-    float s = 1.0 + 0.01 * sin(TWOPI * Time / period);
+    float s = 1.0 + 0.01 * sin(TWOPI * TotalTime / period);
     return _Position * s;
 }
 
@@ -21,7 +21,7 @@ vec3 WaveEffect() {
     float frequency = 20.0;
     float strength = 0.0075;
     
-    p.y += strength * sin(((TWOPI * frequency) * _Position.x) + Time);
+    p.y += strength * sin(((TWOPI * frequency) * _Position.x) + TotalTime);
     
     return p;
 }

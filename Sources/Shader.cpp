@@ -16,10 +16,8 @@ static const path SHADERS_DIRECTORY = L"Shaders/";
 static Uniforms StringToEnum(const string& name) {
     static const std::unordered_map<string, Uniforms> map = {
         {"SignNW", Uniforms::SignNW},
-        {"Time", Uniforms::Time},
         {"Sampler", Uniforms::Sampler},
         {"Position", Uniforms::Position},
-        {"Resolution", Uniforms::Resolution},
         {"Right", Uniforms::Right},
         {"Size", Uniforms::Size},
     };
@@ -32,6 +30,19 @@ static time_t GetFileModificationTime(const char* file_path) {
         return 0;
     }
     return file_stat.st_mtime;
+}
+
+static void ProcessIncludes(string& source) {
+    for (size_t pos = 0; (pos = source.find("#include", pos)) != string::npos;) {
+        size_t q1 = source.find('"', pos);
+        size_t q2 = source.find('"', q1 + 1);
+        string file_path = (SHADERS_DIRECTORY / source.substr(q1 + 1, q2 - q1 - 1)).string();
+        std::ifstream file(file_path);
+        ASSERT(!file.is_open(), "File not found.");
+        string content((std::istreambuf_iterator<char>(file)), {});
+        source.replace(pos, q2 + 1 - pos, content);
+        pos += content.size();
+    }
 }
 
 static bool LoadCompileAndAttach(GLuint program_id,
@@ -52,7 +63,9 @@ static bool LoadCompileAndAttach(GLuint program_id,
         printf(" Missing file --- '%s'", name);
         return true;
     }
-
+    
+    ProcessIncludes(ShaderCode);
+    
     *shader_id = glCreateShader(type);
     const char* SourcePointer = ShaderCode.c_str();
     glShaderSource(*shader_id, 1, &SourcePointer, nullptr);

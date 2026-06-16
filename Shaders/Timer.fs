@@ -3,7 +3,7 @@
 in vec2 UV;
 out vec4 FragColor;
 
-uniform float Time;
+#include "UniformBufferObjects/Scene.glsl"
 
 const float DURATION = 6.0;
 const vec3 color1 = vec3(1.0, 0.0, 0.0);
@@ -28,7 +28,7 @@ void main() {
     
     float fragAngle = atan(centerUV.y, centerUV.x);
     if (fragAngle < 0.0) fragAngle += TWOPI;
-    float endAngle = fract((DURATION - Time) / DURATION) * TWOPI;
+    float endAngle = fract((DURATION - TotalTime) / DURATION) * TWOPI;
     float delta = START_ANGLE - fragAngle;
     if (delta < 0.0) delta += TWOPI;
     float TIMER = step(delta, endAngle);

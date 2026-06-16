@@ -38,7 +38,6 @@ enum struct Uniforms {
     SignNW,
     Time,
     Sampler,
-    Resolution,
     Count // Not really a uniform.
 };
 
@@ -95,11 +94,11 @@ struct ShaderConfig {
     }
 */
 const ShaderConfig SHADERS_CONFIG[] = {
-    { "Quad.vs", nullptr, "DrawTexture.fs", nullptr, nullptr, nullptr, (const char*[]){"Sampler", "Position", "Size", "Time"}, 4, nullptr, 0 },
-    { "Quad.vs", nullptr, "Grid.fs", nullptr, nullptr, nullptr, (const char*[]){"Resolution", "Position", "Size"}, 3, nullptr, 0 },
-    { "Quad.vs", nullptr, "Highlight.fs", nullptr, nullptr, nullptr, (const char*[]){"Position", "Size", "Time"}, 3, nullptr, 0 },
-    { "SDF.vs", nullptr, "SDF.fs", nullptr, nullptr, nullptr, (const char*[]){"Time", "Sampler"}, 2, nullptr, 0 },
-    { "Quad.vs", nullptr, "Timer.fs", nullptr, nullptr, nullptr, (const char*[]){"Time", "Position", "Size"}, 3, nullptr, 0 },
+    { "Quad.vs", nullptr, "DrawTexture.fs", nullptr, nullptr, nullptr, (const char*[]){"Sampler", "Position", "Size"}, 3, nullptr, 0 },
+    { "Quad.vs", nullptr, "Grid.fs", nullptr, nullptr, nullptr, (const char*[]){"Position", "Size"}, 2, nullptr, 0 },
+    { "Quad.vs", nullptr, "Highlight.fs", nullptr, nullptr, nullptr, (const char*[]){"Position", "Size",}, 2, nullptr, 0 },
+    { "SDF.vs", nullptr, "SDF.fs", nullptr, nullptr, nullptr, (const char*[]){"Sampler"}, 1, nullptr, 0 },
+    { "Quad.vs", nullptr, "Timer.fs", nullptr, nullptr, nullptr, (const char*[]){"Position", "Size"}, 2, nullptr, 0 },
 };
 
 #endif

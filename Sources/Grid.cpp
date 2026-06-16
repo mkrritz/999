@@ -207,7 +207,7 @@ void RenderGame(const Shader* const shaders[],
                 const Input* const input,
                 float TotalTime,
                 const Puzzle* const puzzle,
-                float resolution) {
+                GLuint scene_ubo_handle) {
     const Shader* shader;
     const Font* const font = fonts[(uint32_t)FontType::English];
     
@@ -215,10 +215,11 @@ void RenderGame(const Shader* const shaders[],
     
     shader = shaders[(uint32_t)Shaders::Grid];
     glUseProgram(shader->ID);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
        GLuint location = shader->uniform_location[U];
        switch(shader->uniform_name[U]) {
-           case Uniforms::Resolution: glUniform1f(location, resolution); break;
+           //case Uniforms::Resolution: glUniform1f(location, resolution); break;
            case Uniforms::Position:   glUniform2fv(location, 1, glm::value_ptr(quad->position)); break;
            case Uniforms::Size:       glUniform2fv(location, 1, glm::value_ptr(quad->size)); break;
            default: SHADER_WARNING("Uniform mismatch"); break;
@@ -230,10 +231,11 @@ void RenderGame(const Shader* const shaders[],
     glEnable(GL_BLEND);
     shader = shaders[(uint32_t)Shaders::SDF];
     glUseProgram(shader->ID);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
     for (uint32_t U = 0; U < shader->uniforms_count; U++) {
         GLuint location = shader->uniform_location[U];
         switch(shader->uniform_name[U]) {
-            case Uniforms::Time: glUniform1f(location, TotalTime); break;
+            //case Uniforms::Time: glUniform1f(location, TotalTime); break;
             case Uniforms::Sampler: glUniform1i(location, 0); break;
             default: SHADER_WARNING("Uniform mismatch"); break;
         }
