@@ -1,7 +1,28 @@
-CXX = g++ -O0 -Wall -std=c++17 -Iinclude -include include/pch.h
-SOURCE_DIR = src/
-PCH = include/pch.h
-PCH_GCH = include/pch.h.gch
+
+# Where did these go? -lgdi32 -luser32 -lkernel32
+
+APP_NAME     := 999
+APP_ICON     := 999
+
+COMPILER     := g++
+INCLUDE_DIR  := Includes
+SOURCE_DIR   := Sources
+ASSEMBLY_DIR := Assemblies
+BINARY_DIR   := Binaries
+OBJECT_DIR   := Objects
+
+SHADER_DIR   := Shaders
+FONT_DIR     := Fonts
+
+RELEASE_DIR  := Release
+
+TARGET       := $(BINARY_DIR)/$(APP_NAME)
+PCH          := $(INCLUDE_DIR)/pch.h
+
+PKGS     := glfw3 glew
+CXXFLAGS := -O0 -Wall -std=c++17 -mbmi2 \
+            $(shell pkg-config --cflags $(PKGS)) -I$(INCLUDE_DIR)
+LDFLAGS  := $(shell pkg-config --libs $(PKGS)) -lopengl32
 
 SOURCES = \
 	Main.cpp \
@@ -15,41 +36,70 @@ SOURCES = \
 	Memory.cpp \
 	Window.cpp
 
-ifeq ($(MAKECMDGOALS),static)
-	EXEC = a
-	BUILD_TYPE = static
-	OBJECT_DIR = obj_s/
-	LIBRARIES = -Llib -lglfw3 -lglew32s -lopengl32 -lpthread -lgdi32 -luser32 -lkernel32
-	STATIC_FLAGS = -static -static-libgcc -static-libstdc++ -DGLEW_STATIC
-else
-	EXEC = bin/a
-	BUILD_TYPE = dynamic
-	OBJECT_DIR = obj_d/
-	LIBRARIES = -Llib -lglfw3dll -lglew32 -lopengl32 -lpthread -lmingw32 -lgdi32 -luser32 -lkernel32
-	STATIC_FLAGS =
-endif
-
-OBJECTS = $(SOURCES:%.cpp=$(OBJECT_DIR)%.o)
-DEPS = $(OBJECTS:.o=.d)
+OBJECTS       := $(SOURCES:%.cpp=$(OBJECT_DIR)/%.o)
+#OBJECTS       += $(OBJECT_DIR)/$(APP_ICON).o
+ASM_FILES     := $(SOURCES:%.cpp=$(ASSEMBLY_DIR)/%.s)
+DEPENDENCIES  := $(OBJECTS:.o=.d)
 
 ##############################################################
-# Targets
-
-all: $(EXEC)
-
-static: $(EXEC)
-
-$(EXEC): $(PCH_GCH) $(OBJECTS)
-	$(info Linking $(BUILD_TYPE)...)
-	@$(CXX) $(STATIC_FLAGS) -o $@ $(OBJECTS) $(LIBRARIES)
-
-$(PCH_GCH): $(PCH)
-	$(info Generating precompiled header...)
-	@$(CXX) -x c++-header -o $@ $<
-
-$(OBJECT_DIR)%.o: $(SOURCE_DIR)%.cpp
-	$(info Compiling $<...)
-	@$(CXX) -c $(STATIC_FLAGS) $< -o $@ -MMD -MP
-
--include $(DEPS)
+all: $(TARGET)
+assembly: $(ASM_FILES)
 ##############################################################
+
+##############################################################
+$(OBJECT_DIR)/$(APP_ICON).o: $(APP_ICON).rc | $(OBJECT_DIR)
+	@echo Compiling $<...
+	@windres $< -O coff -o $@
+##############################################################
+
+##############################################################
+MKDIR = if not exist $1 mkdir $1
+$(OBJECT_DIR) $(ASSEMBLY_DIR) $(BINARY_DIR):
+	@$(call MKDIR,$(subst /,\,$@))
+##############################################################
+
+##############################################################
+$(TARGET): $(PCH).gch $(OBJECTS) | $(BINARY_DIR)
+	@echo Linking...
+	@$(COMPILER) $(OBJECTS) -o $@ $(LDFLAGS)
+
+$(PCH).gch: $(PCH)
+	@echo Generating precompiled header...
+	@$(COMPILER) $(CXXFLAGS) -x c++-header $< -o $@
+
+$(OBJECT_DIR)/%.o: $(SOURCE_DIR)/%.cpp $(PCH).gch | $(OBJECT_DIR)
+	@echo Compiling $<...
+	@$(COMPILER) $(CXXFLAGS) -include $(PCH) -c $< -o $@ -MMD -MP
+##############################################################
+
+##############################################################
+$(ASSEMBLY_DIR)/%.s: $(SOURCE_DIR)/%.cpp $(PCH).gch | $(ASSEMBLY_DIR)
+	@echo Generating assembly for $<...
+	@$(COMPILER) $(CXXFLAGS) -include $(PCH) -S $< -o $@
+##############################################################
+
+##############################################################
+-include $(DEPENDENCIES)
+##############################################################
+
+.PHONY: clean
+
+clean:
+	@echo Cleaning up...
+	@if exist $(subst /,\,$(OBJECT_DIR)) rmdir /s /q $(subst /,\,$(OBJECT_DIR))
+	@if exist $(subst /,\,$(ASSEMBLY_DIR)) rmdir /s /q $(subst /,\,$(ASSEMBLY_DIR))
+	@if exist $(subst /,\,$(RELEASE_DIR)) rmdir /s /q $(subst /,\,$(RELEASE_DIR))
+	@if exist $(subst /,\,$(INCLUDE_DIR))\pch.h.gch del /f /q $(subst /,\,$(INCLUDE_DIR))\pch.h.gch
+	@if exist $(subst /,\,$(BINARY_DIR))\$(APP_NAME).exe del /f /q $(subst /,\,$(BINARY_DIR))\$(APP_NAME).exe
+
+.PHONY: release
+release:
+	@$(MAKE) --no-print-directory clean
+	@$(MAKE) --no-print-directory all
+	@mkdir $(subst /,\,$(RELEASE_DIR))
+	@copy /Y $(subst /,\,$(TARGET).exe) $(subst /,\,$(RELEASE_DIR)) > nul
+	@echo Copying Shaders...
+	@xcopy /E /I /Y $(SHADER_DIR) $(subst /,\,$(RELEASE_DIR))\$(SHADER_DIR) > nul
+	@xcopy /S /I /Y $(FONT_DIR)\*.png $(subst /,\,$(RELEASE_DIR))\$(FONT_DIR)\ > nul
+	@powershell -NoProfile -ExecutionPolicy Bypass -File ReleaseDLLs.ps1 \
+				-ReleaseDir "$(subst /,\,$(RELEASE_DIR))" -AppName "$(APP_NAME)"

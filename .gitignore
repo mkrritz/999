@@ -1,4 +1,5 @@
-/bin/a.exe
-/a.exe
-/obj_d
-/obj_s
+Binaries/999.exe
+Objects
+Assemblies
+Release
+Includes/pch.h.gch
