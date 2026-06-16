@@ -202,10 +202,7 @@ void SetText(Puzzle* const puzzle,
 void RenderGame(const Shader* const shaders[],
                 const Camera* const camera,
                 const Font* const fonts[],
-                const Quad* const quad,
-                const GLuint quad_vao,
-                const Input* const input,
-                float TotalTime,
+                const UI* const ui,
                 const Puzzle* const puzzle,
                 GLuint scene_ubo_handle) {
     const Shader* shader;
@@ -213,33 +210,19 @@ void RenderGame(const Shader* const shaders[],
     
     glBindSampler(0, camera->sampler_clamp_linear);
     
+    glBindVertexArray(empty_vao);
+    
     shader = shaders[(uint32_t)Shaders::Grid];
+    
     glUseProgram(shader->ID);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
-    for (uint32_t U = 0; U < shader->uniforms_count; U++) {
-       GLuint location = shader->uniform_location[U];
-       switch(shader->uniform_name[U]) {
-           //case Uniforms::Resolution: glUniform1f(location, resolution); break;
-           case Uniforms::Position:   glUniform2fv(location, 1, glm::value_ptr(quad->position)); break;
-           case Uniforms::Size:       glUniform2fv(location, 1, glm::value_ptr(quad->size)); break;
-           default: SHADER_WARNING("Uniform mismatch"); break;
-       }
-    }
-    glBindVertexArray(quad_vao);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(UIIndex::Grid)]);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     
     glEnable(GL_BLEND);
     shader = shaders[(uint32_t)Shaders::SDF];
     glUseProgram(shader->ID);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
-    for (uint32_t U = 0; U < shader->uniforms_count; U++) {
-        GLuint location = shader->uniform_location[U];
-        switch(shader->uniform_name[U]) {
-            //case Uniforms::Time: glUniform1f(location, TotalTime); break;
-            case Uniforms::Sampler: glUniform1i(location, 0); break;
-            default: SHADER_WARNING("Uniform mismatch"); break;
-        }
-    }
     glBindTexture(GL_TEXTURE_2D, font->texture);
     glBindVertexArray(puzzle->surface.vao);
     glDrawElements(GL_TRIANGLES, 6 * puzzle->surface.quads_count, GL_UNSIGNED_INT, 0);

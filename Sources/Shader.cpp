@@ -1,8 +1,6 @@
 
 #include "pch.h"
 
-#define SHADER_SETUP
-
 #include "game/Assert.h"
 #include "game/Memory.h"
 #include "game/Shader.h"
@@ -10,19 +8,7 @@
 
 using std::string;
 using std::filesystem::path;
-
 static const path SHADERS_DIRECTORY = L"Shaders/";
-
-static Uniforms StringToEnum(const string& name) {
-    static const std::unordered_map<string, Uniforms> map = {
-        {"SignNW", Uniforms::SignNW},
-        {"Sampler", Uniforms::Sampler},
-        {"Position", Uniforms::Position},
-        {"Right", Uniforms::Right},
-        {"Size", Uniforms::Size},
-    };
-    return map.at(name);
-}
 
 static time_t GetFileModificationTime(const char* file_path) {
     struct stat file_stat;
@@ -52,6 +38,7 @@ static bool LoadCompileAndAttach(GLuint program_id,
                                  char* const shader_name,
                                  time_t& shader_time) {
     string ShaderCode;
+    int ErrorLogLength;
     path shader_path = SHADERS_DIRECTORY / name;
     std::ifstream ShaderStream(shader_path.string().c_str(), std::ios::in);
     if (ShaderStream.is_open()) {
@@ -71,12 +58,11 @@ static bool LoadCompileAndAttach(GLuint program_id,
     glShaderSource(*shader_id, 1, &SourcePointer, nullptr);
     glCompileShader(*shader_id);
 
-    int ErrorLogLength;
     glGetShaderiv(*shader_id, GL_INFO_LOG_LENGTH, &ErrorLogLength);
     if (ErrorLogLength > 0) {
-        std::vector<char> ShaderErrorMessage(ErrorLogLength + 1);
-        glGetShaderInfoLog(*shader_id, ErrorLogLength, nullptr, &ShaderErrorMessage[0]);
-        printf("\n\n  [ERROR]%s:  %s\n", name, &ShaderErrorMessage[0]);
+        char ErrorMessage[1024];
+        glGetShaderInfoLog(*shader_id, sizeof(ErrorMessage), nullptr, ErrorMessage);
+        printf("\n\n  [ERROR] %s:  %s\n", name, ErrorMessage);
         glDeleteShader(*shader_id);
         return true;
     } else {
@@ -89,131 +75,15 @@ static bool LoadCompileAndAttach(GLuint program_id,
     return false;
 }
 
-static Shader* LoadShaders(Heap* const heap,
-                           const uint32_t slot,
-                           const ShaderConfig& config) {
-    int ErrorLogLength;
-    bool problem = false;
-    GLuint vsID, gsID, fsID, csID, tesID, tcsID;
-    
-    heap->offset = slot * sizeof(Shader);
-    Shader* shader = (Shader*)HeapAllocate(heap, sizeof(Shader));
-    
-    Shader temp; {
-        temp.slot = slot;
-        temp.ID = glCreateProgram();
-        temp.vs_time  = 0;
-        temp.tes_time = 0;
-        temp.tcs_time = 0;
-        temp.gs_time  = 0;
-        temp.fs_time  = 0;
-        temp.cs_time  = 0;
-        temp.vs_name[0]  = '\0';
-        temp.tes_name[0] = '\0';
-        temp.tcs_name[0] = '\0';
-        temp.gs_name[0]  = '\0';
-        temp.fs_name[0]  = '\0';
-        temp.cs_name[0]  = '\0';
-        printf("  [%u] Shader ID %u [", slot, temp.ID);
-        
-        if (config.vs_name) {
-            problem |= LoadCompileAndAttach(temp.ID, &vsID, config.vs_name, GL_VERTEX_SHADER, temp.vs_name, temp.vs_time);
-        }
-        
-        if (config.tes_name) {
-            problem |= LoadCompileAndAttach(temp.ID, &tesID, config.tes_name, GL_TESS_EVALUATION_SHADER, temp.tes_name, temp.tes_time);
-        }
-        
-        if (config.tcs_name) {
-            problem |= LoadCompileAndAttach(temp.ID, &tcsID, config.tcs_name, GL_TESS_CONTROL_SHADER, temp.tcs_name, temp.tcs_time);
-        }
-        
-        if (config.gs_name) {
-            problem |= LoadCompileAndAttach(temp.ID, &gsID, config.gs_name, GL_GEOMETRY_SHADER, temp.gs_name, temp.gs_time);
-        }
-        
-        if (config.fs_name) {
-            problem |= LoadCompileAndAttach(temp.ID, &fsID, config.fs_name, GL_FRAGMENT_SHADER, temp.fs_name, temp.fs_time);
-        }
-        
-        if (config.cs_name) {
-            problem |= LoadCompileAndAttach(temp.ID, &csID, config.cs_name, GL_COMPUTE_SHADER, temp.cs_name, temp.cs_time);
-        }
-        
-        if (config.feedbacks) {
-            if (strcmp(config.feedbacks[config.feedbacks_count], "Seperate") == 0)
-                glTransformFeedbackVaryings(temp.ID, config.feedbacks_count, config.feedbacks, GL_SEPARATE_ATTRIBS);
-            else if (strcmp(config.feedbacks[config.feedbacks_count], "Interleaved") == 0)
-                glTransformFeedbackVaryings(temp.ID, config.feedbacks_count, config.feedbacks, GL_INTERLEAVED_ATTRIBS);
-            else
-                ASSERT(true, config.feedbacks[config.feedbacks_count]);
-        }
-        
-        glLinkProgram(temp.ID);
-        
-        if (config.vs_name) {
-            glDetachShader(temp.ID, vsID);
-            glDeleteShader(vsID);
-        }
-                
-        if (config.tes_name) {
-            glDetachShader(temp.ID, tesID);
-            glDeleteShader(tesID);
-        }
-        
-        if (config.tcs_name) {
-            glDetachShader(temp.ID, tcsID);
-            glDeleteShader(tcsID);
-        }
-        
-        if (config.gs_name) {
-            glDetachShader(temp.ID, gsID);
-            glDeleteShader(gsID);
-        }
-        
-        if (config.fs_name) {
-            glDetachShader(temp.ID, fsID);
-            glDeleteShader(fsID);
-        }
-        
-        if (config.cs_name) {
-            glDetachShader(temp.ID, csID);
-            glDeleteShader(csID);
-        }
-        
-        glGetProgramiv(temp.ID, GL_INFO_LOG_LENGTH, &ErrorLogLength);
-        if (!(problem || (ErrorLogLength > 0))) {
-            for (uint32_t i = 0; i < config.uniforms_count; i++) {
-                temp.uniform_name[i] = StringToEnum(config.uniforms[i]);
-                temp.uniform_location[i] = glGetUniformLocation(temp.ID, config.uniforms[i]);
-            }
-            temp.uniforms_count = config.uniforms_count;
-            glUseProgram(0);
-            glDeleteProgram(shader->ID); // A value of 0 for program will be silently ignored.
-            printf(" ] OK (%u, %u)\n", shader->ID, temp.ID);
-            *shader = temp; // Overwrite shader
-        } else {
-            // Just delete the program of the failed attempt at reloading
-            // Shader state remains unchanged
-            std::vector<char> ProgramErrorMessage(ErrorLogLength + 1);
-            glGetProgramInfoLog(temp.ID, ErrorLogLength, nullptr, &ProgramErrorMessage[0]);
-            printf(" ] \n%s\n", &ProgramErrorMessage[0]);
-            glDeleteProgram(temp.ID);
-        }
-    }
-    
-    return shader;
-}
-
 static void CheckForReload(Heap* const heap) {
     /*
         When any file is modified,
-        the thread will loop over all loaded shader programs
+        this thread will loop over all loaded shader programs
         to find the ones that need reloading.
     */
     const Shader* const shaders = (const Shader*)heap->memory;
     uint64_t shaders_to_be_reloaded = 0;
-    for (uint32_t index = 0; index < (uint32_t)Shaders::Count; index++) {
+    for (uint32_t index = 0; index < static_cast<uint32_t>(Shaders::Count); index++) {
         const Shader* const shader = &shaders[index];
         bool modified = false;
         modified |= (shader->vs_time  < GetFileModificationTime(shader->vs_name));
@@ -240,10 +110,8 @@ static void* ObserveDirectoryChanges(void* arg) {
                                           OPEN_EXISTING,
                                           FILE_FLAG_BACKUP_SEMANTICS,
                                           nullptr);
-    if (directory_handle == INVALID_HANDLE_VALUE) {
-        printf("  How is it possible for the path to not be 'Shaders/'?\n  Why is the path '%ls'?\n", path);
-        return nullptr; // FIX THIS SOMETIME
-    }
+    
+    ASSERT(directory_handle == INVALID_HANDLE_VALUE, "No tracking for you.");
     
     double last_time = 0;
     char buffer[128];
@@ -252,9 +120,11 @@ static void* ObserveDirectoryChanges(void* arg) {
     while (1) {
         // This may trigger multiple times for a single file, for various reasons.
         // Adding a timer to allow reloading only once per second.
-        if (ReadDirectoryChangesW(directory_handle, buffer, sizeof(buffer), FALSE,
-                                  FILE_NOTIFY_CHANGE_LAST_WRITE, &bytes_returned, nullptr, nullptr)) {
-            WARNING(bytes_returned >= sizeof(buffer), "Results truncated, events may be missed.");
+        if (ReadDirectoryChangesW(directory_handle, buffer,
+                                  sizeof(buffer), FALSE,
+                                  FILE_NOTIFY_CHANGE_LAST_WRITE,
+                                  &bytes_returned, nullptr, nullptr)) {
+            ASSERT(bytes_returned >= sizeof(buffer), "Results truncated, events may be missed.");
             FILE_NOTIFY_INFORMATION* info = (FILE_NOTIFY_INFORMATION*)buffer;
             double current_time = glfwGetTime();
             if (info->Action == FILE_ACTION_MODIFIED && (current_time - last_time > 1)) {
@@ -270,9 +140,167 @@ static void* ObserveDirectoryChanges(void* arg) {
     return nullptr;
 }
 
-void ShadersInit(Heap* const heap, Shader* shaders[], bool observe_directory_changes) {
-    for (uint32_t index = 0; index < (uint32_t)Shaders::Count; index++) {
-        shaders[index] = LoadShaders(heap, index, SHADERS_CONFIG[index]);
+struct ShaderConfig {
+    const char* const vs_name;
+    const char* const gs_name;
+    const char* const fs_name;
+    const char* const cs_name;
+    const char* const tcs_name;
+    const char* const tes_name;
+};
+const ShaderConfig SHADERS_CONFIG[] = {
+    { "Quad.vs", nullptr, "DrawTexture.fs", nullptr, nullptr, nullptr },
+    { "Quad.vs", nullptr, "Grid.fs",        nullptr, nullptr, nullptr },
+    { "Quad.vs", nullptr, "Highlight.fs",   nullptr, nullptr, nullptr },
+    { "SDF.vs", nullptr, "SDF.fs",          nullptr, nullptr, nullptr },
+    { "Quad.vs", nullptr, "Timer.fs",       nullptr, nullptr, nullptr },
+};
+
+static uint32_t CeilPowerOfTwo(uint32_t N) {
+    /*
+        Input  0 1 2 3 4 5 6 7 8 9  ...
+        Output 1 1 2 4 4 8 8 8 8 16 ...
+                
+        This is pretty much useless because local_size_xyz will already
+        be a power of 2 because we are good people.
+    */
+    if (N <= 1) { return 1; }
+    return 1u << (32 - __builtin_clz(N - 1));
+}
+
+static Shader* LoadShaders(Heap* const heap,
+                           const uint32_t slot) {
+    int ErrorLogLength;
+    bool problem = false;
+    GLuint vsID, gsID, fsID, csID, tesID, tcsID;
+    GLint local_size_xyz[3];
+    const ShaderConfig& config = SHADERS_CONFIG[slot];
+    
+    heap->offset = slot * sizeof(Shader);
+    Shader* shader = (Shader*)HeapAllocate(heap, sizeof(Shader));
+    
+    Shader temp; {
+        temp.slot = slot;
+        temp.ID = glCreateProgram();
+        temp.vs_time  = 0;
+        temp.tes_time = 0;
+        temp.tcs_time = 0;
+        temp.gs_time  = 0;
+        temp.fs_time  = 0;
+        temp.cs_time  = 0;
+        temp.vs_name[0]  = '\0';
+        temp.tes_name[0] = '\0';
+        temp.tcs_name[0] = '\0';
+        temp.gs_name[0]  = '\0';
+        temp.fs_name[0]  = '\0';
+        temp.cs_name[0]  = '\0';
+        temp.threads     = glm::uvec3(0,0,0);
+        printf("  [%u] Shader ID %u [", slot, temp.ID);
+        
+        if (config.vs_name) {
+            problem |= LoadCompileAndAttach(temp.ID, &vsID, config.vs_name, GL_VERTEX_SHADER, temp.vs_name, temp.vs_time);
+        }
+        
+        if (config.tes_name) {
+            problem |= LoadCompileAndAttach(temp.ID, &tesID, config.tes_name, GL_TESS_EVALUATION_SHADER, temp.tes_name, temp.tes_time);
+        }
+        
+        if (config.tcs_name) {
+            problem |= LoadCompileAndAttach(temp.ID, &tcsID, config.tcs_name, GL_TESS_CONTROL_SHADER, temp.tcs_name, temp.tcs_time);
+        }
+        
+        if (config.gs_name) {
+            problem |= LoadCompileAndAttach(temp.ID, &gsID, config.gs_name, GL_GEOMETRY_SHADER, temp.gs_name, temp.gs_time);
+        }
+        
+        if (config.fs_name) {
+            problem |= LoadCompileAndAttach(temp.ID, &fsID, config.fs_name, GL_FRAGMENT_SHADER, temp.fs_name, temp.fs_time);
+        }
+        
+        if (config.cs_name) {
+            problem |= LoadCompileAndAttach(temp.ID, &csID, config.cs_name, GL_COMPUTE_SHADER, temp.cs_name, temp.cs_time);
+        }
+        
+        glLinkProgram(temp.ID);
+        
+        if (config.vs_name) {
+            glDetachShader(temp.ID, vsID);
+            glDeleteShader(vsID);
+        }
+         
+        if (config.tes_name) {
+            glDetachShader(temp.ID, tesID);
+            glDeleteShader(tesID);
+        }
+        
+        if (config.tcs_name) {
+            glDetachShader(temp.ID, tcsID);
+            glDeleteShader(tcsID);
+        }
+        
+        if (config.gs_name) {
+            glDetachShader(temp.ID, gsID);
+            glDeleteShader(gsID);
+        }
+        
+        if (config.fs_name) {
+            glDetachShader(temp.ID, fsID);
+            glDeleteShader(fsID);
+        }
+        
+        if (config.cs_name) {
+            glDetachShader(temp.ID, csID);
+            glDeleteShader(csID);
+            
+            /*
+                When a compute shader is compiled, retrieve the A, B and C values from
+                    layout(local_size_x = A, local_size_y = B, local_size_z = C) in;
+                These values are useful on the CPU so that the glDispatch command can
+                dispatch the required workgroups based on the number of threads in each workgroup
+                as well as the number of elements that are to be processed.
+                    For example a layout of (64, 1, 1) while processing 69 particles
+                    will result in 2 workgroups dispatched.
+                As is for example the quadtree and the octree, since they are designed
+                in such a way where all threads do work. One thread processes one leaf.
+                At such depths, quadtree with 6 and octree with 4.
+                There are 4096 leafs for both trees.
+                So each workgroup processing 128 leafs, meaning 32 workgroups dispatched.
+                That's fixed.
+                Particles however have no fixed count, so this stays here to enable faster
+                experimentation with variable number of threads per workgroup which will in
+                turn dispatch the minimum number of workgroups.
+                
+            */
+            glGetProgramiv(temp.ID, GL_COMPUTE_WORK_GROUP_SIZE, local_size_xyz);
+            temp.threads = glm::uvec3(CeilPowerOfTwo(local_size_xyz[0]),
+                                      CeilPowerOfTwo(local_size_xyz[1]),
+                                      CeilPowerOfTwo(local_size_xyz[2]));
+        }
+        
+        glGetProgramiv(temp.ID, GL_INFO_LOG_LENGTH, &ErrorLogLength);
+        if (!(problem || (ErrorLogLength > 0))) {
+            glUseProgram(0);
+            glDeleteProgram(shader->ID); // A value of 0 for program will be silently ignored.
+            printf(" ] OK (%u, %u)\n", shader->ID, temp.ID);
+            *shader = temp; // Overwrite shader
+        } else {
+            // Just delete the program of the failed attempt at reloading
+            // Shader state remains unchanged
+            char ErrorMessage[1024];
+            glGetProgramInfoLog(temp.ID, sizeof(ErrorMessage), nullptr, ErrorMessage);
+            printf(" ] \n%s\n", ErrorMessage);
+            glDeleteProgram(temp.ID);
+        }
+    }
+    
+    return shader;
+}
+
+void ShadersInit(Heap* const heap,
+                 Shader** shaders,
+                 bool observe_directory_changes) {
+    for (uint32_t index = 0; index < static_cast<uint32_t>(Shaders::Count); index++) {
+        shaders[index] = LoadShaders(heap, index);
     }
     
     if (observe_directory_changes) {
@@ -283,13 +311,14 @@ void ShadersInit(Heap* const heap, Shader* shaders[], bool observe_directory_cha
     
 }
 
-void ReloadShader(Heap* const heap, uint32_t index) {
+void ReloadShader(Heap* const heap,
+                  uint32_t index) {
     /* Note:
         The reloaded shader is overwriting the one already loaded,
-        so we don't need to do anything with the returned result of LoadShaders.
+        so the returned result of LoadShaders here is useless.
     */
     printf("\n\n");
-    (void)LoadShaders(heap, index, SHADERS_CONFIG[index]);
+    (void)LoadShaders(heap, index);
     printf("\n");
 }
 

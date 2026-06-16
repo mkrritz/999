@@ -44,33 +44,27 @@ Input* NextRecordedInputState();
 // UI
 void UIInit(Heap* const);
 void HighlightCell(const Shader* const [],
-                   const glm::vec2&,
-                   const glm::vec2&,
-                   const GLuint,
+                   const UI* const,
                    GLuint);
 void RenderGame(const Shader* const [],
                 const Camera* const,
                 const Font* const [],
-                const Quad* const,
-                const GLuint,
-                const Input* const,
-                float,
-                const Puzzle* const puzzle,
+                const UI* const,
+                const Puzzle* const,
                 GLuint);
 void BlitGameScreen(const Shader* const [],
                     const Camera* const,
-                    const GLuint,
-                    const Quad* const,
-                    const Quad* const,
+                    const UI* const,
+                    GLuint,
                     GLuint);
 void RenderTimer(const Shader* const [],
-                 const GLuint,
+                 const UI* const,
                  GLuint);
-void RenderQuadToScreen(const Shader* const [],
+
+void RenderQuadToScreen(const Shader* const*,
+                        const UI* const,
                         const Camera* const,
-                        const GLuint,
-                        const Quad* const,
-                        GLuint);
+                        const GLuint);
 // UI
 
 // Font
@@ -109,9 +103,13 @@ struct SceneUBO {
     glm::vec4 timers;
 };
 
+GLuint empty_vao;
+
 int main() {
     GLFWwindow* window;
     window = WindowInit();
+    
+    glCreateVertexArrays(1, &empty_vao);
     
     Input* input = NextRecordedInputState();
     
@@ -184,7 +182,6 @@ int main() {
     //          
     //
     
-    
     while (!(input->special & InputM::ESC)) {
         CurrectTime = glfwGetTime();
         DeltaTime = CurrectTime - LastTime;
@@ -205,20 +202,16 @@ int main() {
         
         input = NextRecordedInputState();
         
-        // UIUBOs required: ???
-        //  Highlight UBO
-        //  FullScreen UBO
-        //  Grid UBO    (That's game_screen_quad)
-        
-        Quad& screen_quad = ui->quads[(uint32_t)Quads::SCREEN];
-        Quad& game_screen_quad = ui->quads[(uint32_t)Quads::GAME_SCREEN];
+        Quad& screen_quad = ui->quads[(uint32_t)Quads::FULLSCREEN];
+        Quad& game_screen_quad = ui->quads[(uint32_t)Quads::GRID];
         
         // TODO: scale under mouse, No cursor?
         // TODO: Aspect cells?
-        const double GX      = game_screen_quad.position.x; // Grid x position in [-1, 1]
-        const double GY      = game_screen_quad.position.y; // Grid y position in [-1, 1]
-        const double GW      = game_screen_quad.size.x; // Grid width size in (0, 2] range
-        const double GH      = game_screen_quad.size.y; // Grid height size in (0, 2] range
+        glm::vec4 GXGYGWGH = ui->ubo[static_cast<uint32_t>(UIIndex::Grid)]->rect;
+        const double GX      = GXGYGWGH.x; // Grid x position in [-1, 1]
+        const double GY      = GXGYGWGH.y; // Grid y position in [-1, 1]
+        const double GW      = GXGYGWGH.z; // Grid width size in (0, 2] range
+        const double GH      = GXGYGWGH.w; // Grid height size in (0, 2] range
         const double HCS     = 0.5f * GW / double(RESOLUTION); // Half cell size
         const double CS      = 2.0f * HCS; // Cell size (Pefrect square grid)
         const double MOUSE_NDC_X   = glm::clamp(input->ndc_x, GX, GX + GW - HCS); // Clamped to respond to the window containing the first render pass
@@ -230,6 +223,8 @@ int main() {
         const double CellX   = GX + (GridX + 0.5f) * CS - HCS;
         const double CellY   = GY + (GridY + 0.5f) * CS - HCS;
         // CellX and CellY are for highlight so these are stored in the highlight UIUBO
+        
+        ui->ubo[static_cast<uint32_t>(UIIndex::Highlight)]->rect = glm::vec4(CellX, CellY, CS, CS);
         
         while(AccumulatorTime >= dt) {
             AccumulatorTime -= dt;
@@ -251,9 +246,8 @@ int main() {
                             float y = -0.7f + dist01(gen) * 0.7f; // do better maths
                             float z =  0.6f + dist01(gen) * 0.2f; // 0.2 to become max based on size above
                             float w = z; // 0.4f + ((dist(gen) + 1.0f) * 1.0f / 2.0f); // TODO aspect?
-                            game_screen_quad.position = glm::vec2(x, y);
-                            game_screen_quad.size     = glm::vec2(z, w);
                             
+                            ui->ubo[static_cast<uint32_t>(UIIndex::Grid)]->rect = glm::vec4(x, y, z, w);
                             //float asd = -1.0f + dist01(gen) * 0.5f;
                             //float rewfwe = z;
                             //screen_quad.position = glm::vec2(asd, asd);
@@ -280,23 +274,26 @@ int main() {
         glClearColor(1, 0, 0, 0); // Red
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        RenderGame(shaders, camera, fonts, &screen_quad, ui->quad_vao, input, TotalTime, puzzle, scene_ubo_handle);
+        RenderGame(shaders, camera, fonts, ui, puzzle, scene_ubo_handle);
         
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, game_screen_quad.framebuffer);
         glClearColor(0, 1, 0, 0); // Green
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         glEnable(GL_BLEND);
-        RenderTimer(shaders, ui->quad_vao, scene_ubo_handle); // Do this circle
-        BlitGameScreen(shaders, camera, ui->quad_vao, &screen_quad, &game_screen_quad, scene_ubo_handle);
-        HighlightCell(shaders, glm::vec2(CellX, CellY), glm::vec2(CS, CS), ui->quad_vao, scene_ubo_handle);
+        RenderTimer(shaders, ui, scene_ubo_handle);
+        BlitGameScreen(shaders, camera, ui, screen_quad.texture, scene_ubo_handle);
+        HighlightCell(shaders, ui, scene_ubo_handle);
         glDisable(GL_BLEND);
+        
         
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         glClearColor(0, 0, 1, 0); // Blue
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        RenderQuadToScreen(shaders, camera, ui->quad_vao, &game_screen_quad, TotalTime);
+        
+                                             // screen_quad?
+        RenderQuadToScreen(shaders, ui, camera, game_screen_quad.texture);
         
         glfwSwapBuffers(window);
     }
