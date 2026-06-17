@@ -1,5 +1,6 @@
 struct SceneUBO {
     vec4 TIMERS;
+    //vec4 GridStuff; maybe instead of another UBO
 };
 
 layout(std140, binding = 0) uniform SceneUniformBufferObject {

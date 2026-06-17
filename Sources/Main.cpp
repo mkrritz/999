@@ -20,7 +20,11 @@ static std::mt19937 gen(time(nullptr));
 static std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
 static std::uniform_real_distribution<float> dist01(0.0f, 1.0f);
 
+GLuint empty_vao;
+
 GLFWwindow* WindowInit();
+
+#if 1
 
 //Memory
 void HeapsInit(Heap*[]);
@@ -80,10 +84,15 @@ void SetText(Puzzle* const,
              const uint32_t);
 // Grid
 
+#endif
+
 static void PuzzleInit(Heap* const heap) {
     Puzzle* puzzle = (Puzzle*)HeapAllocate(heap, sizeof(Puzzle));
     puzzle->grid = nullptr;
     
+    // This looks useless now..
+    // What does it really do?
+    // Make this attributeless vertices.?
     glGenVertexArrays(1, &puzzle->surface.vao);
     glGenBuffers(1, &puzzle->surface.vbo);
     glGenBuffers(1, &puzzle->surface.ibo);
@@ -98,12 +107,17 @@ static void PuzzleInit(Heap* const heap) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 };
 
-
 struct SceneUBO {
     glm::vec4 timers;
 };
 
-GLuint empty_vao;
+/*
+    There must be something wrong with the highlighting rendered cell.
+    It doesn't align perfectly with the location and size of the grid.
+    
+    How rendering is done:
+        
+*/
 
 int main() {
     GLFWwindow* window;
@@ -148,9 +162,6 @@ int main() {
     scene_ubo->timers.y = RESOLUTION; // Another
     
     glDisable(GL_DEPTH_TEST);
-    //glDepthFunc(GL_LESS);
-    //glDepthFunc(GL_LEQUAL);
-    //glEnable(GL_CULL_FACE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBlendEquation(GL_FUNC_ADD);
@@ -164,8 +175,6 @@ int main() {
     LastTime = glfwGetTime();
     CurrectTime = DeltaTime = TotalTime = EveryTwoSeconds = 0;
     AccumulatorTime = dt;
-    uint32_t UpdateCount= 0;
-    uint32_t FixedUpdateCount= 0;
     
     // Levels:
     //      PulseEffect, WaveEffect
@@ -191,7 +200,6 @@ int main() {
         EveryTwoSeconds += DeltaTime;
         scene_ubo->timers.x = TotalTime;
         
-        UpdateCount += 1;
         glfwPollEvents();
         
         while (shader_slots_to_reload) {
@@ -202,37 +210,28 @@ int main() {
         
         input = NextRecordedInputState();
         
-        Quad& screen_quad = ui->quads[(uint32_t)Quads::FULLSCREEN];
-        Quad& game_screen_quad = ui->quads[(uint32_t)Quads::GRID];
-        
-        // TODO: scale under mouse, No cursor?
-        // TODO: Aspect cells?
-        glm::vec4 GXGYGWGH = ui->ubo[static_cast<uint32_t>(UIIndex::Grid)]->rect;
-        const double GX      = GXGYGWGH.x; // Grid x position in [-1, 1]
-        const double GY      = GXGYGWGH.y; // Grid y position in [-1, 1]
-        const double GW      = GXGYGWGH.z; // Grid width size in (0, 2] range
-        const double GH      = GXGYGWGH.w; // Grid height size in (0, 2] range
-        const double HCS     = 0.5f * GW / double(RESOLUTION); // Half cell size
-        const double CS      = 2.0f * HCS; // Cell size (Pefrect square grid)
-        const double MOUSE_NDC_X   = glm::clamp(input->ndc_x, GX, GX + GW - HCS); // Clamped to respond to the window containing the first render pass
-        const double MOUSE_NDC_Y   = glm::clamp(input->ndc_y, GY, GY + GH - HCS); // Clamped to respond to the window containing the first render pass
-        const double LocalX  = (MOUSE_NDC_X - GX) / GW;
-        const double LocalY  = (MOUSE_NDC_Y - GY) / GH;
-        const uint32_t GridX = uint32_t(LocalX * RESOLUTION);
-        const uint32_t GridY = uint32_t(LocalY * RESOLUTION);
-        const double CellX   = GX + (GridX + 0.5f) * CS - HCS;
-        const double CellY   = GY + (GridY + 0.5f) * CS - HCS;
-        // CellX and CellY are for highlight so these are stored in the highlight UIUBO
-        
-        ui->ubo[static_cast<uint32_t>(UIIndex::Highlight)]->rect = glm::vec4(CellX, CellY, CS, CS);
-        
         while(AccumulatorTime >= dt) {
             AccumulatorTime -= dt;
-            FixedUpdateCount += 1;
             
-            if (input->wheel) {
-                input->wheel = 0;
-            }
+            // TODO: scale under mouse, No cursor?
+            // TODO: Aspect cells?
+            glm::vec4 GXGYGWGH = ui->ubo[static_cast<uint32_t>(UIIndex::Grid)]->rect;
+            const double GX      = GXGYGWGH.x; // Grid x position in [-1, 1]
+            const double GY      = GXGYGWGH.y; // Grid y position in [-1, 1]
+            const double GW      = GXGYGWGH.z; // Grid width size in (0, 2] range
+            const double GH      = GXGYGWGH.w; // Grid height size in (0, 2] range
+            const double HCS     = 0.5f * GW / double(RESOLUTION); // Half cell size
+            const double CS      = 2.0f * HCS; // Cell size (Pefrect square grid)
+            const double MOUSE_NDC_X   = glm::clamp(input->ndc_x, GX, GX + GW - HCS); // Clamped to respond to the window containing the first render pass
+            const double MOUSE_NDC_Y   = glm::clamp(input->ndc_y, GY, GY + GH - HCS); // Clamped to respond to the window containing the first render pass
+            const double LocalX  = (MOUSE_NDC_X - GX) / GW;
+            const double LocalY  = (MOUSE_NDC_Y - GY) / GH;
+            const uint32_t GridX = uint32_t(LocalX * RESOLUTION);
+            const uint32_t GridY = uint32_t(LocalY * RESOLUTION);
+            const double CellX   = GX + (GridX + 0.5f) * CS - HCS;
+            const double CellY   = GY + (GridY + 0.5f) * CS - HCS;
+            // CellX and CellY are for highlight so these are stored in the highlight UIUBO
+            ui->ubo[static_cast<uint32_t>(UIIndex::Highlight)]->rect = glm::vec4(CellX, CellY, CS, CS);
             
             if (input->mouse & InputM::LEFT_CLICK) {
                 if (input->toggles & InputM::Toggle_LC) {
@@ -264,36 +263,52 @@ int main() {
                         TotalTime -= 1.0f; // Add cell number as seconds to the timer, or 1 everytime or whatever
                         // Do thi with another variable.
                     }
+                    
                 }
                 input->toggles &= ~InputM::Toggle_LC;
             } else input->toggles |= InputM::Toggle_LC;
             
         }
         
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, screen_quad.framebuffer);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)Quads::FULLSCREEN].framebuffer);
         glClearColor(1, 0, 0, 0); // Red
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         RenderGame(shaders, camera, fonts, ui, puzzle, scene_ubo_handle);
         
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, game_screen_quad.framebuffer);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)Quads::GRID].framebuffer);
         glClearColor(0, 1, 0, 0); // Green
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
+        glBindVertexArray(empty_vao);
         glEnable(GL_BLEND);
-        RenderTimer(shaders, ui, scene_ubo_handle);
-        BlitGameScreen(shaders, camera, ui, screen_quad.texture, scene_ubo_handle);
-        HighlightCell(shaders, ui, scene_ubo_handle);
-        glDisable(GL_BLEND);
         
+        glUseProgram(shaders[(uint32_t)Shaders::Timer]->ID);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(UIIndex::Fullscreen)]);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        
+        glBindSampler(0, camera->sampler_repeat_linear);
+        glBindTextureUnit(0, ui->quads[(uint32_t)Quads::FULLSCREEN].texture);
+        
+        glUseProgram(shaders[(uint32_t)Shaders::DrawTexture]->ID);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(UIIndex::Grid)]);
+        
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        
+        glUseProgram(shaders[(uint32_t)Shaders::Highlight]->ID);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(UIIndex::Highlight)]);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        
+        glDisable(GL_BLEND);
         
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         glClearColor(0, 0, 1, 0); // Blue
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        
-                                             // screen_quad?
-        RenderQuadToScreen(shaders, ui, camera, game_screen_quad.texture);
+        RenderQuadToScreen(shaders, ui, camera, ui->quads[(uint32_t)Quads::GRID].texture);
         
         glfwSwapBuffers(window);
     }

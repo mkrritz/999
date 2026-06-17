@@ -2,7 +2,7 @@
 
 in vec2 UV;
 
-uniform sampler2D Sampler;
+layout(binding = 0) uniform sampler2D Sampler;
 
 out vec4 FragColor;
 

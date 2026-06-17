@@ -22,7 +22,6 @@ void RenderQuadToScreen(const Shader* const* shaders,
     
     glBindSampler(0, camera->sampler_clamp_linear);
     glBindTextureUnit(0, texture);
-    
     glBindVertexArray(empty_vao);
     
     glUseProgram(shader->ID);
@@ -31,60 +30,8 @@ void RenderQuadToScreen(const Shader* const* shaders,
     glBindBufferBase(GL_UNIFORM_BUFFER, 2, 0);
     
     glBindTextureUnit(0, 0);
-    glBindVertexArray(0);
-}
-
-void HighlightCell(const Shader* const shaders[],
-                   const UI* const ui,
-                   GLuint scene_ubo_handle) {
-    const Shader* shader = shaders[(uint32_t)Shaders::Highlight];
-    
-    glBindVertexArray(empty_vao);
-    
-    glUseProgram(shader->ID);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(UIIndex::Highlight)]);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    
-    glBindVertexArray(0);
-}
-
-void RenderTimer(const Shader* const shaders[],
-                 const UI* const ui,
-                 GLuint scene_ubo_handle) {
-    const Shader* shader = shaders[(uint32_t)Shaders::Timer];
-    
-    glBindVertexArray(empty_vao);
-    
-    glUseProgram(shader->ID);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(UIIndex::Fullscreen)]);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    
-    glBindVertexArray(0);
-}
-
-void BlitGameScreen(const Shader* const shaders[],
-                    const Camera* const camera,
-                    const UI* const ui,
-                    GLuint texture,
-                    GLuint scene_ubo_handle) {
-    const Shader* shader = shaders[(uint32_t)Shaders::DrawTexture];
-    //glBindSampler(0, camera->sampler_clamp_linear);
-    glBindSampler(0, camera->sampler_repeat_linear);
-    
-    glBindVertexArray(empty_vao);
-    
-    glUseProgram(shader->ID);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(UIIndex::Grid)]);
-    
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    
-    glBindVertexArray(0);
     glBindSampler(0, 0);
+    glBindVertexArray(0);
 }
 
 void UIInit(Heap* const heap) {

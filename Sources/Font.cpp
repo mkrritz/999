@@ -118,6 +118,8 @@ void FontsInit(Heap* const heap,
     }
     stbi_set_flip_vertically_on_load(false);
     glBindTexture(GL_TEXTURE_2D, 0);
+    
+    // Replace this with glBindTextureUnit ???
 }
 
 glm::vec2 GetAtlasUV(char c) {

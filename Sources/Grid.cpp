@@ -209,6 +209,7 @@ void RenderGame(const Shader* const shaders[],
     const Font* const font = fonts[(uint32_t)FontType::English];
     
     glBindSampler(0, camera->sampler_clamp_linear);
+    glBindTextureUnit(0, font->texture);
     
     glBindVertexArray(empty_vao);
     
@@ -223,12 +224,11 @@ void RenderGame(const Shader* const shaders[],
     shader = shaders[(uint32_t)Shaders::SDF];
     glUseProgram(shader->ID);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
-    glBindTexture(GL_TEXTURE_2D, font->texture);
     glBindVertexArray(puzzle->surface.vao);
     glDrawElements(GL_TRIANGLES, 6 * puzzle->surface.quads_count, GL_UNSIGNED_INT, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
     glDisable(GL_BLEND);
     
     glBindVertexArray(0);
+    
     glBindSampler(0, 0);
 }

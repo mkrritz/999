@@ -4,7 +4,7 @@ in vec2 UV;
 
 out vec4 FragColor;
 
-uniform sampler2D Sampler;
+layout(binding = 0) uniform sampler2D Sampler;
 
 #include "UniformBufferObjects/Scene.glsl"
 
