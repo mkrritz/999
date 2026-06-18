@@ -4,18 +4,19 @@
 #include "game/Assert.h"
 #include "game/Memory.h"
 #include "game/UI.h"
-#include "game/Font.h"
+#include "game/Font.h"        // Do Text.cpp ?
 #include "game/Input.h"
 #include "game/Puzzle.h"
-#include "game/Grid.h"
 #include "game/Shader.h"
 #include "game/Camera.h"
 
 using std::string;
 
-static std::mt19937 gen(time(nullptr));
+static std::mt19937 gen(time(nullptr)); // Random.h
 
 glm::vec2 GetAtlasUV(char);
+
+# if 1 // Fix all that. Remove algorithm, no new. Data tables insteads.
 
 static uint32_t* FillLevelInfo(Puzzle* const puzzle,
                               const std::string& level,
@@ -84,6 +85,8 @@ static string GenerateLevel(Grid* const grid,
     //printf("\n--\n%s\n--\n", digits.c_str());
     return level;
 }
+
+#endif
 
 void GridInit(Heap* const heap,
               Puzzle* const puzzle,
@@ -205,7 +208,6 @@ void RenderGame(const Shader* const shaders[],
                 const UI* const ui,
                 const Puzzle* const puzzle,
                 GLuint scene_ubo_handle) {
-    const Shader* shader;
     const Font* const font = fonts[(uint32_t)FontType::English];
     
     glBindSampler(0, camera->sampler_clamp_linear);
@@ -213,19 +215,18 @@ void RenderGame(const Shader* const shaders[],
     
     glBindVertexArray(empty_vao);
     
-    shader = shaders[(uint32_t)Shaders::Grid];
-    
-    glUseProgram(shader->ID);
+    glUseProgram(shaders[(uint32_t)Shaders::Grid]->ID);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(UIIndex::Grid)]);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(UIIndex::Fullscreen)]);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     
     glEnable(GL_BLEND);
-    shader = shaders[(uint32_t)Shaders::SDF];
-    glUseProgram(shader->ID);
+    
+    glUseProgram(shaders[(uint32_t)Shaders::SDF]->ID);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
-    glBindVertexArray(puzzle->surface.vao);
+    glBindVertexArray(puzzle->surface.vao); // Can this be removed?
     glDrawElements(GL_TRIANGLES, 6 * puzzle->surface.quads_count, GL_UNSIGNED_INT, 0);
+    
     glDisable(GL_BLEND);
     
     glBindVertexArray(0);

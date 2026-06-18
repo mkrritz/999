@@ -6,10 +6,23 @@ struct Overlay {
     size_t quads_count;
 };
 
-struct Grid;
+struct Grid {
+    uint32_t* cells;
+};
+
 struct Puzzle {
     Grid* grid;
     Overlay surface;
 };
+
+//struct Text2D {
+//    GLuint vao, vbo;
+//    uint32_t characters;
+//    uint32_t capacity;
+//    float* vertex_buffer;
+//    
+//    GLuint ubo_handle;
+//    UniformBufferObjectText* ubo;
+//};
 
 #endif

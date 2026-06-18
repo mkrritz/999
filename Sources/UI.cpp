@@ -4,10 +4,8 @@
 #include "game/Assert.h"
 #include "game/Memory.h"
 #include "game/UI.h"
-#include "game/Font.h"
-#include "game/Input.h"
 #include "game/Shader.h"
-#include "game/Camera.h"
+#include "game/Camera.h" // Remove
 #include "game/Window.h"
 
 void RenderQuadToScreen(const Shader* const* shaders,
@@ -82,10 +80,11 @@ void UIInit(Heap* const heap) {
     }
     ui->ubo[static_cast<uint32_t>(UIIndex::Fullscreen)]->rect = glm::vec4(-1.0f, -1.0f, 2.0f, 2.0f);
     
-    // This is set in main...
     ui->ubo[static_cast<uint32_t>(UIIndex::Highlight)]->rect = glm::vec4(-1.0f, -1.0f, 2.0f, 2.0f);
-    // This too so the grid can spawn wherever..
     ui->ubo[static_cast<uint32_t>(UIIndex::Grid)]->rect = glm::vec4(-0.8f, -0.8f, 1.6f, 1.6f);
+    
+    //ui->ubo[static_cast<uint32_t>(UIIndex::Grid)]->rect = glm::vec4(-0.8f, -0.8f, 1.0f, 1.6f);
+    // Will the above work with Aspect cells?
     
 }
 

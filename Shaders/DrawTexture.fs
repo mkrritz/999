@@ -8,8 +8,7 @@ layout(binding = 0) uniform sampler2D Sampler;
 
 #include "UniformBufferObjects/Scene.glsl"
 
-void main()
-{
+void main() {
     vec4 Color = texture(Sampler, UV);
     
     //Color = texture(Sampler, UV * abs(sin(TotalTime)) + 0.3);

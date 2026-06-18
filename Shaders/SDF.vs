@@ -11,15 +11,15 @@ layout(location = 1) in vec2 _UV;
 out vec2 UV;
 
 vec3 PulseEffect() {
-    float period = 2.0;
+    float period = 1.0;
     float s = 1.0 + 0.01 * sin(TWOPI * TotalTime / period);
     return _Position * s;
 }
 
 vec3 WaveEffect() {
     vec3 p = _Position;
-    float frequency = 20.0;
-    float strength = 0.0075;
+    float frequency = 1.0;
+    float strength = 0.105;
     
     p.y += strength * sin(((TWOPI * frequency) * _Position.x) + TotalTime);
     
@@ -28,9 +28,9 @@ vec3 WaveEffect() {
 
 void main() {
     vec3 Position = _Position;
-    //Position = PulseEffect(); //do values controlled by resolution or something
-    //Position = WaveEffect();  //do values controlled by resolution or something
-
+    //Position = PulseEffect();
+    //Position = WaveEffect();
+    
     gl_Position = vec4(Position, 1.0);
     UV = _UV;
 }

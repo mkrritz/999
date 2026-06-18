@@ -8,8 +8,7 @@ out vec4 FragColor;
 
 const vec3  FILL_COLOR = vec3(0.5, 0.5, 0.5);
 
-void main()
-{
+void main() {
     float a_1 = 0.01 * (UV.y-0.5) * (UV.x-0.5) * TotalTime;
     float a_2 = 0.4 * cos(TotalTime * 1.0);
     float a_3 = a_2 * abs(a_1);

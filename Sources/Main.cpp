@@ -9,7 +9,6 @@
 #include "game/Memory.h"
 #include "game/Font.h"
 #include "game/UI.h"
-#include "game/Grid.h"
 #include "game/Puzzle.h"
 #include "game/Window.h"
 
@@ -90,34 +89,53 @@ static void PuzzleInit(Heap* const heap) {
     Puzzle* puzzle = (Puzzle*)HeapAllocate(heap, sizeof(Puzzle));
     puzzle->grid = nullptr;
     
-    // This looks useless now..
-    // What does it really do?
-    // Make this attributeless vertices.?
-    glGenVertexArrays(1, &puzzle->surface.vao);
-    glGenBuffers(1, &puzzle->surface.vbo);
-    glGenBuffers(1, &puzzle->surface.ibo);
-    glBindVertexArray(puzzle->surface.vao);
-    glBindBuffer(GL_ARRAY_BUFFER, puzzle->surface.vbo);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, TEXT_VERTEX_ATTRIBUTE_COUNT * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, TEXT_VERTEX_ATTRIBUTE_COUNT * sizeof(float), (void*)(3 * sizeof(GLfloat))); 
-    glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, puzzle->surface.ibo);
-    glBindVertexArray(0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-};
+    glCreateVertexArrays(1, &puzzle->surface.vao);
+    glCreateBuffers(1, &puzzle->surface.vbo);
+    glCreateBuffers(1, &puzzle->surface.ibo);
+    glVertexArrayVertexBuffer(puzzle->surface.vao, 0, puzzle->surface.vbo, 0, TEXT_VERTEX_ATTRIBUTE_COUNT * sizeof(float));
+    glEnableVertexArrayAttrib(puzzle->surface.vao, 0);
+    glVertexArrayAttribFormat(puzzle->surface.vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayAttribBinding(puzzle->surface.vao, 0, 0);
+    glEnableVertexArrayAttrib(puzzle->surface.vao, 1);
+    glVertexArrayAttribFormat(puzzle->surface.vao, 1, 2, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat));
+    glVertexArrayAttribBinding(puzzle->surface.vao, 1, 0);
+    glVertexArrayElementBuffer(puzzle->surface.vao, puzzle->surface.ibo);
+}
 
 struct SceneUBO {
     glm::vec4 timers;
 };
 
 /*
-    There must be something wrong with the highlighting rendered cell.
-    It doesn't align perfectly with the location and size of the grid.
-    
     How rendering is done:
-        
+        There are two render targets. (enum struct Quads)
+        Both of them have the same size. (WINDOW_WIDTH, WINDOW_HEIGHT)
+        Some things are rendered to the FULLSCREEN target.
+        Then some things are rendered on the GRID target.
+            One of the things that is rendered on the GRID target, is the contents
+            of the FULLSCREEN rendered target.
+        The final screen rendering comes from the GRID target. A full screen quad
+        is rendered with the contents sampled from the GRID target.
 */
+
+// TODO: DSA text.
+// TODO: Aspect cells?
+// TODO: scale under mouse, radially, like severance. No cursor?
+// TODO: 
+
+// Levels:
+//      PulseEffect, WaveEffect
+//      Changing target position every frame. (Moving grid around)
+//      Skip various numbers at level generation.
+//      Do fonts other than numbers. Emojis and such.
+// Score:
+//      Add cell value or something.
+// Time:
+//      Add cell value to timer or something.
+// Powerups:
+//      999:
+//          
+//
 
 int main() {
     GLFWwindow* window;
@@ -145,7 +163,7 @@ int main() {
     PuzzleInit(heaps[(uint32_t)Heaps::Main]);
     Puzzle* const puzzle = (Puzzle*)heaps[(uint32_t)Heaps::Main]->memory;
     
-    uint32_t RESOLUTION = 1;
+    uint32_t RESOLUTION = 1; // what?
     GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, RESOLUTION);
     SetText(puzzle, RESOLUTION);
     
@@ -176,21 +194,6 @@ int main() {
     CurrectTime = DeltaTime = TotalTime = EveryTwoSeconds = 0;
     AccumulatorTime = dt;
     
-    // Levels:
-    //      PulseEffect, WaveEffect
-    //      Changing target position every frame. (Moving grid around)
-    //      Skip various numbers at level generation.
-    //      Do fonts other than numbers. Emojis and such.
-    // Score:
-    //      Cell value = RESOLUTION²:
-    //          Add value to score.
-    //      Cell value = 1:
-    //          Add 1 second to timer.
-    // Powerups:
-    //      999:
-    //          
-    //
-    
     while (!(input->special & InputM::ESC)) {
         CurrectTime = glfwGetTime();
         DeltaTime = CurrectTime - LastTime;
@@ -213,8 +216,6 @@ int main() {
         while(AccumulatorTime >= dt) {
             AccumulatorTime -= dt;
             
-            // TODO: scale under mouse, No cursor?
-            // TODO: Aspect cells?
             glm::vec4 GXGYGWGH = ui->ubo[static_cast<uint32_t>(UIIndex::Grid)]->rect;
             const double GX      = GXGYGWGH.x; // Grid x position in [-1, 1]
             const double GY      = GXGYGWGH.y; // Grid y position in [-1, 1]
@@ -230,7 +231,6 @@ int main() {
             const uint32_t GridY = uint32_t(LocalY * RESOLUTION);
             const double CellX   = GX + (GridX + 0.5f) * CS - HCS;
             const double CellY   = GY + (GridY + 0.5f) * CS - HCS;
-            // CellX and CellY are for highlight so these are stored in the highlight UIUBO
             ui->ubo[static_cast<uint32_t>(UIIndex::Highlight)]->rect = glm::vec4(CellX, CellY, CS, CS);
             
             if (input->mouse & InputM::LEFT_CLICK) {
@@ -238,7 +238,7 @@ int main() {
                     
                     if (puzzle->grid->cells[GridY * RESOLUTION + GridX] == 1) { // R*R and switching between modes
                         RESOLUTION++;
-                        if (RESOLUTION > 5) {
+                        if (RESOLUTION > 40 ) {
                             RESOLUTION = 1;
                             
                             float x = -0.7f + dist01(gen) * 0.7f; // do better maths

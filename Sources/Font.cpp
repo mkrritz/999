@@ -91,6 +91,11 @@ static uint8_t char_to_normalized_ascii(char c) {
     return (uint8_t) c;
 }
 
+glm::vec2 GetAtlasUV(char c) {
+    uint8_t index = char_to_normalized_ascii(c);
+    return FontUV[index];
+}
+
 static const string FONTS[(uint32_t)FontType::Count] = {
     // Keep these in the same order as the 'enum struct FontType'
     "font_1.png",
@@ -98,31 +103,20 @@ static const string FONTS[(uint32_t)FontType::Count] = {
     //"font_1.png",
 };
 
-static void LoadFont(const std::string& name) {
-    path font_path = FONT_DIRECTORY / name;
-    int W, H, C;
-    unsigned char *img = stbi_load(font_path.string().c_str(), &W, &H, &C, 1);
-    ASSERT (!img, "Font image missing.");
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, W, H, 0, GL_RED, GL_UNSIGNED_BYTE, img);
-    stbi_image_free(img);
-}
-
 void FontsInit(Heap* const heap,
                Font* fonts[]) {
     stbi_set_flip_vertically_on_load(true);
     for (uint32_t index = 0; index < (uint32_t)FontType::Count; index++) {
         fonts[index] = (Font*)HeapAllocate(heap, sizeof(Font));
-        glGenTextures(1, &fonts[index]->texture);
-        glBindTexture(GL_TEXTURE_2D, fonts[index]->texture);
-        LoadFont(FONTS[index]);
+        glCreateTextures(GL_TEXTURE_2D, 1, &fonts[index]->texture);
+        
+        path font_path = FONT_DIRECTORY / FONTS[index];
+        int W, H, C;
+        unsigned char *img = stbi_load(font_path.string().c_str(), &W, &H, &C, 1);
+        ASSERT (!img, "Font image missing.");
+        glTextureStorage2D(fonts[index]->texture, 1, GL_R8, W, H);
+        glTextureSubImage2D(fonts[index]->texture, 0, 0, 0, W, H, GL_RED, GL_UNSIGNED_BYTE, img);
+        stbi_image_free(img);
     }
     stbi_set_flip_vertically_on_load(false);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    
-    // Replace this with glBindTextureUnit ???
-}
-
-glm::vec2 GetAtlasUV(char c) {
-    uint8_t index = char_to_normalized_ascii(c);
-    return FontUV[index];
 }

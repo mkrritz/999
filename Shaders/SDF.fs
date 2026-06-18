@@ -6,8 +6,8 @@ layout(binding = 0) uniform sampler2D Sampler;
 
 out vec4 FragColor;
 
-const float FILL = 0.9;    // Make these uniform, to contol character size based on grid size and whatever
-const float BORDER = 0.8;  // Make these uniform, to contol character size based on grid size and whatever
+const float FILL = 0.9;
+const float BORDER = 0.8;
 
 const vec3  FILL_COLOR = vec3(0.647, 0.0, 0.125);
 const vec3  BORDER_COLOR = vec3(0.78, 0.173, 0.255);
