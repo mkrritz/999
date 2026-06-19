@@ -175,6 +175,8 @@ int main() {
     CurrectTime = DeltaTime = TotalTime = EveryTwoSeconds = 0;
     AccumulatorTime = dt;
     
+    glBindVertexArray(empty_vao); // Only quad rendering going on. No VAO needed.
+    
     while (!(input->special & InputM::ESC)) {
         CurrectTime = glfwGetTime();
         DeltaTime = CurrectTime - LastTime;
@@ -262,7 +264,6 @@ int main() {
         glClearColor(0, 1, 0, 0); // Green
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        glBindVertexArray(empty_vao);
         glEnable(GL_BLEND);
         
         glUseProgram(shaders[(uint32_t)Shaders::Timer]->ID);
@@ -293,6 +294,8 @@ int main() {
         
         glfwSwapBuffers(window);
     }
+    
+    glBindVertexArray(0);
     
     return 1;
 }

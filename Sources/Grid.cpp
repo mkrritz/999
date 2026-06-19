@@ -5,14 +5,12 @@
 #include "game/Memory.h"
 #include "game/UI.h"
 #include "game/Font.h"        // Do Text.cpp ?
-#include "game/Input.h"
 #include "game/Puzzle.h"
+#include "game/Random.h"
 #include "game/Shader.h"
 #include "game/Camera.h"
 
 using std::string;
-
-static std::mt19937 gen(time(nullptr)); // Random.h
 
 glm::vec2 GetAtlasUV(char);
 
@@ -83,7 +81,7 @@ static std::string GenerateLevel(Puzzle* const puzzle,
 
 #endif
 
-struct CharQuad {
+struct CharacterQuad {
     glm::vec4 rect;
     glm::vec4 uv_rect;
 };
@@ -93,7 +91,7 @@ void SetText(Puzzle* const puzzle,
     const string level = GenerateLevel(puzzle, resolution);
     uint32_t* NumberOfDigitsOnEachCell = FillLevelInfo(puzzle, level, resolution);
     
-    CharQuad* CQ = new CharQuad[puzzle->quads_count];
+    CharacterQuad* CQ = new CharacterQuad[puzzle->quads_count];
     uint32_t CharacterIndex = 0;
     
     const float CellScale = 1.0f / float(resolution);
@@ -128,7 +126,7 @@ void SetText(Puzzle* const puzzle,
             continue;
         }
         
-        CharQuad& quad = CQ[CharacterIndex];
+        CharacterQuad& quad = CQ[CharacterIndex];
         CharacterIndex += 1;
         
         float X = CellCenterX + (LocalX * VerticalPadding - CharacterScale) * HalfCellScale;
@@ -144,7 +142,7 @@ void SetText(Puzzle* const puzzle,
     }
     
     // Do it with mapped vbo and direct write to field (or memcopy) instead of this gl call
-    glNamedBufferData(puzzle->vbo, puzzle->quads_count * sizeof(CharQuad), &CQ[0], GL_STATIC_DRAW);
+    glNamedBufferData(puzzle->vbo, puzzle->quads_count * sizeof(CharacterQuad), &CQ[0], GL_STATIC_DRAW);
     
     delete[] CQ;
     free(NumberOfDigitsOnEachCell);
@@ -158,28 +156,24 @@ void RenderGame(const Shader* const shaders[],
                 GLuint scene_ubo_handle) {
     const Font* const font = fonts[(uint32_t)FontType::English];
     
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
+    
     glBindSampler(0, camera->sampler_clamp_linear);
     glBindTextureUnit(0, font->texture);
     
-    glBindVertexArray(empty_vao);
-    
     glUseProgram(shaders[(uint32_t)Shaders::Grid]->ID);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
     glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(Quads::Fullscreen)]);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 2, 0);
     
     glEnable(GL_BLEND);
     
     glUseProgram(shaders[(uint32_t)Shaders::SDF]->ID);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, puzzle->vbo);
-    glBindVertexArray(empty_vao);
-    glDrawArrays(GL_TRIANGLES, 0, 6 * puzzle->quads_count); // Is this legit?
+    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, puzzle->quads_count);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, 0);
     
     glDisable(GL_BLEND);
-    
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, 0);
-    glBindVertexArray(0);
     
     glBindSampler(0, 0);
 }

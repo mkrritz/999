@@ -19,7 +19,6 @@ void RenderQuadToScreen(const Shader* const* shaders,
     
     glBindSampler(0, sampler);
     glBindTextureUnit(0, texture);
-    glBindVertexArray(empty_vao);
     
     glUseProgram(shader->ID);
     glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(Quads::Fullscreen)]);
@@ -28,7 +27,6 @@ void RenderQuadToScreen(const Shader* const* shaders,
     
     glBindTextureUnit(0, 0);
     glBindSampler(0, 0);
-    glBindVertexArray(0);
 }
 
 void UIInit(Heap* const heap) {

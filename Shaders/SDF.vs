@@ -5,13 +5,13 @@
 
 #include "UniformBufferObjects/Scene.glsl"
 
-struct CharQuad {
-    vec4 rect;
-    vec4 uv_rect;
+struct CharacterQuad {
+    vec4 rect;          // Are both rect and uv_rect required?
+    vec4 uv_rect;       // Where is the this buffer populated? (SetText)
 };
 
-layout(std430, binding = 3) readonly buffer TextQuads {
-    CharQuad quads[];
+layout(std430, binding = 3) readonly buffer CharacterQuads {
+    CharacterQuad quads[];
 };
 
 out vec2 UV;
@@ -25,29 +25,19 @@ vec3 PulseEffect(vec3 p) {
 vec3 WaveEffect(vec3 p) {
     float frequency = 1.0;
     float strength = 0.105;
-    
     p.y += strength * sin(((TWOPI * frequency) * p.x) + TotalTime);
-    
     return p;
 }
 
-const int corner_indices[6] = int[](1, 0, 2, 1, 2, 3);
-
-const vec2 corner_positions[4] = vec2[](vec2(0.0, 0.0),
-                                        vec2(0.0, 1.0),
-                                        vec2(1.0, 0.0),
-                                        vec2(1.0, 1.0));
-
 void main() {
-    vec2 local_pos = corner_positions[corner_indices[gl_VertexID % 6]];
-    // Is local position the same as UV in Quad.vs?
+    UV = vec2((gl_VertexID >> 1) & 1, gl_VertexID & 1);
     
-    CharQuad q = quads[gl_VertexID / 6];
-    vec3 Position = vec3(q.rect.xy + local_pos * q.rect.zw, 0.0);
+    CharacterQuad quad = quads[gl_InstanceID];
     
+    vec2 Position = quad.rect.xy + UV * quad.rect.zw;
     //Position = PulseEffect(Position);
     //Position = WaveEffect(Position);
     
-    gl_Position = vec4(Position, 1.0);
-    UV = q.uv_rect.xy + local_pos * q.uv_rect.zw;
+    gl_Position = vec4(Position, 0.0, 1.0);
+    UV = quad.uv_rect.xy + UV * quad.uv_rect.zw;
 }
