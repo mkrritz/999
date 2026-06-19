@@ -31,18 +31,14 @@ static uint32_t* FillLevelInfo(Puzzle* const puzzle,
     for (char c : level) {
         if (c == ' ' || c == '\n') {
             digitsPerCell[cellY * resolution + cellX] = digitCount;
-            
             digitCount = 0;
             cellX++;
-            
             if (c == '\n') {
                 cellX = 0;
                 cellY++;
             }
-            
             continue;
         }
-        
         digitCount++;
         quadCount++;
     }
@@ -87,14 +83,6 @@ static std::string GenerateLevel(Puzzle* const puzzle,
 
 #endif
 
-void GridInit(Heap* const heap,
-              Puzzle* const puzzle,
-              const uint32_t resolution) {
-    HeapReset(heap);
-    puzzle->cells = (uint32_t*)HeapAllocate(heap, resolution * resolution * sizeof(uint32_t));
-    glCreateBuffers(1, &puzzle->vbo);
-}
-
 struct CharQuad {
     glm::vec4 rect;
     glm::vec4 uv_rect;
@@ -105,7 +93,7 @@ void SetText(Puzzle* const puzzle,
     const string level = GenerateLevel(puzzle, resolution);
     uint32_t* NumberOfDigitsOnEachCell = FillLevelInfo(puzzle, level, resolution);
     
-    CharQuad* Quads = new CharQuad[puzzle->quads_count];
+    CharQuad* CQ = new CharQuad[puzzle->quads_count];
     uint32_t CharacterIndex = 0;
     
     const float CellScale = 1.0f / float(resolution);
@@ -140,7 +128,7 @@ void SetText(Puzzle* const puzzle,
             continue;
         }
         
-        CharQuad& quad = Quads[CharacterIndex];
+        CharQuad& quad = CQ[CharacterIndex];
         CharacterIndex += 1;
         
         float X = CellCenterX + (LocalX * VerticalPadding - CharacterScale) * HalfCellScale;
@@ -156,9 +144,9 @@ void SetText(Puzzle* const puzzle,
     }
     
     // Do it with mapped vbo and direct write to field (or memcopy) instead of this gl call
-    glNamedBufferData(puzzle->vbo, puzzle->quads_count * sizeof(CharQuad), &Quads[0], GL_STATIC_DRAW);
+    glNamedBufferData(puzzle->vbo, puzzle->quads_count * sizeof(CharQuad), &CQ[0], GL_STATIC_DRAW);
     
-    delete[] Quads;
+    delete[] CQ;
     free(NumberOfDigitsOnEachCell);
 }
 
@@ -177,7 +165,7 @@ void RenderGame(const Shader* const shaders[],
     
     glUseProgram(shaders[(uint32_t)Shaders::Grid]->ID);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(UIIndex::Fullscreen)]);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(Quads::Fullscreen)]);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     
     glEnable(GL_BLEND);
@@ -186,7 +174,7 @@ void RenderGame(const Shader* const shaders[],
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, puzzle->vbo);
     glBindVertexArray(empty_vao);
-    glDrawArrays(GL_TRIANGLES, 0, 6 * puzzle->quads_count);
+    glDrawArrays(GL_TRIANGLES, 0, 6 * puzzle->quads_count); // Is this legit?
     
     glDisable(GL_BLEND);
     

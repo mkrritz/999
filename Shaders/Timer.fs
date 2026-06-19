@@ -5,7 +5,7 @@ out vec4 FragColor;
 
 #include "UniformBufferObjects/Scene.glsl"
 
-const float DURATION = 6.0;
+const float DURATION = 60.0;
 const float PI    = 3.1415925;
 const float HPI   = 1.5707963;
 const float TWOPI = 6.2831850;

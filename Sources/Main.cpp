@@ -6,6 +6,7 @@
 #include "game/Shader.h"
 #include "game/Globals.h"
 #include "game/Camera.h"
+#include "game/Random.h"
 #include "game/Memory.h"
 #include "game/Font.h"
 #include "game/UI.h"
@@ -15,9 +16,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image/stb_image.h"
 
-static std::mt19937 gen(time(nullptr));                           // Do Random.h
-static std::uniform_real_distribution<float> dist(-1.0f, 1.0f);   // Do Random.h
-static std::uniform_real_distribution<float> dist01(0.0f, 1.0f);  // Do Random.h
+std::mt19937 gen(time(nullptr));
+std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
+std::uniform_real_distribution<float> dist01(0.0f, 1.0f);
 
 GLuint empty_vao;
 
@@ -27,6 +28,7 @@ GLFWwindow* WindowInit();
 
 //Memory
 void HeapsInit(Heap*[]);
+void PrintMemory(const Heap* const*);
 //Memory
 
 // Camera
@@ -66,7 +68,7 @@ void RenderTimer(const Shader* const [],
 
 void RenderQuadToScreen(const Shader* const*,
                         const UI* const,
-                        const Camera* const,
+                        const GLuint,
                         const GLuint);
 // UI
 
@@ -76,9 +78,6 @@ void FontsInit(Heap* const,
 // Font
 
 // Grid
-void GridInit(Heap* const,
-              Puzzle* const,
-              const uint32_t);
 void SetText(Puzzle* const,
              const uint32_t);
 // Grid
@@ -90,7 +89,7 @@ struct SceneUBO {          // WHere does thsi go?
 };                         // WHere does thsi go?
 
 /*  How rendering is done:
-        There are two render targets. (enum struct Quads)
+        There are two render targets.
         Both of them have the same size. (WINDOW_WIDTH, WINDOW_HEIGHT)
         Some things are rendered to the FULLSCREEN target.
         Then some things are rendered on the GRID target.
@@ -142,9 +141,11 @@ int main() {
     FontsInit(heaps[(uint32_t)Heaps::Font], fonts);
     
     Puzzle* const puzzle = (Puzzle*)HeapAllocate(heaps[(uint32_t)Heaps::Main], sizeof(Puzzle));
+    glCreateBuffers(1, &puzzle->vbo); // Not really a vbo. Rename..
     
     uint32_t RESOLUTION = 1;
-    GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, RESOLUTION);
+    HeapReset(heaps[(uint32_t)Heaps::Grid]);
+    puzzle->cells = (uint32_t*)HeapAllocate(heaps[(uint32_t)Heaps::Grid], RESOLUTION * RESOLUTION * sizeof(uint32_t));
     SetText(puzzle, RESOLUTION);
     
     GLuint scene_ubo_handle;
@@ -197,7 +198,7 @@ int main() {
         while(AccumulatorTime >= dt) {
             AccumulatorTime -= dt;
             
-            glm::vec4 GXGYGWGH = ui->ubo[static_cast<uint32_t>(UIIndex::Grid)]->rect;
+            glm::vec4 GXGYGWGH = ui->ubo[static_cast<uint32_t>(Quads::Grid)]->rect;
             const double GX          = GXGYGWGH.x; // Grid x position in [-1, 1]
             const double GY          = GXGYGWGH.y; // Grid y position in [-1, 1]
             const double GW          = GXGYGWGH.z; // Grid width size in (0, 2] range
@@ -212,7 +213,7 @@ int main() {
             const uint32_t GridY     = uint32_t(LocalY * RESOLUTION);
             const double CellX       = GX + (GridX + 0.5f) * CS - HCS;
             const double CellY       = GY + (GridY + 0.5f) * CS - HCS;
-            ui->ubo[static_cast<uint32_t>(UIIndex::Highlight)]->rect = glm::vec4(CellX, CellY, CS, CS);
+            ui->ubo[static_cast<uint32_t>(Quads::Highlight)]->rect = glm::vec4(CellX, CellY, CS, CS);
             
             if (input->mouse & InputM::LEFT_CLICK) {
                 if (input->toggles & InputM::Toggle_LC) {
@@ -222,15 +223,17 @@ int main() {
                         if (RESOLUTION > MAX_LEVEL) {
                             RESOLUTION = 1;
                             
-                            float x = -0.7f + dist01(gen) * 0.7f; // do better maths
-                            float y = -0.7f + dist01(gen) * 0.7f; // do better maths
-                            float z =  0.6f + dist01(gen) * 0.2f; // 0.2 to become max based on size above
+                            float x = -0.7f + dist(gen) * 0.3f; // do better maths
+                            float y = -0.7f + dist(gen) * 0.3f; // do better maths
+                            float z =  1.2f + dist(gen) * 0.2f; // 0.2 to become max based on size above
                             float w = z; // 0.4f + ((dist(gen) + 1.0f) * 1.0f / 2.0f); // TODO aspect?
                             
-                            ui->ubo[static_cast<uint32_t>(UIIndex::Grid)]->rect = glm::vec4(x, y, z, w);
+                            ui->ubo[static_cast<uint32_t>(Quads::Grid)]->rect = glm::vec4(x, y, z, w);
                         }
                         scene_ubo->timers.y = RESOLUTION;
-                        GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, RESOLUTION);
+                        
+                        HeapReset(heaps[(uint32_t)Heaps::Grid]);
+                        puzzle->cells = (uint32_t*)HeapAllocate(heaps[(uint32_t)Heaps::Grid], RESOLUTION * RESOLUTION * sizeof(uint32_t));
                         SetText(puzzle, RESOLUTION);
                         
                         TotalTime -= 1.0f;
@@ -239,15 +242,23 @@ int main() {
                 }
                 input->toggles &= ~InputM::Toggle_LC;
             } else input->toggles |= InputM::Toggle_LC;
+            
+            
+            if (input->letters & InputM::H) {
+                if (input->toggles & InputM::H) {
+                    PrintMemory(heaps);
+                }
+                input->toggles &= ~InputM::H;
+            } else input->toggles |= InputM::H;
         }
         
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)Quads::FULLSCREEN].framebuffer);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)RenderTarget::FULLSCREEN].framebuffer);
         glClearColor(1, 0, 0, 0); // Red
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         RenderGame(shaders, camera, fonts, ui, puzzle, scene_ubo_handle);
         
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)Quads::GRID].framebuffer);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)RenderTarget::GRID].framebuffer);
         glClearColor(0, 1, 0, 0); // Green
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
@@ -256,21 +267,20 @@ int main() {
         
         glUseProgram(shaders[(uint32_t)Shaders::Timer]->ID);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(UIIndex::Fullscreen)]);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(Quads::Fullscreen)]);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         
         glBindSampler(0, camera->sampler_repeat_linear);
-        glBindTextureUnit(0, ui->quads[(uint32_t)Quads::FULLSCREEN].texture);
+        glBindTextureUnit(0, ui->quads[(uint32_t)RenderTarget::FULLSCREEN].texture);
         
         glUseProgram(shaders[(uint32_t)Shaders::DrawTexture]->ID);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(UIIndex::Grid)]);
-        
+        glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(Quads::Grid)]);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         
         glUseProgram(shaders[(uint32_t)Shaders::Highlight]->ID);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(UIIndex::Highlight)]);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(Quads::Highlight)]);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         
         glDisable(GL_BLEND);
@@ -279,7 +289,7 @@ int main() {
         glClearColor(0, 0, 1, 0); // Blue
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        RenderQuadToScreen(shaders, ui, camera, ui->quads[(uint32_t)Quads::GRID].texture);
+        RenderQuadToScreen(shaders, ui, camera->sampler_clamp_linear, ui->quads[(uint32_t)RenderTarget::GRID].texture);
         
         glfwSwapBuffers(window);
     }

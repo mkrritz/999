@@ -33,20 +33,16 @@ vec3 WaveEffect(vec3 p) {
 
 const int corner_indices[6] = int[](1, 0, 2, 1, 2, 3);
 
-const vec2 corner_positions[4] = vec2[](
-    vec2(0.0, 0.0), // 0: BL
-    vec2(0.0, 1.0), // 1: TL
-    vec2(1.0, 0.0), // 2: BR
-    vec2(1.0, 1.0)  // 3: TR
-);
+const vec2 corner_positions[4] = vec2[](vec2(0.0, 0.0),
+                                        vec2(0.0, 1.0),
+                                        vec2(1.0, 0.0),
+                                        vec2(1.0, 1.0));
 
 void main() {
-    uint quad_idx = gl_VertexID / 6;
-    uint vertex_idx = gl_VertexID % 6;
-    int corner = corner_indices[vertex_idx];
-    vec2 local_pos = corner_positions[corner];
+    vec2 local_pos = corner_positions[corner_indices[gl_VertexID % 6]];
+    // Is local position the same as UV in Quad.vs?
     
-    CharQuad q = quads[quad_idx];
+    CharQuad q = quads[gl_VertexID / 6];
     vec3 Position = vec3(q.rect.xy + local_pos * q.rect.zw, 0.0);
     
     //Position = PulseEffect(Position);

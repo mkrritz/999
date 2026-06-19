@@ -1,15 +1,15 @@
 #ifndef UI_HPP
 #define UI_HPP
 
-enum struct UIIndex {      // Rename this to Quads because these carry
-    Grid,                  // the position and the size of the quad to be rendered?
+enum struct Quads {
+    Grid,
     Fullscreen,
     Highlight,
     Count
 };
 
-enum struct Quads {               // Renmame to RenderTarget or something?
-    FULLSCREEN,                   // Because these carry the texture
+enum struct RenderTarget {
+    FULLSCREEN,
     GRID,
     // SETTINGS_SCREEN,
     // MENU_SCREEN,
@@ -26,10 +26,10 @@ struct Quad {
 };
 
 struct UI {
-    Quad quads[(uint32_t)Quads::Count];
+    Quad quads[(uint32_t)RenderTarget::Count];
     
-    GLuint ubo_handle[static_cast<uint32_t>(UIIndex::Count)];
-    UIUBO* ubo[static_cast<uint32_t>(UIIndex::Count)];
+    GLuint ubo_handle[static_cast<uint32_t>(Quads::Count)];
+    UIUBO* ubo[static_cast<uint32_t>(Quads::Count)];
 };
 
 #endif
