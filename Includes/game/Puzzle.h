@@ -1,28 +1,12 @@
 #ifndef Puzzle_HPP
 #define Puzzle_HPP
 
-struct Overlay {
-    GLuint vao, vbo, ibo;
-    size_t quads_count;
-};
-
-struct Grid {
-    uint32_t* cells;
-};
+const uint32_t MAX_LEVEL = 40;
 
 struct Puzzle {
-    Grid* grid;
-    Overlay surface;
+    uint32_t* cells;
+    GLuint vbo;
+    size_t quads_count;
 };
-
-//struct Text2D {
-//    GLuint vao, vbo;
-//    uint32_t characters;
-//    uint32_t capacity;
-//    float* vertex_buffer;
-//    
-//    GLuint ubo_handle;
-//    UniformBufferObjectText* ubo;
-//};
 
 #endif

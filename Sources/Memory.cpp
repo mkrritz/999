@@ -3,6 +3,7 @@
 
 #include "game/Assert.h"
 #include "game/Memory.h"
+#include "game/Puzzle.h"
 
 static Heap* HeapInit(size_t size) {
     Heap* heap = (Heap*)malloc(sizeof(Heap));
@@ -15,17 +16,14 @@ static Heap* HeapInit(size_t size) {
 }
 
 void HeapsInit(Heap* heaps[]) {
-    heaps[(uint32_t)Heaps::Camera]     = HeapInit(1024);
-    heaps[(uint32_t)Heaps::Font]       = HeapInit(1024);
-    heaps[(uint32_t)Heaps::Shader]     = HeapInit(5 * 1024);
-    heaps[(uint32_t)Heaps::UI]         = HeapInit(1024);
+    heaps[(uint32_t)Heaps::Camera] = HeapInit(1024);
+    heaps[(uint32_t)Heaps::Font]   = HeapInit(1024);
+    heaps[(uint32_t)Heaps::Shader] = HeapInit(5 * 1024);
+    heaps[(uint32_t)Heaps::UI]     = HeapInit(1024);
     
-    //Stores 'struct Puzzle'.
-    heaps[(uint32_t)Heaps::Main]       = HeapInit(64);
+    heaps[(uint32_t)Heaps::Main]   = HeapInit(sizeof(Puzzle));
     
-    // Stores 'struct Grid'.
-    heaps[(uint32_t)Heaps::Grid]       = HeapInit(sizeof(uint32_t*) + sizeof(uint32_t) * 40 * 40); // Memory for max level 40
-    //printf("\nSize of grid: %u\n", sizeof(Grid));
+    heaps[(uint32_t)Heaps::Grid]   = HeapInit(sizeof(uint32_t*) + sizeof(uint32_t) * MAX_LEVEL * MAX_LEVEL);
     
 }
 

@@ -15,9 +15,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image/stb_image.h"
 
-static std::mt19937 gen(time(nullptr));
-static std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
-static std::uniform_real_distribution<float> dist01(0.0f, 1.0f);
+static std::mt19937 gen(time(nullptr));                           // Do Random.h
+static std::uniform_real_distribution<float> dist(-1.0f, 1.0f);   // Do Random.h
+static std::uniform_real_distribution<float> dist01(0.0f, 1.0f);  // Do Random.h
 
 GLuint empty_vao;
 
@@ -85,29 +85,11 @@ void SetText(Puzzle* const,
 
 #endif
 
-static void PuzzleInit(Heap* const heap) {
-    Puzzle* puzzle = (Puzzle*)HeapAllocate(heap, sizeof(Puzzle));
-    puzzle->grid = nullptr;
-    
-    glCreateVertexArrays(1, &puzzle->surface.vao);
-    glCreateBuffers(1, &puzzle->surface.vbo);
-    glCreateBuffers(1, &puzzle->surface.ibo);
-    glVertexArrayVertexBuffer(puzzle->surface.vao, 0, puzzle->surface.vbo, 0, TEXT_VERTEX_ATTRIBUTE_COUNT * sizeof(float));
-    glEnableVertexArrayAttrib(puzzle->surface.vao, 0);
-    glVertexArrayAttribFormat(puzzle->surface.vao, 0, 3, GL_FLOAT, GL_FALSE, 0);
-    glVertexArrayAttribBinding(puzzle->surface.vao, 0, 0);
-    glEnableVertexArrayAttrib(puzzle->surface.vao, 1);
-    glVertexArrayAttribFormat(puzzle->surface.vao, 1, 2, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat));
-    glVertexArrayAttribBinding(puzzle->surface.vao, 1, 0);
-    glVertexArrayElementBuffer(puzzle->surface.vao, puzzle->surface.ibo);
-}
+struct SceneUBO {          // WHere does thsi go?
+    glm::vec4 timers;      // WHere does thsi go?
+};                         // WHere does thsi go?
 
-struct SceneUBO {
-    glm::vec4 timers;
-};
-
-/*
-    How rendering is done:
+/*  How rendering is done:
         There are two render targets. (enum struct Quads)
         Both of them have the same size. (WINDOW_WIDTH, WINDOW_HEIGHT)
         Some things are rendered to the FULLSCREEN target.
@@ -116,26 +98,25 @@ struct SceneUBO {
             of the FULLSCREEN rendered target.
         The final screen rendering comes from the GRID target. A full screen quad
         is rendered with the contents sampled from the GRID target.
+    
+    TODO: DSA text.
+    TODO: Aspect cells?
+    TODO: scale under mouse, radially, like severance. No cursor?
+    TODO: 
+    
+    Levels:
+        PulseEffect, WaveEffect
+        Changing target position every frame. (Moving grid around)
+        Skip various numbers at level generation.
+        Do fonts other than numbers. Emojis and such.
+    Score:
+        Add cell value or something.
+    Time:
+        Add cell value to timer or something.
+    Powerups:
+        999:
+    
 */
-
-// TODO: DSA text.
-// TODO: Aspect cells?
-// TODO: scale under mouse, radially, like severance. No cursor?
-// TODO: 
-
-// Levels:
-//      PulseEffect, WaveEffect
-//      Changing target position every frame. (Moving grid around)
-//      Skip various numbers at level generation.
-//      Do fonts other than numbers. Emojis and such.
-// Score:
-//      Add cell value or something.
-// Time:
-//      Add cell value to timer or something.
-// Powerups:
-//      999:
-//          
-//
 
 int main() {
     GLFWwindow* window;
@@ -160,10 +141,9 @@ int main() {
     Font* fonts[(uint32_t)FontType::Count] = {nullptr};
     FontsInit(heaps[(uint32_t)Heaps::Font], fonts);
     
-    PuzzleInit(heaps[(uint32_t)Heaps::Main]);
-    Puzzle* const puzzle = (Puzzle*)heaps[(uint32_t)Heaps::Main]->memory;
+    Puzzle* const puzzle = (Puzzle*)HeapAllocate(heaps[(uint32_t)Heaps::Main], sizeof(Puzzle));
     
-    uint32_t RESOLUTION = 1; // what?
+    uint32_t RESOLUTION = 1;
     GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, RESOLUTION);
     SetText(puzzle, RESOLUTION);
     
@@ -201,9 +181,12 @@ int main() {
         AccumulatorTime += DeltaTime;
         TotalTime += DeltaTime;
         EveryTwoSeconds += DeltaTime;
+        
         scene_ubo->timers.x = TotalTime;
         
         glfwPollEvents();
+        
+        input = NextRecordedInputState();
         
         while (shader_slots_to_reload) {
             uint32_t slot = __builtin_ctzll(shader_slots_to_reload);
@@ -211,34 +194,32 @@ int main() {
             ReloadShader(heaps[(uint32_t)Heaps::Shader], slot);
         }
         
-        input = NextRecordedInputState();
-        
         while(AccumulatorTime >= dt) {
             AccumulatorTime -= dt;
             
             glm::vec4 GXGYGWGH = ui->ubo[static_cast<uint32_t>(UIIndex::Grid)]->rect;
-            const double GX      = GXGYGWGH.x; // Grid x position in [-1, 1]
-            const double GY      = GXGYGWGH.y; // Grid y position in [-1, 1]
-            const double GW      = GXGYGWGH.z; // Grid width size in (0, 2] range
-            const double GH      = GXGYGWGH.w; // Grid height size in (0, 2] range
-            const double HCS     = 0.5f * GW / double(RESOLUTION); // Half cell size
-            const double CS      = 2.0f * HCS; // Cell size (Pefrect square grid)
-            const double MOUSE_NDC_X   = glm::clamp(input->ndc_x, GX, GX + GW - HCS); // Clamped to respond to the window containing the first render pass
-            const double MOUSE_NDC_Y   = glm::clamp(input->ndc_y, GY, GY + GH - HCS); // Clamped to respond to the window containing the first render pass
-            const double LocalX  = (MOUSE_NDC_X - GX) / GW;
-            const double LocalY  = (MOUSE_NDC_Y - GY) / GH;
-            const uint32_t GridX = uint32_t(LocalX * RESOLUTION);
-            const uint32_t GridY = uint32_t(LocalY * RESOLUTION);
-            const double CellX   = GX + (GridX + 0.5f) * CS - HCS;
-            const double CellY   = GY + (GridY + 0.5f) * CS - HCS;
+            const double GX          = GXGYGWGH.x; // Grid x position in [-1, 1]
+            const double GY          = GXGYGWGH.y; // Grid y position in [-1, 1]
+            const double GW          = GXGYGWGH.z; // Grid width size in (0, 2] range
+            const double GH          = GXGYGWGH.w; // Grid height size in (0, 2] range
+            const double HCS         = 0.5f * GW / double(RESOLUTION); // Half cell size
+            const double CS          = 2.0f * HCS; // Cell size (Pefrect square grid)
+            const double MOUSE_NDC_X = glm::clamp(input->ndc_x, GX, GX + GW - HCS);
+            const double MOUSE_NDC_Y = glm::clamp(input->ndc_y, GY, GY + GH - HCS);
+            const double LocalX      = (MOUSE_NDC_X - GX) / GW;
+            const double LocalY      = (MOUSE_NDC_Y - GY) / GH;
+            const uint32_t GridX     = uint32_t(LocalX * RESOLUTION);
+            const uint32_t GridY     = uint32_t(LocalY * RESOLUTION);
+            const double CellX       = GX + (GridX + 0.5f) * CS - HCS;
+            const double CellY       = GY + (GridY + 0.5f) * CS - HCS;
             ui->ubo[static_cast<uint32_t>(UIIndex::Highlight)]->rect = glm::vec4(CellX, CellY, CS, CS);
             
             if (input->mouse & InputM::LEFT_CLICK) {
                 if (input->toggles & InputM::Toggle_LC) {
                     
-                    if (puzzle->grid->cells[GridY * RESOLUTION + GridX] == 1) { // R*R and switching between modes
+                    if (puzzle->cells[GridY * RESOLUTION + GridX] == 1) { // R*R and other modes
                         RESOLUTION++;
-                        if (RESOLUTION > 40 ) {
+                        if (RESOLUTION > MAX_LEVEL) {
                             RESOLUTION = 1;
                             
                             float x = -0.7f + dist01(gen) * 0.7f; // do better maths
@@ -247,27 +228,17 @@ int main() {
                             float w = z; // 0.4f + ((dist(gen) + 1.0f) * 1.0f / 2.0f); // TODO aspect?
                             
                             ui->ubo[static_cast<uint32_t>(UIIndex::Grid)]->rect = glm::vec4(x, y, z, w);
-                            //float asd = -1.0f + dist01(gen) * 0.5f;
-                            //float rewfwe = z;
-                            //screen_quad.position = glm::vec2(asd, asd);
-                            //screen_quad.size     = glm::vec2(rewfwe, rewfwe);
-                            // This won't align because text in placed on whole NDC
-                            // not bounded by the quad. Maybe fix maybe not.
-                            // RenderGame can remain on full NDC space, it's just two
-                            // quads anyway. The grid and the text.
                         }
                         scene_ubo->timers.y = RESOLUTION;
                         GridInit(heaps[(uint32_t)Heaps::Grid], puzzle, RESOLUTION);
-                        SetText(puzzle, RESOLUTION); // shuffle as level up or something
+                        SetText(puzzle, RESOLUTION);
                         
-                        TotalTime -= 1.0f; // Add cell number as seconds to the timer, or 1 everytime or whatever
-                        // Do thi with another variable.
+                        TotalTime -= 1.0f;
                     }
                     
                 }
                 input->toggles &= ~InputM::Toggle_LC;
             } else input->toggles |= InputM::Toggle_LC;
-            
         }
         
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)Quads::FULLSCREEN].framebuffer);
