@@ -17,6 +17,7 @@ enum struct Shaders {
     Highlight,
     SDF,
     Timer,
+    Level,
     Count // Not really a shader.
 };
 

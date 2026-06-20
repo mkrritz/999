@@ -154,6 +154,7 @@ const ShaderConfig SHADERS_CONFIG[] = {
     { "Quad.vs", nullptr, "Highlight.fs",   nullptr, nullptr, nullptr },
     { "SDF.vs", nullptr, "SDF.fs",          nullptr, nullptr, nullptr },
     { "Quad.vs", nullptr, "Timer.fs",       nullptr, nullptr, nullptr },
+    { "Level.vs", nullptr, "Level.fs",       nullptr, nullptr, nullptr },
 };
 
 static uint32_t CeilPowerOfTwo(uint32_t N) {

@@ -29,4 +29,6 @@ void main() {
     float timer = step(angle, fract((DURATION - TotalTime) / DURATION));
     
     FragColor = vec4(mix(color1, color2, Distance), ring * timer);
+    
+    //FragColor = vec4(UV, 0, 1);
 }

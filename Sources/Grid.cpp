@@ -86,6 +86,7 @@ struct CharacterQuad {
     glm::vec4 uv_rect;
 };
 
+#if 1
 void SetText(Puzzle* const puzzle,
              const uint32_t resolution) {
     const string level = GenerateLevel(puzzle, resolution);
@@ -147,7 +148,91 @@ void SetText(Puzzle* const puzzle,
     delete[] CQ;
     free(NumberOfDigitsOnEachCell);
 }
+#else
+void SetText(Puzzle* const puzzle,
+             const uint32_t resolution) {
+    const std::string level = GenerateLevel(puzzle, resolution);
+    uint32_t* NumberOfDigitsOnEachCell = FillLevelInfo(puzzle, level, resolution);
+    
+    CharacterQuad* CQ = new CharacterQuad[puzzle->quads_count];
+    uint32_t CharacterIndex = 0;
+    
+    const float CellScale = 1.0f / float(resolution);
+    const float HalfCellScale = CellScale / 2.0f;
+    const float VerticalPadding = 0.6f;
+    
+    uint32_t CIX = 0;
+    uint32_t CIY = 0;
+    
+    float CharacterScale =
+        1.0f + 1.0f / float(NumberOfDigitsOnEachCell[CIY * resolution + CIX]);
+    
+    float LocalX =
+        -CharacterScale *
+        ((float(NumberOfDigitsOnEachCell[CIY * resolution + CIX]) - 1.0f) / 2.0f);
+    
+    for (size_t i = 0; level[i] != '\0'; i++)
+    {
+        const char Character = level[i];
 
+        if (Character == '\n')
+        {
+            CIY++;
+            CIX = 0;
+
+            CharacterScale =
+                1.0f + 1.0f / float(NumberOfDigitsOnEachCell[CIY * resolution + CIX]);
+
+            LocalX =
+                -CharacterScale *
+                ((float(NumberOfDigitsOnEachCell[CIY * resolution + CIX]) - 1.0f) / 2.0f);
+
+            continue;
+        }
+
+        if (Character == ' ')
+        {
+            CIX++;
+
+            CharacterScale =
+                1.0f + 1.0f / float(NumberOfDigitsOnEachCell[CIY * resolution + CIX]);
+
+            LocalX =
+                -CharacterScale *
+                ((float(NumberOfDigitsOnEachCell[CIY * resolution + CIX]) - 1.0f) / 2.0f);
+
+            continue;
+        }
+
+        CharacterQuad& quad = CQ[CharacterIndex++];
+
+        // =========================
+        // LOCAL OFFSET ONLY
+        // =========================
+
+        float X = (LocalX * VerticalPadding - CharacterScale) * HalfCellScale;
+        float Y = -CharacterScale * HalfCellScale;
+
+        float W = 2.0f * CharacterScale * HalfCellScale;
+        float H = 2.0f * CharacterScale * HalfCellScale;
+
+        quad.rect = glm::vec4(X, Y, W, H);
+
+        glm::vec2 UV = GetAtlasUV(Character);
+        quad.uv_rect = glm::vec4(UV.x, UV.y, 0.125f, 0.125f);
+
+        LocalX += CharacterScale;
+    }
+
+    glNamedBufferData(puzzle->vbo,
+                      puzzle->quads_count * sizeof(CharacterQuad),
+                      &CQ[0],
+                      GL_STATIC_DRAW);
+
+    delete[] CQ;
+    free(NumberOfDigitsOnEachCell);
+}
+#endif
 void RenderGame(const Shader* const shaders[],
                 const Camera* const camera,
                 const Font* const fonts[],

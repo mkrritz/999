@@ -272,13 +272,22 @@ int main() {
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         
         glBindSampler(0, camera->sampler_repeat_linear);
-        glBindTextureUnit(0, ui->quads[(uint32_t)RenderTarget::FULLSCREEN].texture);
         
+        glBindTextureUnit(0, ui->quads[(uint32_t)RenderTarget::FULLSCREEN].texture);
         glUseProgram(shaders[(uint32_t)Shaders::DrawTexture]->ID);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Grid]);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         
+        { // This renders the current level. Not yet. How to get UV of level number?
+          // And then how should this shader gain access to that?
+                      #define DigitsInThisNumber 3
+            glBindTextureUnit(0, fonts[(uint32_t)FontType::English]->texture);
+            glUseProgram(shaders[(uint32_t)Shaders::Level]->ID);
+            glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Level]);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, puzzle->vbo);
+            glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, DigitsInThisNumber);
+        }
         glBindSampler(0, 0);
         glBindTextureUnit(0, 0);
         

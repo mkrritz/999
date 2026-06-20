@@ -5,6 +5,7 @@ enum struct Quads {
     Grid,
     Fullscreen,
     Highlight,
+    Level,
     Count
 };
 

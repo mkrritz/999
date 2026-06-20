@@ -83,5 +83,6 @@ void UIInit(Heap* const heap) {
     //ui->ubo[(uint32_t)Quads::Grid]->rect = glm::vec4(-0.8f, -0.8f, 1.0f, 1.6f);
     // Will the above work with Aspect cells?
     
+    ui->ubo[(uint32_t)Quads::Level]->rect = glm::vec4(-0.99f, 0.84f, 0.15f, 0.15f);
 }
 
