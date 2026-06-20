@@ -84,5 +84,8 @@ void UIInit(Heap* const heap) {
     // Will the above work with Aspect cells?
     
     ui->ubo[(uint32_t)Quads::Level]->rect = glm::vec4(-0.99f, 0.84f, 0.15f, 0.15f);
+    
+    glCreateBuffers(1, &ui->level_vbo);
+    ui->level_quads_count = 0;
 }
 

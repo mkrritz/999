@@ -8,6 +8,7 @@
 struct CharacterQuad {
     vec4 rect;          // Are both rect and uv_rect required?
     vec4 uv_rect;       // Where is the this buffer populated? (SetText)
+    vec4 ndc;
     // rect is xy NDC position and zw width and height in NDC
     //         xy in range [-1, 1] zx in range [0, 2]
     //              Similar to how 'enum struct Quads' are setup.
@@ -41,7 +42,7 @@ void main() {
     
     CharacterQuad quad = quads[gl_InstanceID];
     
-    vec2 Position = quad.rect.xy + UV * quad.rect.zw;
+    vec2 Position = quad.ndc.xy + quad.rect.xy + UV * quad.rect.zw;
     //Position = PulseEffect(Position);
     //Position = WaveEffect(Position);
     

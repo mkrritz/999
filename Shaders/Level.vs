@@ -8,6 +8,7 @@
 struct CharacterQuad {
     vec4 rect;          // Are both rect and uv_rect required?
     vec4 uv_rect;       // Where is the this buffer populated? (SetText)
+    vec4 ndc;
     // rect is xy NDC position and zw width and height in NDC
     //         xy in range [-1, 1] zx in range [0, 2]
     //              Similar to how 'enum struct Quads' are setup.
@@ -27,11 +28,11 @@ out vec2 UV;
 #include "UniformBufferObjects/UI.glsl"
 
 void main() {
-    UV = vec2((gl_VertexID >> 1) & 1, gl_VertexID & 1); // 0 or 1 for each vertex
+    UV = vec2((gl_VertexID >> 1) & 1, gl_VertexID & 1);
     
     CharacterQuad quad = quads[gl_InstanceID];
     
-    vec2 Position = quad.rect.xy + UV * quad.rect.zw;
+    vec2 Position = vec2(NDCX, NDCY) + quad.rect.xy + UV * quad.rect.zw;
     
     gl_Position = vec4(Position, 0.0, 1.0);
     

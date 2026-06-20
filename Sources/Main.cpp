@@ -80,6 +80,8 @@ void FontsInit(Heap* const,
 // Grid
 void SetText(Puzzle* const,
              const uint32_t);
+void SetLevelText(UI* const,
+                  const uint32_t);
 // Grid
 
 #endif
@@ -102,7 +104,8 @@ struct SceneUBO {          // WHere does thsi go?
     TODO: Aspect cells?
     TODO: scale under mouse, radially, like severance. No cursor?
     TODO: Remove news, pass heaps.
-    
+    TODO: Remove algorithm, replace new with heaps. Data tables for levels instead.
+
     Levels:
         PulseEffect, WaveEffect
         Changing target position every frame. (Moving grid around)
@@ -147,6 +150,7 @@ int main() {
     HeapReset(heaps[(uint32_t)Heaps::Grid]);
     puzzle->cells = (uint32_t*)HeapAllocate(heaps[(uint32_t)Heaps::Grid], RESOLUTION * RESOLUTION * sizeof(uint32_t));
     SetText(puzzle, RESOLUTION);
+    SetLevelText(ui, RESOLUTION);
     
     GLuint scene_ubo_handle;
     glCreateBuffers(1, &scene_ubo_handle);
@@ -237,6 +241,7 @@ int main() {
                         HeapReset(heaps[(uint32_t)Heaps::Grid]);
                         puzzle->cells = (uint32_t*)HeapAllocate(heaps[(uint32_t)Heaps::Grid], RESOLUTION * RESOLUTION * sizeof(uint32_t));
                         SetText(puzzle, RESOLUTION);
+                        SetLevelText(ui, RESOLUTION);
                         
                         TotalTime -= 1.0f;
                     }
@@ -279,14 +284,12 @@ int main() {
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Grid]);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         
-        { // This renders the current level. Not yet. How to get UV of level number?
-          // And then how should this shader gain access to that?
-                      #define DigitsInThisNumber 3
+        { // This renders the current level.
             glBindTextureUnit(0, fonts[(uint32_t)FontType::English]->texture);
             glUseProgram(shaders[(uint32_t)Shaders::Level]->ID);
             glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Level]);
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, puzzle->vbo);
-            glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, DigitsInThisNumber);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ui->level_vbo);
+            glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, ui->level_quads_count);
         }
         glBindSampler(0, 0);
         glBindTextureUnit(0, 0);
