@@ -158,22 +158,23 @@ void RenderGame(const Shader* const shaders[],
     
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
     
-    glBindSampler(0, camera->sampler_clamp_linear);
-    glBindTextureUnit(0, font->texture);
-    
     glUseProgram(shaders[(uint32_t)Shaders::Grid]->ID);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(Quads::Fullscreen)]);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Fullscreen]);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindBufferBase(GL_UNIFORM_BUFFER, 2, 0);
     
     glEnable(GL_BLEND);
+    
+    glBindSampler(0, camera->sampler_clamp_linear);
+    glBindTextureUnit(0, font->texture);
     
     glUseProgram(shaders[(uint32_t)Shaders::SDF]->ID);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, puzzle->vbo);
     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, puzzle->quads_count);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, 0);
     
-    glDisable(GL_BLEND);
-    
     glBindSampler(0, 0);
+    glBindTextureUnit(0, 0);
+    
+    glDisable(GL_BLEND);
 }

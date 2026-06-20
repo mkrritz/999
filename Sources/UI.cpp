@@ -11,7 +11,7 @@ void RenderQuadToScreen(const Shader* const* shaders,
                         const UI* const ui,
                         const GLuint sampler,
                         const GLuint texture) {
-    const Shader* shader = shaders[static_cast<uint32_t>(Shaders::DrawTexture)];
+    const Shader* shader = shaders[(uint32_t)Shaders::DrawTexture];
     
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // This means screen rendering.
     glClearColor(1, 0, 1, 0);
@@ -21,7 +21,7 @@ void RenderQuadToScreen(const Shader* const* shaders,
     glBindTextureUnit(0, texture);
     
     glUseProgram(shader->ID);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(Quads::Fullscreen)]);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Fullscreen]);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindBufferBase(GL_UNIFORM_BUFFER, 2, 0);
     
@@ -64,8 +64,8 @@ void UIInit(Heap* const heap) {
         }
     }
     
-    glCreateBuffers(static_cast<uint32_t>(Quads::Count), ui->ubo_handle);
-    for (uint32_t index = 0; index < static_cast<uint32_t>(Quads::Count); index++) {
+    glCreateBuffers((uint32_t)Quads::Count, ui->ubo_handle);
+    for (uint32_t index = 0; index < (uint32_t)Quads::Count; index++) {
         glNamedBufferStorage(ui->ubo_handle[index],
                              sizeof(UIUBO),
                              nullptr,
@@ -75,12 +75,12 @@ void UIInit(Heap* const heap) {
                                                        sizeof(UIUBO),
                                                        CPU_CAN_WRITE);
     }
-    ui->ubo[static_cast<uint32_t>(Quads::Fullscreen)]->rect = glm::vec4(-1.0f, -1.0f, 2.0f, 2.0f);
+    ui->ubo[(uint32_t)Quads::Fullscreen]->rect = glm::vec4(-1.0f, -1.0f, 2.0f, 2.0f);
     
-    ui->ubo[static_cast<uint32_t>(Quads::Highlight)]->rect = glm::vec4(-1.0f, -1.0f, 2.0f, 2.0f);
-    ui->ubo[static_cast<uint32_t>(Quads::Grid)]->rect = glm::vec4(-0.8f, -0.8f, 1.6f, 1.6f);
+    ui->ubo[(uint32_t)Quads::Highlight]->rect = glm::vec4(-1.0f, -1.0f, 2.0f, 2.0f);
+    ui->ubo[(uint32_t)Quads::Grid]->rect = glm::vec4(-0.8f, -0.8f, 1.6f, 1.6f);
     
-    //ui->ubo[static_cast<uint32_t>(Quads::Grid)]->rect = glm::vec4(-0.8f, -0.8f, 1.0f, 1.6f);
+    //ui->ubo[(uint32_t)Quads::Grid]->rect = glm::vec4(-0.8f, -0.8f, 1.0f, 1.6f);
     // Will the above work with Aspect cells?
     
 }

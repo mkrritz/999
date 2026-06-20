@@ -101,7 +101,7 @@ struct SceneUBO {          // WHere does thsi go?
     TODO: DSA text.
     TODO: Aspect cells?
     TODO: scale under mouse, radially, like severance. No cursor?
-    TODO: 
+    TODO: Remove news, pass heaps.
     
     Levels:
         PulseEffect, WaveEffect
@@ -200,7 +200,7 @@ int main() {
         while(AccumulatorTime >= dt) {
             AccumulatorTime -= dt;
             
-            glm::vec4 GXGYGWGH = ui->ubo[static_cast<uint32_t>(Quads::Grid)]->rect;
+            glm::vec4 GXGYGWGH = ui->ubo[(uint32_t)Quads::Grid]->rect;
             const double GX          = GXGYGWGH.x; // Grid x position in [-1, 1]
             const double GY          = GXGYGWGH.y; // Grid y position in [-1, 1]
             const double GW          = GXGYGWGH.z; // Grid width size in (0, 2] range
@@ -215,7 +215,7 @@ int main() {
             const uint32_t GridY     = uint32_t(LocalY * RESOLUTION);
             const double CellX       = GX + (GridX + 0.5f) * CS - HCS;
             const double CellY       = GY + (GridY + 0.5f) * CS - HCS;
-            ui->ubo[static_cast<uint32_t>(Quads::Highlight)]->rect = glm::vec4(CellX, CellY, CS, CS);
+            ui->ubo[(uint32_t)Quads::Highlight]->rect = glm::vec4(CellX, CellY, CS, CS);
             
             if (input->mouse & InputM::LEFT_CLICK) {
                 if (input->toggles & InputM::Toggle_LC) {
@@ -230,7 +230,7 @@ int main() {
                             float z =  1.2f + dist(gen) * 0.2f; // 0.2 to become max based on size above
                             float w = z; // 0.4f + ((dist(gen) + 1.0f) * 1.0f / 2.0f); // TODO aspect?
                             
-                            ui->ubo[static_cast<uint32_t>(Quads::Grid)]->rect = glm::vec4(x, y, z, w);
+                            ui->ubo[(uint32_t)Quads::Grid]->rect = glm::vec4(x, y, z, w);
                         }
                         scene_ubo->timers.y = RESOLUTION;
                         
@@ -268,7 +268,7 @@ int main() {
         
         glUseProgram(shaders[(uint32_t)Shaders::Timer]->ID);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(Quads::Fullscreen)]);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Fullscreen]);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         
         glBindSampler(0, camera->sampler_repeat_linear);
@@ -276,12 +276,15 @@ int main() {
         
         glUseProgram(shaders[(uint32_t)Shaders::DrawTexture]->ID);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(Quads::Grid)]);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Grid]);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        
+        glBindSampler(0, 0);
+        glBindTextureUnit(0, 0);
         
         glUseProgram(shaders[(uint32_t)Shaders::Highlight]->ID);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[static_cast<uint32_t>(Quads::Highlight)]);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Highlight]);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         
         glDisable(GL_BLEND);

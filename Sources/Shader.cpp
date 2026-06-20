@@ -83,7 +83,7 @@ static void CheckForReload(Heap* const heap) {
     */
     const Shader* const shaders = (const Shader*)heap->memory;
     uint64_t shaders_to_be_reloaded = 0;
-    for (uint32_t index = 0; index < static_cast<uint32_t>(Shaders::Count); index++) {
+    for (uint32_t index = 0; index < (uint32_t)Shaders::Count; index++) {
         const Shader* const shader = &shaders[index];
         bool modified = false;
         modified |= (shader->vs_time  < GetFileModificationTime(shader->vs_name));
@@ -299,7 +299,7 @@ static Shader* LoadShaders(Heap* const heap,
 void ShadersInit(Heap* const heap,
                  Shader** shaders,
                  bool observe_directory_changes) {
-    for (uint32_t index = 0; index < static_cast<uint32_t>(Shaders::Count); index++) {
+    for (uint32_t index = 0; index < (uint32_t)Shaders::Count; index++) {
         shaders[index] = LoadShaders(heap, index);
     }
     

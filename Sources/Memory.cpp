@@ -47,7 +47,7 @@ static std::string FormatWithCommas(uint32_t value) {
     return str;
 }
 
-static const char* HeapNames[static_cast<uint32_t>(Heaps::Count)] = {
+static const char* HeapNames[(uint32_t)Heaps::Count] = {
     // Keep these in sync with 'enum struct Heaps'
     // Used for prints only
     "Shader",
@@ -60,7 +60,7 @@ static const char* HeapNames[static_cast<uint32_t>(Heaps::Count)] = {
 
 void PrintMemory(const Heap* const* heaps) {
     printf("\n");
-    for (uint32_t index = 0; index < static_cast<uint32_t>(Heaps::Count); index++) {
+    for (uint32_t index = 0; index < (uint32_t)Heaps::Count; index++) {
         std::string offset = FormatWithCommas(heaps[index]->offset);
         std::string size = FormatWithCommas(heaps[index]->size);
         printf("%s memory:  %s / %s\n", HeapNames[index], offset.c_str(), size.c_str());

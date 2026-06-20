@@ -28,8 +28,8 @@ struct Quad {
 struct UI {
     Quad quads[(uint32_t)RenderTarget::Count];
     
-    GLuint ubo_handle[static_cast<uint32_t>(Quads::Count)];
-    UIUBO* ubo[static_cast<uint32_t>(Quads::Count)];
+    GLuint ubo_handle[(uint32_t)Quads::Count];
+    UIUBO* ubo[(uint32_t)Quads::Count];
 };
 
 #endif
