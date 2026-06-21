@@ -81,6 +81,7 @@ void FontsInit(Heap* const,
 void SetText(Puzzle* const,
              const uint32_t);
 void SetLevelText(UI* const,
+                  Puzzle* const,
                   const uint32_t);
 // Grid
 
@@ -100,10 +101,8 @@ struct SceneUBO {          // WHere does thsi go?
         The final screen rendering comes from the GRID target. A full screen quad
         is rendered with the contents sampled from the GRID target.
     
-    TODO: DSA text.
     TODO: Aspect cells?
     TODO: scale under mouse, radially, like severance. No cursor?
-    TODO: Remove news, pass heaps.
     TODO: Remove algorithm, replace new with heaps. Data tables for levels instead.
 
     Levels:
@@ -144,13 +143,21 @@ int main() {
     FontsInit(heaps[(uint32_t)Heaps::Font], fonts);
     
     Puzzle* const puzzle = (Puzzle*)HeapAllocate(heaps[(uint32_t)Heaps::Main], sizeof(Puzzle));
-    glCreateBuffers(1, &puzzle->vbo); // Not really a vbo. Rename..
+    {// Organizing this better.
+        glCreateBuffers(1, &puzzle->vbo); // Not really a vbo. Rename..
+        glNamedBufferStorage(puzzle->vbo, 131072, nullptr, CPU_CAN_WRITE);
+        puzzle->quads_ptr = glMapNamedBufferRange(puzzle->vbo, 0, 131072, CPU_CAN_WRITE);
+        glCreateBuffers(1, &puzzle->level_vbo);
+        glNamedBufferStorage(puzzle->level_vbo, 1024, nullptr, CPU_CAN_WRITE);
+        puzzle->level_quads_ptr = glMapNamedBufferRange(puzzle->level_vbo, 0, 1024, CPU_CAN_WRITE);
+        puzzle->level_quads_count = 0;
+    }
     
     uint32_t RESOLUTION = 1;
     HeapReset(heaps[(uint32_t)Heaps::Grid]);
     puzzle->cells = (uint32_t*)HeapAllocate(heaps[(uint32_t)Heaps::Grid], RESOLUTION * RESOLUTION * sizeof(uint32_t));
     SetText(puzzle, RESOLUTION);
-    SetLevelText(ui, RESOLUTION);
+    SetLevelText(ui, puzzle, RESOLUTION);
     
     GLuint scene_ubo_handle;
     glCreateBuffers(1, &scene_ubo_handle);
@@ -241,7 +248,7 @@ int main() {
                         HeapReset(heaps[(uint32_t)Heaps::Grid]);
                         puzzle->cells = (uint32_t*)HeapAllocate(heaps[(uint32_t)Heaps::Grid], RESOLUTION * RESOLUTION * sizeof(uint32_t));
                         SetText(puzzle, RESOLUTION);
-                        SetLevelText(ui, RESOLUTION);
+                        SetLevelText(ui, puzzle, RESOLUTION);
                         
                         TotalTime -= 1.0f;
                     }
@@ -288,8 +295,8 @@ int main() {
             glBindTextureUnit(0, fonts[(uint32_t)FontType::English]->texture);
             glUseProgram(shaders[(uint32_t)Shaders::Level]->ID);
             glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Level]);
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ui->level_vbo);
-            glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, ui->level_quads_count);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, puzzle->level_vbo);
+            glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, puzzle->level_quads_count);
         }
         glBindSampler(0, 0);
         glBindTextureUnit(0, 0);

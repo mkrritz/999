@@ -31,9 +31,6 @@ struct UI {
     
     GLuint ubo_handle[(uint32_t)Quads::Count];
     UIUBO* ubo[(uint32_t)Quads::Count];
-    
-    GLuint level_vbo;
-    uint32_t level_quads_count;
 };
 
 #endif

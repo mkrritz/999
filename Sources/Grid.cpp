@@ -86,39 +86,12 @@ struct CharacterQuad {
     glm::vec4 ndc;
 };
 
-
-/*
-There are two competing coordinate spaces in the code:
-    Cell/layout space ( CPU code)
-        CellCenterX/Y, CellScale, etc. ---> produces per-character absolute NDC rectangles
-    Per-number local layout (your intent)
-        LocalX, CharacterScale ---> produces offsets within a multi-digit number
-
-The SDF shader in RenderGame renders each number onto each cell of the rendered grid.
-
-The Level shader is supposed to render a multi
-digit number in some screen location
-dictated by ui->ubo_handle[(uint32_t)Quads::Level].
-
-For multi-digit numbers:
-    CPU:
-        rect.xy = LOCAL offset within number
-        rect.zw = glyph size
-    GPU:
-        base position (NDCX, NDCY) + local offset + UV offset
-
-If we remove CellCenterX/Y from baked position then SDF rendering of all the numbers breaks
-All numbers are overlapping because one subtle but important consequence
-we now implicitly assume all quads in a draw call share the same (NDCX, NDCY)
-
-*/
-
 void SetText(Puzzle* const puzzle,
              const uint32_t resolution) {
     const string level = GenerateLevel(puzzle, resolution);
     uint32_t* NumberOfDigitsOnEachCell = FillLevelInfo(puzzle, level, resolution);
     
-    CharacterQuad* CQ = new CharacterQuad[puzzle->quads_count];
+    CharacterQuad* CQ = (CharacterQuad*)puzzle->quads_ptr;
     uint32_t CharacterIndex = 0;
     
     const float CellScale = 1.0f / float(resolution);
@@ -169,21 +142,19 @@ void SetText(Puzzle* const puzzle,
         LocalX += CharacterScale;
     }
     
-    // Do it with mapped vbo and direct write to field (or memcopy) instead of this gl call
-    glNamedBufferData(puzzle->vbo, puzzle->quads_count * sizeof(CharacterQuad), &CQ[0], GL_STATIC_DRAW);
-    
-    delete[] CQ;
     free(NumberOfDigitsOnEachCell);
 }
 
-void SetLevelText(UI* const ui, const uint32_t level_number) {
+void SetLevelText(UI* const ui,
+                  Puzzle* const puzzle,
+                  uint32_t level_number) {
     const string text = std::to_string(level_number);
-    ui->level_quads_count = (uint32_t)text.length();
+    puzzle->level_quads_count = (uint32_t)text.length();
     
-    CharacterQuad* CQ = new CharacterQuad[ui->level_quads_count];
+    CharacterQuad* CQ = (CharacterQuad*)puzzle->level_quads_ptr;
     
     float CharacterScale = 1.0f;
-    float LocalX = -CharacterScale * ((float(ui->level_quads_count) - 1.0f) / 2.0f);
+    float LocalX = -CharacterScale * ((float(puzzle->level_quads_count) - 1.0f) / 2.0f);
     const float VerticalPadding = 0.3f;
     
     glm::vec4 ui_rect = ui->ubo[(uint32_t)Quads::Level]->rect;
@@ -205,9 +176,6 @@ void SetLevelText(UI* const ui, const uint32_t level_number) {
         
         LocalX += CharacterScale;
     }
-    
-    glNamedBufferData(ui->level_vbo, ui->level_quads_count * sizeof(CharacterQuad), &CQ[0], GL_STATIC_DRAW);
-    delete[] CQ;
 }
 
 void RenderGame(const Shader* const shaders[],
