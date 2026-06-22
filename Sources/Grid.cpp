@@ -4,7 +4,8 @@
 #include "game/Assert.h"
 #include "game/Memory.h"
 #include "game/UI.h"
-#include "game/Font.h"        // Do Text.cpp ?
+#include "game/Font.h"        // Do Text.cpp ? Move SetTExt to Text and then this file
+#include "game/Text.h"     // contains the grid generation and the grid rendering.
 #include "game/Puzzle.h"
 #include "game/Random.h"
 #include "game/Shader.h"
@@ -15,6 +16,7 @@ using std::string;
 glm::vec2 GetAtlasUV(char);
 
 # if 1
+
 static uint32_t* FillLevelInfo(Puzzle* const puzzle,
                                const std::string& level,
                                const uint32_t resolution) {
@@ -80,18 +82,12 @@ static std::string GenerateLevel(Puzzle* const puzzle,
 
 #endif
 
-struct CharacterQuad {
-    glm::vec4 rect;
-    glm::vec4 uv_rect;
-    glm::vec4 ndc;
-};
-
 void SetText(Puzzle* const puzzle,
              const uint32_t resolution) {
     const string level = GenerateLevel(puzzle, resolution);
     uint32_t* NumberOfDigitsOnEachCell = FillLevelInfo(puzzle, level, resolution);
     
-    CharacterQuad* CQ = (CharacterQuad*)puzzle->quads_ptr;
+    CharacterQuad* CQ = puzzle->cells_buffer;
     uint32_t CharacterIndex = 0;
     
     const float CellScale = 1.0f / float(resolution);
@@ -148,13 +144,13 @@ void SetText(Puzzle* const puzzle,
 void SetLevelText(UI* const ui,
                   Puzzle* const puzzle,
                   uint32_t level_number) {
-    const string text = std::to_string(level_number);
-    puzzle->level_quads_count = (uint32_t)text.length();
+    const string text = std::to_string(level_number);                     //Do better.
+    puzzle->number_of_digits_in_current_level = (uint32_t)text.length();  //Do better.
     
-    CharacterQuad* CQ = (CharacterQuad*)puzzle->level_quads_ptr;
+    CharacterQuad* CQ = puzzle->level_buffer;
     
     float CharacterScale = 1.0f;
-    float LocalX = -CharacterScale * ((float(puzzle->level_quads_count) - 1.0f) / 2.0f);
+    float LocalX = -CharacterScale * ((float(puzzle->number_of_digits_in_current_level) - 1.0f) / 2.0f);
     const float VerticalPadding = 0.3f;
     
     glm::vec4 ui_rect = ui->ubo[(uint32_t)Quads::Level]->rect;
@@ -205,7 +201,7 @@ void RenderGame(const Shader* const shaders[],
     glBindTextureUnit(0, font->texture);
     
     glUseProgram(shaders[(uint32_t)Shaders::SDF]->ID);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, puzzle->vbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, puzzle->cells_handle);
     glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, puzzle->quads_count);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, 0);
     

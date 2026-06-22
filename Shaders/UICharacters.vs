@@ -30,7 +30,20 @@ void main() {
 /*
     This shader renders many quads.
     Each positioned at the location assigned in the UIUBO. (Similar to the simple Quad.vs)
-    This allows multiple quads in a cell.
+    This allows multiple quads in a cell. 
+                            (
+                                There is no cell concept here though.
+                                Except that the cell is the quad being rendered.
+                                Regarding GridCharacters.vs:
+                                    Each cell contains many quads,
+                                    but we shouldn't have one UBO per cell.
+                                    So there's that. But we probably also shouldn't
+                                    have one UBO per UI element.
+                                So maybe one grouping is the quads that must be placed
+                                somewhere relative to the playing grid. And one grouping
+                                for the UI elements (score, time, level, etc.) which are
+                                placed relative to the NDC.
+                            )
                             (
                                 TODO: Render this [[[ Level # ]]]
                                 A sentence and a multidigit number.

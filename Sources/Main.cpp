@@ -8,6 +8,7 @@
 #include "game/Camera.h"
 #include "game/Random.h"
 #include "game/Memory.h"
+#include "game/Text.h"
 #include "game/Font.h"
 #include "game/UI.h"
 #include "game/Puzzle.h"
@@ -102,6 +103,7 @@ struct SceneUBO {          // WHere does thsi go?
         is rendered with the contents sampled from the GRID target.
     
     TODO: Aspect cells?
+    TODO: Rename RESOLUTION to Level
     TODO: scale under mouse, radially, like severance. No cursor?
     TODO: Remove algorithm, replace new with heaps. Data tables for levels instead.
 
@@ -118,6 +120,36 @@ struct SceneUBO {          // WHere does thsi go?
         999:
     
 */
+#include <stdio.h>
+#include <math.h>
+
+#include <stdio.h>
+
+long long digits_upto_n_squared(int n) {
+    int x = n * n;
+    long long res = 0;
+    int d = 1, start = 1;
+
+    while (start <= x) {
+        int end = start * 10 - 1;
+        if (end > x) end = x;
+        res += (long long)(end - start + 1) * d;
+        start *= 10;
+        d++;
+    }
+    return res;
+}
+
+int num_digits(long long n) {
+    if (n == 0) return 1;
+
+    int digits = 0;
+    while (n > 0) {
+        n /= 10;
+        digits++;
+    }
+    return digits;
+}
 
 int main() {
     GLFWwindow* window;
@@ -144,16 +176,39 @@ int main() {
     
     Puzzle* const puzzle = (Puzzle*)HeapAllocate(heaps[(uint32_t)Heaps::Main], sizeof(Puzzle));
     {// Organizing this better.
-        glCreateBuffers(1, &puzzle->vbo); // Not really a vbo. Rename..
-        glNamedBufferStorage(puzzle->vbo, 131072, nullptr, CPU_CAN_WRITE);
-        puzzle->quads_ptr = glMapNamedBufferRange(puzzle->vbo, 0, 131072, CPU_CAN_WRITE);
-        glCreateBuffers(1, &puzzle->level_vbo);
-        glNamedBufferStorage(puzzle->level_vbo, 1024, nullptr, CPU_CAN_WRITE);
-        puzzle->level_quads_ptr = glMapNamedBufferRange(puzzle->level_vbo, 0, 1024, CPU_CAN_WRITE);
-        puzzle->level_quads_count = 0;
         
-        // 131072 How many quads does this support? (2000 digits?)
-        // 1024   How many quads does this support? (20 digits?)
+        size_t DIGITS_FOR_MAX_LEVEL = digits_upto_n_squared(MAX_LEVEL); // Compile time?
+        size_t GRID_BUFFER_SIZE = DIGITS_FOR_MAX_LEVEL * sizeof(CharacterQuad);
+        
+        glCreateBuffers(1, &puzzle->cells_handle);
+        glNamedBufferStorage(puzzle->cells_handle,
+                             GRID_BUFFER_SIZE,
+                             nullptr,
+                             CPU_CAN_WRITE);
+        puzzle->cells_buffer = (CharacterQuad*)glMapNamedBufferRange(puzzle->cells_handle,
+                                                                     0,
+                                                                     GRID_BUFFER_SIZE,
+                                                                     CPU_CAN_WRITE);
+        
+        size_t DIGITS_IN_MAX_LEVEL = num_digits(MAX_LEVEL); // Compile time?
+        size_t LEVEL_BUFFER_SIZE = DIGITS_IN_MAX_LEVEL * sizeof(CharacterQuad);
+        
+        glCreateBuffers(1, &puzzle->level_handle);
+        glNamedBufferStorage(puzzle->level_handle,
+                             LEVEL_BUFFER_SIZE,
+                             nullptr,
+                             CPU_CAN_WRITE);
+        puzzle->level_buffer = (CharacterQuad*)glMapNamedBufferRange(puzzle->level_handle,
+                                                                     0,
+                                                                     LEVEL_BUFFER_SIZE,
+                                                                     CPU_CAN_WRITE);
+        
+        
+        printf(" %zu  DIGITS_FOR_MAX_LEVEL\n", DIGITS_FOR_MAX_LEVEL);
+        printf(" %zu  GRID_BUFFER_SIZE\n", GRID_BUFFER_SIZE);
+        printf(" %zu  DIGITS_IN_MAX_LEVEL\n", DIGITS_IN_MAX_LEVEL);
+        printf(" %zu  LEVEL_BUFFER_SIZE\n", LEVEL_BUFFER_SIZE);
+        
     }
     
     uint32_t RESOLUTION = 1;
@@ -298,8 +353,8 @@ int main() {
             glBindTextureUnit(0, fonts[(uint32_t)FontType::English]->texture);
             glUseProgram(shaders[(uint32_t)Shaders::Level]->ID);
             glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Level]);
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, puzzle->level_vbo);
-            glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, puzzle->level_quads_count);
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, puzzle->level_handle);
+            glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, puzzle->number_of_digits_in_current_level);
         }
         glBindSampler(0, 0);
         glBindTextureUnit(0, 0);
