@@ -151,6 +151,9 @@ int main() {
         glNamedBufferStorage(puzzle->level_vbo, 1024, nullptr, CPU_CAN_WRITE);
         puzzle->level_quads_ptr = glMapNamedBufferRange(puzzle->level_vbo, 0, 1024, CPU_CAN_WRITE);
         puzzle->level_quads_count = 0;
+        
+        // 131072 How many quads does this support? (2000 digits?)
+        // 1024   How many quads does this support? (20 digits?)
     }
     
     uint32_t RESOLUTION = 1;

@@ -172,7 +172,13 @@ void SetLevelText(UI* const ui,
         
         glm::vec2 UV = GetAtlasUV(Character);
         CQ[i].uv_rect = glm::vec4(UV.x, UV.y, 0.125f, 0.125f);
-        CQ[i].ndc = glm::vec4(0.0f);
+        CQ[i].ndc = glm::vec4(0.0f); // This is useless here. Because NDC values
+                                     // are taken from the UIUBO for that quad.
+                                     // How to split the similarities?
+                                     // One system to handle grid rendering
+                                     //     (SetText)
+                                     // And one to handle the UI rendering
+                                     //     (SetLevelText)
         
         LocalX += CharacterScale;
     }

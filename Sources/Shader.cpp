@@ -149,12 +149,12 @@ struct ShaderConfig {
     const char* const tes_name;
 };
 const ShaderConfig SHADERS_CONFIG[] = {
-    { "Quad.vs", nullptr, "DrawTexture.fs", nullptr, nullptr, nullptr },
-    { "Quad.vs", nullptr, "Grid.fs",        nullptr, nullptr, nullptr },
-    { "Quad.vs", nullptr, "Highlight.fs",   nullptr, nullptr, nullptr },
-    { "SDF.vs", nullptr, "SDF.fs",          nullptr, nullptr, nullptr },
-    { "Quad.vs", nullptr, "Timer.fs",       nullptr, nullptr, nullptr },
-    { "Level.vs", nullptr, "Level.fs",       nullptr, nullptr, nullptr },
+    { "Quad.vs", nullptr, "DrawTexture.fs",             nullptr, nullptr, nullptr },
+    { "Quad.vs", nullptr, "Grid.fs",                    nullptr, nullptr, nullptr },
+    { "Quad.vs", nullptr, "Highlight.fs",               nullptr, nullptr, nullptr },
+    { "GridCharacters.vs", nullptr, "GridCharacter.fs", nullptr, nullptr, nullptr },
+    { "Quad.vs", nullptr, "Timer.fs",                   nullptr, nullptr, nullptr },
+    { "UICharacters.vs", nullptr, "UICharacter.fs",     nullptr, nullptr, nullptr },
 };
 
 static uint32_t CeilPowerOfTwo(uint32_t N) {
