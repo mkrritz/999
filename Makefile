@@ -20,7 +20,7 @@ TARGET       := $(BINARY_DIR)/$(APP_NAME)
 PCH          := $(INCLUDE_DIR)/pch.h
 
 PKGS     := glfw3 glew
-CXXFLAGS := -O0 -Wall -std=c++17 -mbmi2 \
+CXXFLAGS := -O0 -Wall -std=c++20 -mbmi2 \
             $(shell pkg-config --cflags $(PKGS)) -I$(INCLUDE_DIR)
 LDFLAGS  := $(shell pkg-config --libs $(PKGS)) -lopengl32
 

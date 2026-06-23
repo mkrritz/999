@@ -120,12 +120,31 @@ struct SceneUBO {          // WHere does thsi go?
         999:
     
 */
-#include <stdio.h>
-#include <math.h>
 
-#include <stdio.h>
+consteval bool ValidateCountDigits() {
+    return 1u == CountDigits(0) &&
+           1u == CountDigits(9) &&
+           2u == CountDigits(19) &&
+           3u == CountDigits(998);
+}
+
+consteval bool ValidateCountAllDigitsUpToValueSquared() {
+    return 0u == CountAllDigitsUpToValueSquared(0) &&
+           1u == CountAllDigitsUpToValueSquared(1) &&
+           4u == CountAllDigitsUpToValueSquared(2) &&
+           9u == CountAllDigitsUpToValueSquared(3) &&
+           23u == CountAllDigitsUpToValueSquared(4) &&
+           41u == CountAllDigitsUpToValueSquared(5) &&
+           63u == CountAllDigitsUpToValueSquared(6) &&
+           192u == CountAllDigitsUpToValueSquared(10) &&
+           2592u == CountAllDigitsUpToValueSquared(30) &&
+           5293u == CountAllDigitsUpToValueSquared(40);
+}
 
 int main() {
+    static_assert(ValidateCountDigits());
+    static_assert(ValidateCountAllDigitsUpToValueSquared());
+    
     GLFWwindow* window;
     window = WindowInit();
     
@@ -150,7 +169,7 @@ int main() {
     
     Puzzle* const puzzle = (Puzzle*)HeapAllocate(heaps[(uint32_t)Heaps::Main], sizeof(Puzzle));
     {// Organizing this better.
-        constexpr uint32_t DIGITS_FOR_MAX_LEVEL = count_digits_up_to_square(MAX_LEVEL);
+        constexpr uint32_t DIGITS_FOR_MAX_LEVEL = CountAllDigitsUpToValueSquared(MAX_LEVEL);
         size_t GRID_BUFFER_SIZE = DIGITS_FOR_MAX_LEVEL * sizeof(CharacterQuad);
         glCreateBuffers(1, &puzzle->cells_handle);
         glNamedBufferStorage(puzzle->cells_handle,
@@ -162,7 +181,7 @@ int main() {
                                                                      GRID_BUFFER_SIZE,
                                                                      CPU_CAN_WRITE);
         
-        constexpr uint32_t DIGITS_IN_MAX_LEVEL = count_decimal_digits(MAX_LEVEL);
+        constexpr uint32_t DIGITS_IN_MAX_LEVEL = CountDigits(MAX_LEVEL);
         size_t LEVEL_BUFFER_SIZE = DIGITS_IN_MAX_LEVEL * sizeof(CharacterQuad);
         glCreateBuffers(1, &puzzle->level_handle);
         glNamedBufferStorage(puzzle->level_handle,
