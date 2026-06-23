@@ -125,32 +125,6 @@ struct SceneUBO {          // WHere does thsi go?
 
 #include <stdio.h>
 
-long long digits_upto_n_squared(int n) {
-    int x = n * n;
-    long long res = 0;
-    int d = 1, start = 1;
-
-    while (start <= x) {
-        int end = start * 10 - 1;
-        if (end > x) end = x;
-        res += (long long)(end - start + 1) * d;
-        start *= 10;
-        d++;
-    }
-    return res;
-}
-
-int num_digits(long long n) {
-    if (n == 0) return 1;
-
-    int digits = 0;
-    while (n > 0) {
-        n /= 10;
-        digits++;
-    }
-    return digits;
-}
-
 int main() {
     GLFWwindow* window;
     window = WindowInit();
@@ -176,10 +150,8 @@ int main() {
     
     Puzzle* const puzzle = (Puzzle*)HeapAllocate(heaps[(uint32_t)Heaps::Main], sizeof(Puzzle));
     {// Organizing this better.
-        
-        size_t DIGITS_FOR_MAX_LEVEL = digits_upto_n_squared(MAX_LEVEL); // Compile time?
+        constexpr uint32_t DIGITS_FOR_MAX_LEVEL = count_digits_up_to_square(MAX_LEVEL);
         size_t GRID_BUFFER_SIZE = DIGITS_FOR_MAX_LEVEL * sizeof(CharacterQuad);
-        
         glCreateBuffers(1, &puzzle->cells_handle);
         glNamedBufferStorage(puzzle->cells_handle,
                              GRID_BUFFER_SIZE,
@@ -190,9 +162,8 @@ int main() {
                                                                      GRID_BUFFER_SIZE,
                                                                      CPU_CAN_WRITE);
         
-        size_t DIGITS_IN_MAX_LEVEL = num_digits(MAX_LEVEL); // Compile time?
+        constexpr uint32_t DIGITS_IN_MAX_LEVEL = count_decimal_digits(MAX_LEVEL);
         size_t LEVEL_BUFFER_SIZE = DIGITS_IN_MAX_LEVEL * sizeof(CharacterQuad);
-        
         glCreateBuffers(1, &puzzle->level_handle);
         glNamedBufferStorage(puzzle->level_handle,
                              LEVEL_BUFFER_SIZE,
@@ -203,10 +174,9 @@ int main() {
                                                                      LEVEL_BUFFER_SIZE,
                                                                      CPU_CAN_WRITE);
         
-        
-        printf(" %zu  DIGITS_FOR_MAX_LEVEL\n", DIGITS_FOR_MAX_LEVEL);
+        printf(" %u  DIGITS_FOR_MAX_LEVEL\n", DIGITS_FOR_MAX_LEVEL);
         printf(" %zu  GRID_BUFFER_SIZE\n", GRID_BUFFER_SIZE);
-        printf(" %zu  DIGITS_IN_MAX_LEVEL\n", DIGITS_IN_MAX_LEVEL);
+        printf(" %u  DIGITS_IN_MAX_LEVEL\n", DIGITS_IN_MAX_LEVEL);
         printf(" %zu  LEVEL_BUFFER_SIZE\n", LEVEL_BUFFER_SIZE);
         
     }
