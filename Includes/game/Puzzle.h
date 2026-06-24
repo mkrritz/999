@@ -1,7 +1,7 @@
 #ifndef Puzzle_HPP
 #define Puzzle_HPP
 
-constexpr uint32_t MAX_LEVEL = 5;
+constexpr uint32_t MAX_RESOLUTION = 5;
 
 struct CharacterQuad;
 struct Puzzle {

@@ -5,12 +5,11 @@
 #include "game/Assert.h"
 #include "game/Memory.h"
 #include "game/UI.h"
-#include "game/Font.h"        // Do Text.cpp ? Move SetTExt to Text and then this file
-#include "game/Text.h"     // contains the grid generation and the grid rendering.
-#include "game/Puzzle.h"
+#include "game/Font.h"
+#include "game/Text.h"
+#include "game/Puzzle.h" // Remove this and operate on buffers via pointer parameter?
 #include "game/Random.h"
 #include "game/Shader.h"
-#include "game/Camera.h"
 
 
 using std::string;
@@ -18,6 +17,12 @@ using std::string;
 glm::vec2 GetAtlasUV(char);
 
 # if 1 // Are these up for consteval?
+       // This is CPU side only. Called by SetText only.
+       // Move to main and process them tere and then SetText will accept
+       // pointer parameters, or not. These can all be files, instead of
+       // generated at runtime. Then another script is responsible for generating
+       // the levels. (For the case where they don't need to be random, but whatever).
+       // And then SetText just loads the file and updates buffers.
 
 static uint32_t* FillLevelInfo(Puzzle* const puzzle,
                                const std::string& level,
@@ -64,21 +69,30 @@ static std::string GenerateLevel(Puzzle* const puzzle,
     }
     
     std::string level;
-    
-    for (uint32_t i = 0; i < cellCount; ++i) {
-        level += std::to_string(numbers[i]);
+    uint32_t CharacterIndex = 0;
+    while (true) {
+        level += std::to_string(puzzle->cells[CharacterIndex]);
         
-        if (i == cellCount - 1) {
+        if (CharacterIndex == cellCount - 1) {
             break;
         }
         
-        if ((i + 1) % resolution == 0) {
+        if ((CharacterIndex + 1) % resolution == 0) {
             level += '\n';
         } else {
             level += ' ';
         }
+        CharacterIndex++;
     }
     
+    /* Example for level 3:
+        "123456789"
+        "1 2 3\n4 5 6\n7 8 9"
+        
+        Just read file to load the level instead of generating stuff...
+        Then just assert that level is valid and load and gg.
+        
+    */
     return level;
 }
 
@@ -86,12 +100,19 @@ static std::string GenerateLevel(Puzzle* const puzzle,
 
 
 void SetText(Puzzle* const puzzle,
+             CharacterQuad* const buffer, // Where to ASSERT and what?
              const uint32_t resolution) {
     const string level = GenerateLevel(puzzle, resolution);
+    //GenerateLevel stores the level in strong format with spaces and newlines.
+    // Then we iterate the level character by character and update the CharacterQuad buffer.
     uint32_t* NumberOfDigitsOnEachCell = FillLevelInfo(puzzle, level, resolution);
+    // This buffer has the same number of elements as the cells buffer..
+    // So that's a parallel buffer. That looks like something that can be
+    // calculated procedurally. so there's that.
+    // base 10 with log10 or something.
     
-    CharacterQuad* CQ = puzzle->cells_buffer;
-    uint32_t CharacterIndex = 0;
+    // Make resolution a constexpr and refactor so everything else is constexpr.
+    
     
     const float CellScale = 1.0f / float(resolution);
     const float HalfCellScale = CellScale / 2.0f;
@@ -104,8 +125,11 @@ void SetText(Puzzle* const puzzle,
     float CellCenterX = -1.0f + CellScale;
     float CellCenterY = -1.0f + CellScale;
     
+    uint32_t CharacterIndex = 0;
+    
     for (size_t i = 0; level[i] != '\0'; i++) {
         const char Character = level[i];
+        
         if (Character == '\n') {
             CIY += 1;
             CIX = 0;
@@ -125,7 +149,9 @@ void SetText(Puzzle* const puzzle,
             continue;
         }
         
-        CharacterQuad& quad = CQ[CharacterIndex];
+        glm::vec2 UV = GetAtlasUV(Character);
+        
+        CharacterQuad& quad = buffer[CharacterIndex];
         CharacterIndex += 1;
         
         float X = (LocalX * VerticalPadding - CharacterScale) * HalfCellScale;
@@ -133,8 +159,6 @@ void SetText(Puzzle* const puzzle,
         float W = 2.0f * CharacterScale * HalfCellScale;
         float H = 2.0f * CharacterScale * HalfCellScale;
         quad.rect = glm::vec4(X, Y, W, H);
-        
-        glm::vec2 UV = GetAtlasUV(Character);
         quad.uv_rect = glm::vec4(UV.x, UV.y, 0.125f, 0.125f);
         quad.ndc = glm::vec4(CellCenterX, CellCenterY, 0.0f, 0.0f);
         

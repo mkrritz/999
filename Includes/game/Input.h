@@ -108,7 +108,7 @@ namespace InputM {
 }
 
 struct Input {
-    unsigned int  letters; // xxxxxx26
+    unsigned int  letters; // xxxxxx26  // Do uint32_t...
     unsigned int  special; // 23 esc, f12-f1, 9-0
     unsigned int  toggles; // whatever
     unsigned char mouse;   // xxx5

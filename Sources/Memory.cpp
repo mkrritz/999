@@ -23,7 +23,7 @@ void HeapsInit(Heap* heaps[]) {
     
     heaps[(uint32_t)Heaps::Main]   = HeapInit(sizeof(Puzzle));
     
-    heaps[(uint32_t)Heaps::Grid]   = HeapInit(sizeof(uint32_t) * MAX_LEVEL * MAX_LEVEL);
+    heaps[(uint32_t)Heaps::Grid]   = HeapInit(sizeof(uint32_t) * MAX_RESOLUTION * MAX_RESOLUTION);
 }
 
 void* HeapAllocate(Heap* const heap, size_t size) {

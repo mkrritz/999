@@ -84,6 +84,7 @@ void FontsInit(Heap* const,
 
 // Grid
 void SetText(Puzzle* const,
+             CharacterQuad* const,
              const uint32_t);
 void SetLevelText(UI* const,
                   Puzzle* const,
@@ -103,12 +104,14 @@ void SetLevelText(UI* const,
         is rendered with the contents sampled from the GRID target.
     
     TODO: Aspect cells?
-    TODO: Rename RESOLUTION to Level
     TODO: scale under mouse, radially, like severance. No cursor?
-    TODO: Remove algorithm, replace new with heaps. Data tables for levels instead.
-    TODO: Text.cpp
     TODO:
-    
+    TODO: Text.cpp
+    TODO: Remove algorithm, replace new with heaps. Data tables for levels instead.
+    FIX:  When going from MAX_RESOLUTION back to first level. There is a frame of issues,
+          in which the grid is rendered at the new location with the contents of the 
+          MAX_RESOLUTION instead of the first level. The next frame the issue is resolved...
+          
     Levels:
         PulseEffect, WaveEffect
         Changing target position every frame. (Moving grid around)
@@ -202,8 +205,8 @@ int main() {
     
     Puzzle* const puzzle = (Puzzle*)HeapAllocate(heaps[(uint32_t)Heaps::Main], sizeof(Puzzle));
     {// Organizing this better.
-        constexpr uint32_t DIGITS_FOR_MAX_LEVEL = CountAllDigitsUpToValueSquared(MAX_LEVEL);
-        constexpr size_t GRID_BUFFER_SIZE = DIGITS_FOR_MAX_LEVEL * sizeof(CharacterQuad);
+        constexpr uint32_t DIGITS_FOR_MAX_RESOLUTION = CountAllDigitsUpToValueSquared(MAX_RESOLUTION);
+        constexpr size_t GRID_BUFFER_SIZE = DIGITS_FOR_MAX_RESOLUTION * sizeof(CharacterQuad);
         glCreateBuffers(1, &puzzle->cells_handle);
         glNamedBufferStorage(puzzle->cells_handle,
                              GRID_BUFFER_SIZE,
@@ -214,8 +217,8 @@ int main() {
                                                                      GRID_BUFFER_SIZE,
                                                                      CPU_CAN_WRITE);
         
-        constexpr uint32_t DIGITS_IN_MAX_LEVEL = CountDigits(MAX_LEVEL);
-        constexpr size_t LEVEL_BUFFER_SIZE = DIGITS_IN_MAX_LEVEL * sizeof(CharacterQuad);
+        constexpr uint32_t DIGITS_IN_MAX_RESOLUTION = CountDigits(MAX_RESOLUTION);
+        constexpr size_t LEVEL_BUFFER_SIZE = DIGITS_IN_MAX_RESOLUTION * sizeof(CharacterQuad);
         glCreateBuffers(1, &puzzle->level_handle);
         glNamedBufferStorage(puzzle->level_handle,
                              LEVEL_BUFFER_SIZE,
@@ -226,17 +229,17 @@ int main() {
                                                                      LEVEL_BUFFER_SIZE,
                                                                      CPU_CAN_WRITE);
         
-        //printf(" %u  DIGITS_FOR_MAX_LEVEL\n", DIGITS_FOR_MAX_LEVEL);
+        //printf(" %u  DIGITS_FOR_MAX_RESOLUTION\n", DIGITS_FOR_MAX_RESOLUTION);
         //printf(" %zu  GRID_BUFFER_SIZE\n", GRID_BUFFER_SIZE);
-        //printf(" %u  DIGITS_IN_MAX_LEVEL\n", DIGITS_IN_MAX_LEVEL);
+        //printf(" %u  DIGITS_IN_MAX_RESOLUTION\n", DIGITS_IN_MAX_RESOLUTION);
         //printf(" %zu  LEVEL_BUFFER_SIZE\n", LEVEL_BUFFER_SIZE);
     }
     
-    uint32_t RESOLUTION = 1;
+    uint32_t resolution = 1;
     HeapReset(heaps[(uint32_t)Heaps::Grid]);
-    puzzle->cells = (uint32_t*)HeapAllocate(heaps[(uint32_t)Heaps::Grid], RESOLUTION * RESOLUTION * sizeof(uint32_t));
-    SetText(puzzle, RESOLUTION);
-    SetLevelText(ui, puzzle, RESOLUTION);
+    puzzle->cells = (uint32_t*)HeapAllocate(heaps[(uint32_t)Heaps::Grid], resolution * resolution * sizeof(uint32_t));
+    SetText(puzzle, puzzle->cells_buffer, resolution);
+    SetLevelText(ui, puzzle, resolution);
     
     GLuint scene_ubo_handle;
     glCreateBuffers(1, &scene_ubo_handle);
@@ -248,7 +251,7 @@ int main() {
                                                            0,
                                                            sizeof(SceneUBO),
                                                            CPU_CAN_WRITE);
-    scene_ubo->timers.y = RESOLUTION; // Another
+    scene_ubo->timers.y = resolution; // Another
     
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -295,14 +298,14 @@ int main() {
             const double GY          = GXGYGWGH.y; // Grid y position in [-1, 1]
             const double GW          = GXGYGWGH.z; // Grid width size in (0, 2] range
             const double GH          = GXGYGWGH.w; // Grid height size in (0, 2] range
-            const double HCS         = 0.5f * GW / double(RESOLUTION); // Half cell size
+            const double HCS         = 0.5f * GW / double(resolution); // Half cell size
             const double CS          = 2.0f * HCS; // Cell size (Pefrect square grid)
             const double MOUSE_NDC_X = glm::clamp(input->ndc_x, GX, GX + GW - HCS);
             const double MOUSE_NDC_Y = glm::clamp(input->ndc_y, GY, GY + GH - HCS);
             const double LocalX      = (MOUSE_NDC_X - GX) / GW;
             const double LocalY      = (MOUSE_NDC_Y - GY) / GH;
-            const uint32_t GridX     = uint32_t(LocalX * RESOLUTION);
-            const uint32_t GridY     = uint32_t(LocalY * RESOLUTION);
+            const uint32_t GridX     = uint32_t(LocalX * resolution);
+            const uint32_t GridY     = uint32_t(LocalY * resolution);
             const double CellX       = GX + (GridX + 0.5f) * CS - HCS;
             const double CellY       = GY + (GridY + 0.5f) * CS - HCS;
             ui->ubo[(uint32_t)Quads::Highlight]->rect = glm::vec4(CellX, CellY, CS, CS);
@@ -310,10 +313,10 @@ int main() {
             if (input->mouse & InputM::LEFT_CLICK) {
                 if (input->toggles & InputM::Toggle_LC) {
                     
-                    if (puzzle->cells[GridY * RESOLUTION + GridX] == 1) { // R*R and other modes
-                        RESOLUTION++;
-                        if (RESOLUTION > MAX_LEVEL) {
-                            RESOLUTION = 1;
+                    if (puzzle->cells[GridY * resolution + GridX] == 1) { // R*R and other modes
+                        resolution++;
+                        if (resolution > MAX_RESOLUTION) {
+                            resolution = 1;
                             
                             float x = -0.7f + dist(gen) * 0.3f; // do better maths
                             float y = -0.7f + dist(gen) * 0.3f; // do better maths
@@ -322,12 +325,12 @@ int main() {
                             
                             ui->ubo[(uint32_t)Quads::Grid]->rect = glm::vec4(x, y, z, w);
                         }
-                        scene_ubo->timers.y = RESOLUTION;
+                        scene_ubo->timers.y = resolution;
                         
                         HeapReset(heaps[(uint32_t)Heaps::Grid]);
-                        puzzle->cells = (uint32_t*)HeapAllocate(heaps[(uint32_t)Heaps::Grid], RESOLUTION * RESOLUTION * sizeof(uint32_t));
-                        SetText(puzzle, RESOLUTION);
-                        SetLevelText(ui, puzzle, RESOLUTION);
+                        puzzle->cells = (uint32_t*)HeapAllocate(heaps[(uint32_t)Heaps::Grid], resolution * resolution * sizeof(uint32_t));
+                        SetText(puzzle, puzzle->cells_buffer, resolution);
+                        SetLevelText(ui, puzzle, resolution);
                         
                         TotalTime -= 1.0f;
                     }
