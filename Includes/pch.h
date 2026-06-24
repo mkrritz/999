@@ -58,30 +58,4 @@ typedef struct {
 #define CPU_CAN_READ           ( GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT)
 #define CPU_CAN_READ_AND_WRITE (GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT)
 
-consteval uint32_t CountDigits(uint32_t Value) {
-    uint32_t DigitCount = 0u;
-    while (Value > 0u) {
-        Value /= 10u;
-        DigitCount++;
-    }
-    return DigitCount ? DigitCount : 1u;
-}
-
-consteval uint32_t CountAllDigitsUpToValueSquared(uint32_t Value) {
-    const uint32_t UpperLimit = Value * Value;
-    uint32_t TotalDigits = 0;
-    uint32_t DigitsPerNumber = 1;
-    uint32_t RangeStart = 1;
-    while (RangeStart <= UpperLimit) {
-        const uint32_t RangeEnd = (RangeStart * 10 - 1 < UpperLimit)
-            ? (RangeStart * 10 - 1)
-            : UpperLimit;
-        const uint32_t numbers_in_range = RangeEnd - RangeStart + 1;
-        TotalDigits += numbers_in_range * DigitsPerNumber;
-        RangeStart *= 10;
-        DigitsPerNumber++;
-    }
-    return TotalDigits;
-}
-
 #endif

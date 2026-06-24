@@ -1,4 +1,5 @@
 
+
 #include "pch.h"
 
 #include "game/Assert.h"
@@ -11,11 +12,12 @@
 #include "game/Shader.h"
 #include "game/Camera.h"
 
+
 using std::string;
 
 glm::vec2 GetAtlasUV(char);
 
-# if 1
+# if 1 // Are these up for consteval?
 
 static uint32_t* FillLevelInfo(Puzzle* const puzzle,
                                const std::string& level,
@@ -81,6 +83,7 @@ static std::string GenerateLevel(Puzzle* const puzzle,
 }
 
 #endif
+
 
 void SetText(Puzzle* const puzzle,
              const uint32_t resolution) {
@@ -178,35 +181,4 @@ void SetLevelText(UI* const ui,
         
         LocalX += CharacterScale;
     }
-}
-
-void RenderGame(const Shader* const shaders[],
-                const Camera* const camera,
-                const Font* const fonts[],
-                const UI* const ui,
-                const Puzzle* const puzzle,
-                GLuint scene_ubo_handle) {
-    const Font* const font = fonts[(uint32_t)FontType::English];
-    
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
-    
-    glUseProgram(shaders[(uint32_t)Shaders::Grid]->ID);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Fullscreen]);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 2, 0);
-    
-    glEnable(GL_BLEND);
-    
-    glBindSampler(0, camera->sampler_clamp_linear);
-    glBindTextureUnit(0, font->texture);
-    
-    glUseProgram(shaders[(uint32_t)Shaders::SDF]->ID);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, puzzle->cells_handle);
-    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, puzzle->quads_count);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, 0);
-    
-    glBindSampler(0, 0);
-    glBindTextureUnit(0, 0);
-    
-    glDisable(GL_BLEND);
 }

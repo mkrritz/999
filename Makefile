@@ -30,7 +30,7 @@ SOURCES = \
 	Shader.cpp \
 	Camera.cpp \
 	Font.cpp \
-	Grid.cpp \
+	Text.cpp \
 	Globals.cpp \
 	UI.cpp \
 	Memory.cpp \

@@ -25,6 +25,10 @@ GLuint empty_vao;
 
 GLFWwindow* WindowInit();
 
+struct SceneUBO {
+    glm::vec4 timers;
+};
+
 #if 1
 
 //Memory
@@ -88,10 +92,6 @@ void SetLevelText(UI* const,
 
 #endif
 
-struct SceneUBO {          // WHere does thsi go?
-    glm::vec4 timers;      // WHere does thsi go?
-};                         // WHere does thsi go?
-
 /*  How rendering is done:
         There are two render targets.
         Both of them have the same size. (WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -106,7 +106,9 @@ struct SceneUBO {          // WHere does thsi go?
     TODO: Rename RESOLUTION to Level
     TODO: scale under mouse, radially, like severance. No cursor?
     TODO: Remove algorithm, replace new with heaps. Data tables for levels instead.
-
+    TODO: Text.cpp
+    TODO:
+    
     Levels:
         PulseEffect, WaveEffect
         Changing target position every frame. (Moving grid around)
@@ -120,6 +122,34 @@ struct SceneUBO {          // WHere does thsi go?
         999:
     
 */
+
+#if 1 // Usecases for consteval?
+
+consteval uint32_t CountDigits(uint32_t Value) {
+    uint32_t DigitCount = 0u;
+    while (Value > 0u) {
+        Value /= 10u;
+        DigitCount++;
+    }
+    return DigitCount ? DigitCount : 1u;
+}
+
+consteval uint32_t CountAllDigitsUpToValueSquared(uint32_t Value) {
+    const uint32_t UpperLimit = Value * Value;
+    uint32_t TotalDigits = 0;
+    uint32_t DigitsPerNumber = 1;
+    uint32_t RangeStart = 1;
+    while (RangeStart <= UpperLimit) {
+        const uint32_t RangeEnd = (RangeStart * 10 - 1 < UpperLimit)
+            ? (RangeStart * 10 - 1)
+            : UpperLimit;
+        const uint32_t numbers_in_range = RangeEnd - RangeStart + 1;
+        TotalDigits += numbers_in_range * DigitsPerNumber;
+        RangeStart *= 10;
+        DigitsPerNumber++;
+    }
+    return TotalDigits;
+}
 
 consteval bool ValidateCountDigits() {
     return 1u == CountDigits(0) &&
@@ -140,6 +170,8 @@ consteval bool ValidateCountAllDigitsUpToValueSquared() {
            2592u == CountAllDigitsUpToValueSquared(30) &&
            5293u == CountAllDigitsUpToValueSquared(40);
 }
+
+#endif
 
 int main() {
     static_assert(ValidateCountDigits());
@@ -166,11 +198,12 @@ int main() {
     
     Font* fonts[(uint32_t)FontType::Count] = {nullptr};
     FontsInit(heaps[(uint32_t)Heaps::Font], fonts);
+    const Font* const font = fonts[(uint32_t)FontType::English];
     
     Puzzle* const puzzle = (Puzzle*)HeapAllocate(heaps[(uint32_t)Heaps::Main], sizeof(Puzzle));
     {// Organizing this better.
         constexpr uint32_t DIGITS_FOR_MAX_LEVEL = CountAllDigitsUpToValueSquared(MAX_LEVEL);
-        size_t GRID_BUFFER_SIZE = DIGITS_FOR_MAX_LEVEL * sizeof(CharacterQuad);
+        constexpr size_t GRID_BUFFER_SIZE = DIGITS_FOR_MAX_LEVEL * sizeof(CharacterQuad);
         glCreateBuffers(1, &puzzle->cells_handle);
         glNamedBufferStorage(puzzle->cells_handle,
                              GRID_BUFFER_SIZE,
@@ -182,7 +215,7 @@ int main() {
                                                                      CPU_CAN_WRITE);
         
         constexpr uint32_t DIGITS_IN_MAX_LEVEL = CountDigits(MAX_LEVEL);
-        size_t LEVEL_BUFFER_SIZE = DIGITS_IN_MAX_LEVEL * sizeof(CharacterQuad);
+        constexpr size_t LEVEL_BUFFER_SIZE = DIGITS_IN_MAX_LEVEL * sizeof(CharacterQuad);
         glCreateBuffers(1, &puzzle->level_handle);
         glNamedBufferStorage(puzzle->level_handle,
                              LEVEL_BUFFER_SIZE,
@@ -193,11 +226,10 @@ int main() {
                                                                      LEVEL_BUFFER_SIZE,
                                                                      CPU_CAN_WRITE);
         
-        printf(" %u  DIGITS_FOR_MAX_LEVEL\n", DIGITS_FOR_MAX_LEVEL);
-        printf(" %zu  GRID_BUFFER_SIZE\n", GRID_BUFFER_SIZE);
-        printf(" %u  DIGITS_IN_MAX_LEVEL\n", DIGITS_IN_MAX_LEVEL);
-        printf(" %zu  LEVEL_BUFFER_SIZE\n", LEVEL_BUFFER_SIZE);
-        
+        //printf(" %u  DIGITS_FOR_MAX_LEVEL\n", DIGITS_FOR_MAX_LEVEL);
+        //printf(" %zu  GRID_BUFFER_SIZE\n", GRID_BUFFER_SIZE);
+        //printf(" %u  DIGITS_IN_MAX_LEVEL\n", DIGITS_IN_MAX_LEVEL);
+        //printf(" %zu  LEVEL_BUFFER_SIZE\n", LEVEL_BUFFER_SIZE);
     }
     
     uint32_t RESOLUTION = 1;
@@ -317,7 +349,33 @@ int main() {
         glClearColor(1, 0, 0, 0); // Red
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        RenderGame(shaders, camera, fonts, ui, puzzle, scene_ubo_handle);
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
+        
+        glUseProgram(shaders[(uint32_t)Shaders::Grid]->ID);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Fullscreen]);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 2, 0);
+        
+        glEnable(GL_BLEND);
+        
+        glBindSampler(0, camera->sampler_clamp_linear);
+        
+        glBindTextureUnit(0, font->texture);
+        glUseProgram(shaders[(uint32_t)Shaders::SDF]->ID);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, puzzle->cells_handle);
+        glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, puzzle->quads_count);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, 0);
+        
+        glBindSampler(0, 0);
+        glBindTextureUnit(0, 0);
+        
+        glDisable(GL_BLEND);
+        
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
         
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, ui->quads[(uint32_t)RenderTarget::GRID].framebuffer);
         glClearColor(0, 1, 0, 0); // Green
@@ -337,14 +395,13 @@ int main() {
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Grid]);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-        
-        { // This renders the current level.
-            glBindTextureUnit(0, fonts[(uint32_t)FontType::English]->texture);
-            glUseProgram(shaders[(uint32_t)Shaders::Level]->ID);
-            glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Level]);
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, puzzle->level_handle);
-            glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, puzzle->number_of_digits_in_current_level);
-        }
+    
+        glBindTextureUnit(0, font->texture);
+        glUseProgram(shaders[(uint32_t)Shaders::Level]->ID);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Level]);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, puzzle->level_handle);
+        glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, puzzle->number_of_digits_in_current_level);
+            
         glBindSampler(0, 0);
         glBindTextureUnit(0, 0);
         
@@ -355,9 +412,8 @@ int main() {
         
         glDisable(GL_BLEND);
         
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-        glClearColor(0, 0, 1, 0); // Blue
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
         
         RenderQuadToScreen(shaders, ui, camera->sampler_clamp_linear, ui->quads[(uint32_t)RenderTarget::GRID].texture);
         

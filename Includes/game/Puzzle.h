@@ -1,18 +1,17 @@
 #ifndef Puzzle_HPP
 #define Puzzle_HPP
 
-constexpr uint32_t MAX_LEVEL = 40;
+constexpr uint32_t MAX_LEVEL = 5;
 
 struct CharacterQuad;
 struct Puzzle {
+    uint32_t quads_count;
     uint32_t* cells;
-    
-    uint32_t quads_count; // The total number of quads in all cells.
     
     GLuint cells_handle;
     CharacterQuad* cells_buffer;
     
-    uint32_t number_of_digits_in_current_level;
+    uint32_t number_of_digits_in_current_level; // not here.
     GLuint level_handle;
     CharacterQuad* level_buffer;
 };
