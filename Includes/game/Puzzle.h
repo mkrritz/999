@@ -1,7 +1,16 @@
 #ifndef Puzzle_HPP
 #define Puzzle_HPP
 
-constexpr uint32_t MAX_RESOLUTION = 5;
+constexpr uint32_t MAX_RESOLUTION = 35;
+
+constexpr uint32_t CountDigits(uint32_t Value) {
+    uint32_t DigitCount = 0u;
+    while (Value > 0u) {
+        Value /= 10u;
+        DigitCount++;
+    }
+    return DigitCount ? DigitCount : 1u;
+}
 
 struct CharacterQuad;
 struct Puzzle {
@@ -11,7 +20,6 @@ struct Puzzle {
     GLuint cells_handle;
     CharacterQuad* cells_buffer;
     
-    uint32_t number_of_digits_in_current_level; // not here.
     GLuint level_handle;
     CharacterQuad* level_buffer;
 };

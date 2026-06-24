@@ -126,16 +126,7 @@ void SetLevelText(UI* const,
     
 */
 
-#if 1 // Usecases for consteval?
-
-consteval uint32_t CountDigits(uint32_t Value) {
-    uint32_t DigitCount = 0u;
-    while (Value > 0u) {
-        Value /= 10u;
-        DigitCount++;
-    }
-    return DigitCount ? DigitCount : 1u;
-}
+#if 1
 
 consteval uint32_t CountAllDigitsUpToValueSquared(uint32_t Value) {
     const uint32_t UpperLimit = Value * Value;
@@ -403,7 +394,7 @@ int main() {
         glUseProgram(shaders[(uint32_t)Shaders::Level]->ID);
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Level]);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, puzzle->level_handle);
-        glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, puzzle->number_of_digits_in_current_level);
+        glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, CountDigits(resolution));
             
         glBindSampler(0, 0);
         glBindTextureUnit(0, 0);
