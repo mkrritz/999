@@ -106,8 +106,8 @@ void SetLevelText(UI* const,
     TODO: Aspect cells?
     TODO: scale under mouse, radially, like severance. No cursor?
     TODO:
-    TODO: Text.cpp
-    TODO: Remove algorithm, replace new with heaps. Data tables for levels instead.
+    TODO:
+    TODO:
     FIX:  When going from MAX_RESOLUTION back to first level. There is a frame of issues,
           in which the grid is rendered at the new location with the contents of the 
           MAX_RESOLUTION instead of the first level. The next frame the issue is resolved...
@@ -345,7 +345,7 @@ int main() {
         
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
+        
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
         
         glUseProgram(shaders[(uint32_t)Shaders::Grid]->ID);
@@ -389,7 +389,7 @@ int main() {
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Grid]);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-    
+        
         glBindTextureUnit(0, font->texture);
         glUseProgram(shaders[(uint32_t)Shaders::Level]->ID);
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Level]);

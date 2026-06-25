@@ -21,13 +21,28 @@ glm::vec2 GetAtlasUV(char);
 # if 1
 /*
     Using this LoadLevel to load predetermined levels instead of 
-    having functions here to generate new levels on the fly.
-    That's because that wasn't as customizable. Also, randomness can be added
-    here. (Simply adding a (number % level*level) or something similar. (-1 maybe)
+    having functions here to generate new levels at runtime.
     
-    This doesn't make much sense, but what about a game that has many levels?
-    Each level takes some time to complete, instead of a simple click on a cell.
-    WEll that's that.
+    That way level design is the python script, or whatever.
+    
+    Level format is handled elsewhere.
+    So SetText is just a parser.
+    
+    Is the iteration supposed to happen on the character?
+    What about on the things that are calculated because of the character?
+    For example CharacterQuad buffers and such.
+    Meaning, that instead of the level being a string of space seperated values,
+    each value being log(value) number of digits, each digit being a quad to be rendered.
+    What ekse us tgere t gid?
+    Similarly for SetLevelText, which is pretty much the same thing as SetText,
+    but instead it's setup to be processed by the UICharacters vertex shader,
+    instead of the GridCharacters vertex shader, which again they are pretty much the same.
+    The difference is which thing decides where to place the quads?
+    
+    Also, randomness can be added here.
+    Simply adding a (number % level*level) or something similar. (-1 maybe)
+    Still not random, but it is.
+    
 */
 
 static std::string LoadLevel(Puzzle* const puzzle,
@@ -59,10 +74,6 @@ void SetText(Puzzle* const puzzle,
              CharacterQuad* const buffer,
              const uint32_t resolution) {
     const string level = LoadLevel(puzzle, resolution);
-    
-    // Is the iteration supposed to happen on the character?
-    // What about on the things that are calculated because of the character?
-    // For example CharacterQuad buffers and such.
     
     const float CellScale = 1.0f / float(resolution);
     const float HalfCellScale = CellScale / 2.0f;
