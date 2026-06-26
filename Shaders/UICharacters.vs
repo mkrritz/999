@@ -19,7 +19,7 @@ void main() {
     const vec2 CharacterSize       = quad.rect.zw;
     const vec2 CharacterUVPosition = quad.uv_rect.xy;
     const vec2 CharacterUVSize     = quad.uv_rect.zw;
-    const vec2 CellCenter          = quad.ndc.xy;
+    const vec2 CellCenter          = quad.ndc.xy; // Extremely useless
     
     vec2 Position = vec2(NDCX, NDCY) + CharacterPosition + UV * CharacterSize;
     

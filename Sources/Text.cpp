@@ -73,52 +73,51 @@ static std::string LoadLevel(Puzzle* const puzzle,
 void SetText(Puzzle* const puzzle,
              CharacterQuad* const buffer,
              const uint32_t resolution) {
-    const string level = LoadLevel(puzzle, resolution);
+    const string Level = LoadLevel(puzzle, resolution); // Maybe this is parameter.
+    
+    uint32_t ValidChacater = 0;
     
     const float CellScale = 1.0f / float(resolution);
     const float HalfCellScale = CellScale / 2.0f;
     const float VerticalPadding = 0.6f;
     
-    uint32_t CIX = 0;
-    uint32_t CIY = 0;
-    
-    uint32_t Digits = CountDigits(puzzle->cells[CIY * resolution + CIX]);
-    
+    uint32_t Width = 0;  // Characters in line.
+    uint32_t Height = 0; // Lines.
+    uint32_t Digits = CountDigits(puzzle->cells[Height * resolution + Width]);
     float CharacterScale = 1.0f + 1.0f / float(Digits);
     float LocalX = -CharacterScale * ((float(Digits) - 1.0f) / 2.0f);
     float CellCenterX = -1.0f + CellScale;
     float CellCenterY = -1.0f + CellScale;
     
     uint32_t CharacterIndex = 0;
-    
-    for (size_t i = 0; level[i] != '\0'; i++) {
-        const char Character = level[i];
+    while(true) {
+        const char Character = Level[CharacterIndex++];
         
+        if (Character == '\0') {
+            break;
+        }
         if (Character == '\n') {
-            CIY += 1;
-            CIX = 0;
-            Digits = CountDigits(puzzle->cells[CIY * resolution + CIX]);
+            Height += 1;
+            Width = 0;
+            Digits = CountDigits(puzzle->cells[Height * resolution + Width]);
             CharacterScale = 1.0f + 1.0f / float(Digits);
             LocalX = -CharacterScale * ((float(Digits) - 1.0f) / 2.0f);
-            
             CellCenterX = -1.0f + CellScale;
             CellCenterY += 2.0f * CellScale;
             continue;
         }
         if (Character == ' ') {
-            CIX += 1;
-            Digits = CountDigits(puzzle->cells[CIY * resolution + CIX]);
+            Width += 1;
+            Digits = CountDigits(puzzle->cells[Height * resolution + Width]);
             CharacterScale = 1.0f + 1.0f / float(Digits);
             LocalX = -CharacterScale * ((float(Digits) - 1.0f) / 2.0f);
-            
             CellCenterX += 2.0f * CellScale;
             continue;
         }
         
         glm::vec2 UV = GetAtlasUV(Character);
         
-        CharacterQuad& quad = buffer[CharacterIndex];
-        CharacterIndex += 1;
+        CharacterQuad& quad = buffer[ValidChacater++];
         
         float X = (LocalX * VerticalPadding - CharacterScale) * HalfCellScale;
         float Y = -CharacterScale * HalfCellScale;
@@ -127,11 +126,13 @@ void SetText(Puzzle* const puzzle,
         quad.rect = glm::vec4(X, Y, W, H);
         quad.uv_rect = glm::vec4(UV.x, UV.y, 0.125f, 0.125f);
         quad.ndc = glm::vec4(CellCenterX, CellCenterY, 0.0f, 0.0f);
+        // Remove the two 0.125 and the two 0.0 and keep 2 vec4s.
+        // It's 0.125 because the font image contains a grid of 8x8 characters
+        // The two 0.0 are useless.
         
         LocalX += CharacterScale;
     }
-    
-    puzzle->quads_count = CharacterIndex;
+    puzzle->quads_count = ValidChacater;
 }
 
 void SetLevelText(UI* const ui,
@@ -145,16 +146,14 @@ void SetLevelText(UI* const ui,
     float CharacterScale = 1.0f;
     float LocalX = -CharacterScale * ((float(num_digits) - 1.0f) / 2.0f);
     const float VerticalPadding = 0.3f;
-    
-    glm::vec4 ui_rect = ui->ubo[(uint32_t)Quads::Level]->rect;
-    float scale = ui_rect.w; // height acts as scale
+    float scale2 = 0.15f; // What is this really? Or what is the CharacterScale above really?
     
     for(size_t i = 0; i < text.length(); i++) {
         char Character = text[i];
         
-        float W = scale;
-        float H = scale;
-        float X = (LocalX * VerticalPadding) * scale;
+        float W = scale2;
+        float H = scale2;
+        float X = (LocalX * VerticalPadding) * scale2;
         float Y = 0.0f;
         
         CQ[i].rect = glm::vec4(X, Y, W, H);

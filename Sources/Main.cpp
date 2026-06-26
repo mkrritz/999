@@ -106,7 +106,9 @@ void SetLevelText(UI* const,
     TODO: Aspect cells?
     TODO: scale under mouse, radially, like severance. No cursor?
     TODO:
-    TODO:
+    TODO: Remove SetLevelText function. One SetText is more than enough.
+          Then when rendering the level quads, we can instead render: "Level #Digits"
+          and the space after Level and before #Digits won't be an extra quad...
     TODO:
     FIX:  When going from MAX_RESOLUTION back to first level. There is a frame of issues,
           in which the grid is rendered at the new location with the contents of the 
@@ -209,7 +211,8 @@ int main() {
                                                                      CPU_CAN_WRITE);
         
         constexpr uint32_t DIGITS_IN_MAX_RESOLUTION = CountDigits(MAX_RESOLUTION);
-        constexpr size_t LEVEL_BUFFER_SIZE = DIGITS_IN_MAX_RESOLUTION * sizeof(CharacterQuad);
+        constexpr size_t LEVEL_BUFFER_SIZE = (5 + DIGITS_IN_MAX_RESOLUTION) * sizeof(CharacterQuad);
+                                           // 5 is because "Level" is 5 characters.
         glCreateBuffers(1, &puzzle->level_handle);
         glNamedBufferStorage(puzzle->level_handle,
                              LEVEL_BUFFER_SIZE,
@@ -316,7 +319,7 @@ int main() {
                             
                             ui->ubo[(uint32_t)Quads::Grid]->rect = glm::vec4(x, y, z, w);
                         }
-                        scene_ubo->timers.y = resolution;
+                        scene_ubo->timers.y = resolution; // Not like this..
                         
                         HeapReset(heaps[(uint32_t)Heaps::Grid]);
                         puzzle->cells = (uint32_t*)HeapAllocate(heaps[(uint32_t)Heaps::Grid], resolution * resolution * sizeof(uint32_t));
@@ -394,8 +397,8 @@ int main() {
         glUseProgram(shaders[(uint32_t)Shaders::Level]->ID);
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Level]);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, puzzle->level_handle);
-        glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, CountDigits(resolution));
-            
+        glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, 5 + CountDigits(resolution));
+                                                    // 5 is because "Level" is 5 characters.
         glBindSampler(0, 0);
         glBindTextureUnit(0, 0);
         
