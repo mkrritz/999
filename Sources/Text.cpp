@@ -1,8 +1,5 @@
 
-
 #include "pch.h"
-#include <fstream>
-#include <sstream>
 
 #include "game/Assert.h"
 #include "game/Memory.h"
@@ -118,7 +115,7 @@ void SetGridText(Puzzle* const puzzle,
     float CellCenterX = -1.0f + CellScale;
     float CellCenterY = -1.0f + CellScale;
     
-    std::string current_word = ""; // The fuck is this? it's a builder.
+    std::string current_word = "";
     
     for (size_t CharacterIndex = 0; CharacterIndex <= Level.length(); ++CharacterIndex) {
         char Character = (CharacterIndex < Level.length()) ? Level[CharacterIndex] : '\0';
@@ -134,13 +131,13 @@ void SetGridText(Puzzle* const puzzle,
                 glm::vec2 anchor = glm::vec2(CellCenterX, CellCenterY);
                 glm::vec2 offset = glm::vec2(-0.5f, -0.5f);
                 
-                ValidChacater += SetText(current_word,            // What does this return and why?
-                                         buffer + ValidChacater,  // Formalize all this.
-                                         anchor,                  // Formalize all this.
-                                         scale,                   // Formalize all this.
-                                         VerticalPadding / 2.0f,  // Formalize all this.
-                                         true,                    // Formalize all this.
-                                         offset);                 // Formalize all this.
+                ValidChacater += SetText(current_word,
+                                         buffer + ValidChacater,
+                                         anchor,
+                                         scale,
+                                         VerticalPadding / 2.0f,
+                                         true,
+                                         offset);
                 current_word.clear();
             }
             
@@ -158,5 +155,6 @@ void SetGridText(Puzzle* const puzzle,
         
         current_word += Character;
     }
+    
     puzzle->quads_count = ValidChacater;
 }
