@@ -70,104 +70,93 @@ static std::string LoadLevel(Puzzle* const puzzle,
 
 #endif
 
-void SetText(Puzzle* const puzzle,
-             CharacterQuad* const buffer,
-             const uint32_t resolution) {
-    const string Level = LoadLevel(puzzle, resolution); // Maybe this is parameter.
+uint32_t SetText(const std::string& text,
+                 CharacterQuad* const buffer,
+                 const glm::vec2 anchor,
+                 const float scale,
+                 const float padding,
+                 const bool center_text,
+                 const glm::vec2 offset) {
+    uint32_t written = 0;
+    float local_x = 0.0f;
+    if (center_text) {
+        local_x = -((float(text.length()) - 1.0f) / 2.0f);
+    }
     
+    for (size_t i = 0; i < text.length(); ++i) {
+        char c = text[i];
+        if (c == ' ') {
+            local_x += 1.0f;
+            continue;
+        }
+        
+        glm::vec2 uv = GetAtlasUV(c);
+        CharacterQuad& quad = buffer[written++];
+        
+        float x = (local_x * padding + offset.x) * scale;
+        float y = offset.y * scale;
+        
+        quad.rect = glm::vec4(x, y, scale, scale);
+        quad.uv = uv;
+        quad.anchor = anchor;
+        
+        local_x += 1.0f;
+    }
+    return written;
+}
+
+void SetGridText(Puzzle* const puzzle,
+                 CharacterQuad* const buffer,
+                 const uint32_t resolution) {
+    const std::string Level = LoadLevel(puzzle, resolution);
     uint32_t ValidChacater = 0;
     
     const float CellScale = 1.0f / float(resolution);
-    const float HalfCellScale = CellScale / 2.0f;
     const float VerticalPadding = 0.6f;
-    
-    uint32_t Width = 0;  // Characters in line.
-    uint32_t Height = 0; // Lines.
-    uint32_t Digits = CountDigits(puzzle->cells[Height * resolution + Width]);
-    float CharacterScale = 1.0f + 1.0f / float(Digits);
-    float LocalX = -CharacterScale * ((float(Digits) - 1.0f) / 2.0f);
+    uint32_t Width = 0;
+    uint32_t Height = 0;
     float CellCenterX = -1.0f + CellScale;
     float CellCenterY = -1.0f + CellScale;
     
-    uint32_t CharacterIndex = 0;
-    while(true) {
-        const char Character = Level[CharacterIndex++];
-        
-        if (Character == '\0') {
-            break;
-        }
-        if (Character == '\n') {
-            Height += 1;
-            Width = 0;
-            Digits = CountDigits(puzzle->cells[Height * resolution + Width]);
-            CharacterScale = 1.0f + 1.0f / float(Digits);
-            LocalX = -CharacterScale * ((float(Digits) - 1.0f) / 2.0f);
-            CellCenterX = -1.0f + CellScale;
-            CellCenterY += 2.0f * CellScale;
-            continue;
-        }
-        if (Character == ' ') {
-            Width += 1;
-            Digits = CountDigits(puzzle->cells[Height * resolution + Width]);
-            CharacterScale = 1.0f + 1.0f / float(Digits);
-            LocalX = -CharacterScale * ((float(Digits) - 1.0f) / 2.0f);
-            CellCenterX += 2.0f * CellScale;
+    std::string current_word = ""; // The fuck is this? it's a builder.
+    
+    for (size_t CharacterIndex = 0; CharacterIndex <= Level.length(); ++CharacterIndex) {
+        char Character = (CharacterIndex < Level.length()) ? Level[CharacterIndex] : '\0';
+        if (Character == '\r') {
             continue;
         }
         
-        glm::vec2 UV = GetAtlasUV(Character);
+        if (Character == ' ' || Character == '\n' || Character == '\0') {
+            if (!current_word.empty()) {
+                uint32_t Digits = CountDigits(puzzle->cells[Height * resolution + Width]);
+                float CharacterScale = 1.0f + 1.0f / float(Digits);
+                float scale = CharacterScale * CellScale;
+                glm::vec2 anchor = glm::vec2(CellCenterX, CellCenterY);
+                glm::vec2 offset = glm::vec2(-0.5f, -0.5f);
+                
+                ValidChacater += SetText(current_word,            // What does this return and why?
+                                         buffer + ValidChacater,  // Formalize all this.
+                                         anchor,                  // Formalize all this.
+                                         scale,                   // Formalize all this.
+                                         VerticalPadding / 2.0f,  // Formalize all this.
+                                         true,                    // Formalize all this.
+                                         offset);                 // Formalize all this.
+                current_word.clear();
+            }
+            
+            if (Character == '\n') {
+                Height += 1;
+                Width = 0;
+                CellCenterX = -1.0f + CellScale;
+                CellCenterY += 2.0f * CellScale;
+            } else if (Character == ' ') {
+                Width += 1;
+                CellCenterX += 2.0f * CellScale;
+            }
+            continue;
+        }
         
-        CharacterQuad& quad = buffer[ValidChacater++];
-        
-        float X = (LocalX * VerticalPadding - CharacterScale) * HalfCellScale;
-        float Y = -CharacterScale * HalfCellScale;
-        float W = 2.0f * CharacterScale * HalfCellScale;
-        float H = 2.0f * CharacterScale * HalfCellScale;
-        quad.rect = glm::vec4(X, Y, W, H);
-        quad.uv_rect = glm::vec4(UV.x, UV.y, 0.125f, 0.125f);
-        quad.ndc = glm::vec4(CellCenterX, CellCenterY, 0.0f, 0.0f);
-        // Remove the two 0.125 and the two 0.0 and keep 2 vec4s.
-        // It's 0.125 because the font image contains a grid of 8x8 characters
-        // The two 0.0 are useless.
-        
-        LocalX += CharacterScale;
+        current_word += Character;
     }
     puzzle->quads_count = ValidChacater;
-}
-
-void SetLevelText(UI* const ui,
-                  Puzzle* const puzzle,
-                  uint32_t level_number) {
-    const string text = std::to_string(level_number);
-    uint32_t num_digits = CountDigits(level_number);
-    
-    CharacterQuad* CQ = puzzle->level_buffer;
-    
-    float CharacterScale = 1.0f;
-    float LocalX = -CharacterScale * ((float(num_digits) - 1.0f) / 2.0f);
-    const float VerticalPadding = 0.3f;
-    float scale2 = 0.15f; // What is this really? Or what is the CharacterScale above really?
-    
-    for(size_t i = 0; i < text.length(); i++) {
-        char Character = text[i];
-        
-        float W = scale2;
-        float H = scale2;
-        float X = (LocalX * VerticalPadding) * scale2;
-        float Y = 0.0f;
-        
-        CQ[i].rect = glm::vec4(X, Y, W, H);
-        
-        glm::vec2 UV = GetAtlasUV(Character);
-        CQ[i].uv_rect = glm::vec4(UV.x, UV.y, 0.125f, 0.125f);
-        CQ[i].ndc = glm::vec4(0.0f); // This is useless here. Because NDC values
-                                     // are taken from the UIUBO for that quad.
-                                     // How to split the similarities?
-                                     // One system to handle grid rendering
-                                     //     (SetText)
-                                     // And one to handle the UI rendering
-                                     //     (SetLevelText)
-        
-        LocalX += CharacterScale;
-    }
 }

@@ -21,6 +21,6 @@ void main() {
 
     FragColor = vec4(mix(BORDER_COLOR, FILL_COLOR, fill), border);
     
-    //FragColor += vec4(QUAD_COLOR, 0.2);
+    FragColor += vec4(QUAD_COLOR, 0.2);
     //FragColor = vec4(UV, 0, 1);
 }

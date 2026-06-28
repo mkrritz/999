@@ -16,6 +16,6 @@ void main() {
 
     FragColor = vec4(Distance,Distance,Distance, border);
     
-    //FragColor += vec4(0.1, 0.24313, 0.21568, 0.2);
+    FragColor += vec4(0.1, 0.24313, 0.21568, 0.2);
     //FragColor = vec4(UV, 0, 1);
 }

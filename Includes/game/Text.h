@@ -3,8 +3,8 @@
 
 struct CharacterQuad {
     glm::vec4 rect;
-    glm::vec4 uv_rect;
-    glm::vec4 ndc;
+    glm::vec2 uv;
+    glm::vec2 anchor;
 };
 
 #endif
