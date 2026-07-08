@@ -12,6 +12,7 @@ BINARY_DIR   := Binaries
 OBJECT_DIR   := Objects
 
 SHADER_DIR   := Shaders
+LEVEL_DIR    := Levels
 FONT_DIR     := Fonts
 
 RELEASE_DIR  := Release
@@ -100,6 +101,7 @@ release:
 	@copy /Y $(subst /,\,$(TARGET).exe) $(subst /,\,$(RELEASE_DIR)) > nul
 	@echo Copying Shaders...
 	@xcopy /E /I /Y $(SHADER_DIR) $(subst /,\,$(RELEASE_DIR))\$(SHADER_DIR) > nul
+	@xcopy /E /I /Y $(LEVEL_DIR) $(subst /,\,$(RELEASE_DIR))\$(LEVEL_DIR) > nul
 	@xcopy /S /I /Y $(FONT_DIR)\*.png $(subst /,\,$(RELEASE_DIR))\$(FONT_DIR)\ > nul
 	@powershell -NoProfile -ExecutionPolicy Bypass -File ReleaseDLLs.ps1 \
 				-ReleaseDir "$(subst /,\,$(RELEASE_DIR))" -AppName "$(APP_NAME)"
