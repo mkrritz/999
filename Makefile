@@ -1,6 +1,4 @@
 
-# Where did these go? -lgdi32 -luser32 -lkernel32
-
 APP_NAME     := 999
 APP_ICON     := 999
 
@@ -12,7 +10,6 @@ BINARY_DIR   := Binaries
 OBJECT_DIR   := Objects
 
 SHADER_DIR   := Shaders
-LEVEL_DIR    := Levels
 FONT_DIR     := Fonts
 
 RELEASE_DIR  := Release
@@ -21,9 +18,11 @@ TARGET       := $(BINARY_DIR)/$(APP_NAME)
 PCH          := $(INCLUDE_DIR)/pch.h
 
 PKGS     := glfw3 glew
-CXXFLAGS := -O0 -Wall -std=c++20 -mbmi2 \
-            $(shell pkg-config --cflags $(PKGS)) -I$(INCLUDE_DIR)
-LDFLAGS  := $(shell pkg-config --libs $(PKGS)) -lopengl32
+CXXFLAGS := -O0 -Wall -std=c++20 \
+            $(shell pkg-config --static --cflags $(PKGS)) -I$(INCLUDE_DIR)
+LDFLAGS  := -static-libgcc -static-libstdc++ -Wl,-Bstatic \
+            $(shell pkg-config --static --libs $(PKGS)) -lwinpthread \
+            -Wl,-Bdynamic -lopengl32 -lgdi32
 
 SOURCES = \
 	Main.cpp \
@@ -101,7 +100,6 @@ release:
 	@copy /Y $(subst /,\,$(TARGET).exe) $(subst /,\,$(RELEASE_DIR)) > nul
 	@echo Copying Shaders...
 	@xcopy /E /I /Y $(SHADER_DIR) $(subst /,\,$(RELEASE_DIR))\$(SHADER_DIR) > nul
-	@xcopy /E /I /Y $(LEVEL_DIR) $(subst /,\,$(RELEASE_DIR))\$(LEVEL_DIR) > nul
 	@xcopy /S /I /Y $(FONT_DIR)\*.png $(subst /,\,$(RELEASE_DIR))\$(FONT_DIR)\ > nul
 	@powershell -NoProfile -ExecutionPolicy Bypass -File ReleaseDLLs.ps1 \
 				-ReleaseDir "$(subst /,\,$(RELEASE_DIR))" -AppName "$(APP_NAME)"

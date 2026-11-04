@@ -44,7 +44,7 @@ void UpdateInputStateKeyboard(int key, int scancode, int action, int mods) {
 }
 
 void UpdateInputStateMouse(int key, int action, int mods) {
-    key = 1 << key; // key is 0, 1, ..
+    key = 1 << key;
     _input.mouse = (action == GLFW_PRESS) ? (_input.mouse | key) : (_input.mouse & ~key);
 #ifdef DEBUG
     std::bitset<8 * sizeof(_input.mouse)> mouse(_input.mouse);

@@ -6,7 +6,7 @@
 #include "game/UI.h"
 #include "game/Font.h"
 #include "game/Text.h"
-#include "game/Puzzle.h" // Remove this and operate on buffers via pointer parameter?
+#include "game/Puzzle.h"
 #include "game/Random.h"
 #include "game/Shader.h"
 
@@ -36,9 +36,6 @@ glm::vec2 GetAtlasUV(char);
     instead of the GridCharacters vertex shader, which again they are pretty much the same.
     The difference is which thing decides where to place the quads?
     
-    Also, randomness can be added here.
-    Simply adding a (number % level*level) or something similar. (-1 maybe)
-    Still not random, but it is.
     
 */
 
@@ -105,6 +102,7 @@ uint32_t SetText(const std::string& text,
 void SetGridText(Puzzle* const puzzle,
                  CharacterQuad* const buffer,
                  const uint32_t resolution) {
+                                            // Revert back to randomly generated instead..
     const std::string Level = LoadLevel(puzzle, resolution);
     uint32_t ValidChacater = 0;
     

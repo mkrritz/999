@@ -110,11 +110,13 @@ void SetGridText(Puzzle* const,
     TODO: Aspect cells?
     TODO: scale under mouse, radially, like severance. No cursor?
     TODO:
-    TODO: 
+    TODO: REMOVE CONSTEVAL AND CONSTEXPR, RANDOM LEVELS INSTEAD.
+    TODO:
+    TODO:
     FIX:  When going from MAX_RESOLUTION back to first level. There is a frame of issues,
           in which the grid is rendered at the new location with the contents of the 
           MAX_RESOLUTION instead of the first level. The next frame the issue is resolved...
-          
+    
     Levels:
         PulseEffect, WaveEffect
         Changing target position every frame. (Moving grid around)
@@ -203,7 +205,7 @@ int main() {
     const Font* const font = fonts[(uint32_t)FontType::English];
     
     Puzzle* const puzzle = (Puzzle*)HeapAllocate(heaps[(uint32_t)Heaps::Main], sizeof(Puzzle));
-    {// Organizing this better.
+    { // Do this this better.
         constexpr uint32_t DIGITS_FOR_MAX_RESOLUTION = CountAllDigitsUpToValueSquared(MAX_RESOLUTION);
         constexpr size_t GRID_BUFFER_SIZE = DIGITS_FOR_MAX_RESOLUTION * sizeof(CharacterQuad);
         glCreateBuffers(1, &puzzle->cells_handle);
@@ -253,7 +255,7 @@ int main() {
                                                            0,
                                                            sizeof(SceneUBO),
                                                            CPU_CAN_WRITE);
-    scene_ubo->timers.y = resolution; // Another
+    scene_ubo->timers.y = resolution;
     
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);

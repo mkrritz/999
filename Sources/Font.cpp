@@ -99,8 +99,6 @@ glm::vec2 GetAtlasUV(char c) {
 static const string FONTS[(uint32_t)FontType::Count] = {
     // Keep these in the same order as the 'enum struct FontType'
     "font_1.png",
-    //"font_1.png",
-    //"font_1.png",
 };
 
 void FontsInit(Heap* const heap,
