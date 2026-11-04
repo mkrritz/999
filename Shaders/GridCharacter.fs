@@ -18,9 +18,9 @@ void main() {
     float aaf = fwidth(d);
     float fill  = smoothstep(FILL - aaf, FILL + aaf, d);
     float border = smoothstep(BORDER - aaf, BORDER + aaf, d);
-
-    FragColor = vec4(mix(BORDER_COLOR, FILL_COLOR, fill), border);
     
-    FragColor += vec4(QUAD_COLOR, 0.2);
+    FragColor = vec4(mix(BORDER_COLOR, FILL_COLOR, fill), border);
+    //FragColor += vec4(QUAD_COLOR, 0.2);
+    
     //FragColor = vec4(UV, 0, 1);
 }

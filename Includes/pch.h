@@ -27,7 +27,7 @@
 
 #include <chrono>
 #include <random>
-#include <algorithm> // Remove
+#include <algorithm> // Remove and implement instead.
 
 extern GLuint empty_vao; // For invoking shaders with attributeless vertices.
 

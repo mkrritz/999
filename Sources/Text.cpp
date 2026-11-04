@@ -10,59 +10,39 @@
 #include "game/Random.h"
 #include "game/Shader.h"
 
-
 using std::string;
 
 glm::vec2 GetAtlasUV(char);
 
-# if 1
-/*
-    Using this LoadLevel to load predetermined levels instead of 
-    having functions here to generate new levels at runtime.
-    
-    That way level design is the python script, or whatever.
-    
-    Level format is handled elsewhere.
-    So SetText is just a parser.
-    
-    Is the iteration supposed to happen on the character?
-    What about on the things that are calculated because of the character?
-    For example CharacterQuad buffers and such.
-    Meaning, that instead of the level being a string of space seperated values,
-    each value being log(value) number of digits, each digit being a quad to be rendered.
-    What ekse us tgere t gid?
-    Similarly for SetLevelText, which is pretty much the same thing as SetText,
-    but instead it's setup to be processed by the UICharacters vertex shader,
-    instead of the GridCharacters vertex shader, which again they are pretty much the same.
-    The difference is which thing decides where to place the quads?
-    
-    
-*/
-
-static std::string LoadLevel(Puzzle* const puzzle,
-                             const uint32_t resolution) {
-    std::string filename = "Levels/" + std::to_string(resolution) + ".txt";
-    std::ifstream file(filename);
-    
-    if (!file.is_open()) {
-        ASSERT(true, "Failed to load level file!");
-    }
-    
-    std::string level((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+std::string GenerateRandomLevel(Puzzle* const puzzle,
+                                const uint32_t resolution) {
     const uint32_t cellCount = resolution * resolution;
-    uint32_t cellIndex = 0;
-    std::stringstream ss(level);
-    std::string token;
-    while (ss >> token) {
-        if (cellIndex < cellCount) {
-            puzzle->cells[cellIndex++] = std::stoul(token);
+    
+    for (uint32_t i = 0; i < cellCount; ++i) {
+        puzzle->cells[i] = i + 1;
+    }
+    std::shuffle(puzzle->cells, puzzle->cells + cellCount, gen);
+    
+    std::string level;
+    for (uint32_t y = 0; y < resolution; ++y) {
+        for (uint32_t x = 0; x < resolution; ++x) {
+            level += std::to_string(puzzle->cells[y * resolution + x]);
+            if (x + 1 < resolution) {
+                level += ' ';
+            }
+        }
+        if (y + 1 < resolution) {
+            level += '\n';
         }
     }
     
     return level;
 }
 
-#endif
+std::string GenerateLevel(Puzzle* const puzzle,
+                          const uint32_t resolution) {
+    return GenerateRandomLevel(puzzle, resolution);
+}
 
 uint32_t SetText(const std::string& text,
                  CharacterQuad* const buffer,
@@ -90,6 +70,10 @@ uint32_t SetText(const std::string& text,
         float x = (local_x * padding + offset.x) * scale;
         float y = offset.y * scale;
         
+        if (c >= 'A' && c <= 'Z') {
+            y += 0.1f * scale;         // This is not the way, is it?
+        }
+        
         quad.rect = glm::vec4(x, y, scale, scale);
         quad.uv = uv;
         quad.anchor = anchor;
@@ -102,8 +86,7 @@ uint32_t SetText(const std::string& text,
 void SetGridText(Puzzle* const puzzle,
                  CharacterQuad* const buffer,
                  const uint32_t resolution) {
-                                            // Revert back to randomly generated instead..
-    const std::string Level = LoadLevel(puzzle, resolution);
+    const std::string Level = GenerateRandomLevel(puzzle, resolution);
     uint32_t ValidChacater = 0;
     
     const float CellScale = 1.0f / float(resolution);

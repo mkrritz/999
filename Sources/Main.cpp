@@ -31,10 +31,10 @@ struct SceneUBO {
 
 #if 1
 
-//Memory
+// Memory
 void HeapsInit(Heap*[]);
 void PrintMemory(const Heap* const*);
-//Memory
+// Memory
 
 // Camera
 void CameraInit(Heap* const);
@@ -110,9 +110,9 @@ void SetGridText(Puzzle* const,
     TODO: Aspect cells?
     TODO: scale under mouse, radially, like severance. No cursor?
     TODO:
-    TODO: REMOVE CONSTEVAL AND CONSTEXPR, RANDOM LEVELS INSTEAD.
     TODO:
     TODO:
+    
     FIX:  When going from MAX_RESOLUTION back to first level. There is a frame of issues,
           in which the grid is rendered at the new location with the contents of the 
           MAX_RESOLUTION instead of the first level. The next frame the issue is resolved...
@@ -131,9 +131,7 @@ void SetGridText(Puzzle* const,
     
 */
 
-#if 1
-
-consteval uint32_t CountAllDigitsUpToValueSquared(uint32_t Value) {
+uint32_t CountAllDigitsUpToValueSquared(uint32_t Value) {
     const uint32_t UpperLimit = Value * Value;
     uint32_t TotalDigits = 0;
     uint32_t DigitsPerNumber = 1;
@@ -150,36 +148,7 @@ consteval uint32_t CountAllDigitsUpToValueSquared(uint32_t Value) {
     return TotalDigits;
 }
 
-consteval bool ValidateCountDigits() {
-    return 1u == CountDigits(0) &&
-           1u == CountDigits(9) &&
-           2u == CountDigits(19) &&
-           3u == CountDigits(998);
-}
-
-consteval bool ValidateCountAllDigitsUpToValueSquared() {
-    return 0u == CountAllDigitsUpToValueSquared(0) &&
-           1u == CountAllDigitsUpToValueSquared(1) &&
-           4u == CountAllDigitsUpToValueSquared(2) &&
-           9u == CountAllDigitsUpToValueSquared(3) &&
-           23u == CountAllDigitsUpToValueSquared(4) &&
-           41u == CountAllDigitsUpToValueSquared(5) &&
-           63u == CountAllDigitsUpToValueSquared(6) &&
-           192u == CountAllDigitsUpToValueSquared(10) &&
-           2592u == CountAllDigitsUpToValueSquared(30) &&
-           5293u == CountAllDigitsUpToValueSquared(40);
-}
-
-#endif
-
-#define LEVEL_STRING 6 // "Level " is 6 and then there is the number of digits of the current level.
-                       // There is space for DIGITS_IN_MAX_RESOLUTION anyway. So it's all good.
-                       // Let's not do dedicated fixed space for all.
-                       // Fix this by making the size known asap.
-
 int main() {
-    static_assert(ValidateCountDigits());
-    static_assert(ValidateCountAllDigitsUpToValueSquared());
     
     GLFWwindow* window;
     window = WindowInit();
@@ -206,8 +175,8 @@ int main() {
     
     Puzzle* const puzzle = (Puzzle*)HeapAllocate(heaps[(uint32_t)Heaps::Main], sizeof(Puzzle));
     { // Do this this better.
-        constexpr uint32_t DIGITS_FOR_MAX_RESOLUTION = CountAllDigitsUpToValueSquared(MAX_RESOLUTION);
-        constexpr size_t GRID_BUFFER_SIZE = DIGITS_FOR_MAX_RESOLUTION * sizeof(CharacterQuad);
+        const uint32_t DIGITS_FOR_MAX_RESOLUTION = CountAllDigitsUpToValueSquared(MAX_RESOLUTION);
+        const size_t GRID_BUFFER_SIZE = DIGITS_FOR_MAX_RESOLUTION * sizeof(CharacterQuad);
         glCreateBuffers(1, &puzzle->cells_handle);
         glNamedBufferStorage(puzzle->cells_handle,
                              GRID_BUFFER_SIZE,
@@ -218,8 +187,10 @@ int main() {
                                                                      GRID_BUFFER_SIZE,
                                                                      CPU_CAN_WRITE);
         
-        constexpr uint32_t DIGITS_IN_MAX_RESOLUTION = CountDigits(MAX_RESOLUTION);
-        constexpr size_t LEVEL_BUFFER_SIZE = (LEVEL_STRING + DIGITS_IN_MAX_RESOLUTION) * sizeof(CharacterQuad);
+        const uint32_t DIGITS_IN_MAX_RESOLUTION = CountDigits(MAX_RESOLUTION);
+        
+        // 5 because of the extra characters required to display 'Level'
+        const size_t LEVEL_BUFFER_SIZE = (5 + DIGITS_IN_MAX_RESOLUTION) * sizeof(CharacterQuad);
         glCreateBuffers(1, &puzzle->level_handle);
         glNamedBufferStorage(puzzle->level_handle,
                              LEVEL_BUFFER_SIZE,
@@ -229,6 +200,7 @@ int main() {
                                                                      0,
                                                                      LEVEL_BUFFER_SIZE,
                                                                      CPU_CAN_WRITE);
+        memset(puzzle->level_buffer, 0, LEVEL_BUFFER_SIZE);
         
         //printf(" %u  DIGITS_FOR_MAX_RESOLUTION\n", DIGITS_FOR_MAX_RESOLUTION);
         //printf(" %zu  GRID_BUFFER_SIZE\n", GRID_BUFFER_SIZE);
@@ -240,7 +212,7 @@ int main() {
     HeapReset(heaps[(uint32_t)Heaps::Grid]);
     puzzle->cells = (uint32_t*)HeapAllocate(heaps[(uint32_t)Heaps::Grid], resolution * resolution * sizeof(uint32_t));
     SetGridText(puzzle, puzzle->cells_buffer, resolution);
-    SetText("Level " + std::to_string(resolution),
+    puzzle->level_quads_count = SetText("Level " + std::to_string(resolution),
             puzzle->level_buffer,
             glm::vec2(ui->ubo[(uint32_t)Quads::Level]->rect.x, ui->ubo[(uint32_t)Quads::Level]->rect.y),
             0.15f, 0.3f, false);
@@ -334,7 +306,7 @@ int main() {
                         HeapReset(heaps[(uint32_t)Heaps::Grid]);
                         puzzle->cells = (uint32_t*)HeapAllocate(heaps[(uint32_t)Heaps::Grid], resolution * resolution * sizeof(uint32_t));
                         SetGridText(puzzle, puzzle->cells_buffer, resolution);
-                        SetText("Level " + std::to_string(resolution),
+                        puzzle->level_quads_count = SetText("Level " + std::to_string(resolution),
                                 puzzle->level_buffer,
                                 glm::vec2(ui->ubo[(uint32_t)Quads::Level]->rect.x, ui->ubo[(uint32_t)Quads::Level]->rect.y),
                                 0.15f, 0.3f, false);
@@ -410,8 +382,7 @@ int main() {
         glUseProgram(shaders[(uint32_t)Shaders::Level]->ID);
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Level]);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, puzzle->level_handle);
-        glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, LEVEL_STRING + CountDigits(resolution));
-                                                       // Fix this to know what to render..
+        glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, puzzle->level_quads_count);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, 0);
         glBindSampler(0, 0);
         glBindTextureUnit(0, 0);

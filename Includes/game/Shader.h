@@ -39,7 +39,7 @@ struct Shader {
     time_t tes_time;
     time_t tcs_time;
     
-    glm::uvec3 threads; // REMOVE THIS IN A BIT
+    glm::uvec3 threads;
 };
 
 #endif
