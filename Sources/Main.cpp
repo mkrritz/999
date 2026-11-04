@@ -149,6 +149,14 @@ uint32_t CountAllDigitsUpToValueSquared(uint32_t Value) {
 }
 
 int main() {
+    wchar_t exe_path[MAX_PATH];
+    GetModuleFileNameW(NULL, exe_path, MAX_PATH);
+    std::filesystem::path exe_dir = std::filesystem::path(exe_path).parent_path();
+    if (std::filesystem::exists(exe_dir / "Shaders")) {
+        std::filesystem::current_path(exe_dir);
+    } else if (std::filesystem::exists(exe_dir.parent_path() / "Shaders")) {
+        std::filesystem::current_path(exe_dir.parent_path());
+    }
     
     GLFWwindow* window;
     window = WindowInit();
