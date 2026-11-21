@@ -8,7 +8,6 @@
 #include "game/Text.h"
 #include "game/Puzzle.h"
 #include "game/Random.h"
-#include "game/Shader.h"
 
 using std::string;
 

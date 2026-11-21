@@ -17,12 +17,16 @@ RELEASE_DIR  := Release
 TARGET       := $(BINARY_DIR)/$(APP_NAME)
 PCH          := $(INCLUDE_DIR)/pch.h
 
+TOOLCHAIN    := $(abspath $(dir $(firstword $(shell where.exe $(COMPILER) 2>nul)))/..)
+FOCUS_LIB    := $(TOOLCHAIN)/lib/libFocus.a
+
 PKGS     := glfw3 glew
 CXXFLAGS := -O0 -Wall -std=c++20 \
             $(shell pkg-config --static --cflags $(PKGS)) -I$(INCLUDE_DIR)
-LDFLAGS  := -static-libgcc -static-libstdc++ -Wl,-Bstatic \
+LDLIBS   := -Wl,-Bstatic -lFocus \
             $(shell pkg-config --static --libs $(PKGS)) -lwinpthread \
             -Wl,-Bdynamic -lopengl32 -lgdi32
+LDFLAGS  := -static-libgcc -static-libstdc++
 
 SOURCES = \
 	Main.cpp \
@@ -31,7 +35,6 @@ SOURCES = \
 	Camera.cpp \
 	Font.cpp \
 	Text.cpp \
-	Globals.cpp \
 	UI.cpp \
 	Memory.cpp \
 	Window.cpp
@@ -59,9 +62,9 @@ $(OBJECT_DIR) $(ASSEMBLY_DIR) $(BINARY_DIR):
 ##############################################################
 
 ##############################################################
-$(TARGET): $(PCH).gch $(OBJECTS) | $(BINARY_DIR)
+$(TARGET): $(PCH).gch $(OBJECTS) $(FOCUS_LIB) | $(BINARY_DIR)
 	@echo Linking...
-	@$(COMPILER) $(OBJECTS) -o $@ $(LDFLAGS)
+	@$(COMPILER) $(OBJECTS) -o $@ $(LDFLAGS) $(LDLIBS)
 
 $(PCH).gch: $(PCH)
 	@echo Generating precompiled header...

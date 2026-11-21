@@ -4,7 +4,6 @@
 #include "game/Assert.h"
 #include "game/Input.h"
 #include "game/Shader.h"
-#include "game/Globals.h"
 #include "game/Camera.h"
 #include "game/Random.h"
 #include "game/Memory.h"
@@ -41,10 +40,9 @@ void CameraInit(Heap* const);
 // Camera
 
 // Shader
-void ShadersInit(Heap* const,
-                 Shader*[], bool);
-void ReloadShader(Heap* const,
-                  uint32_t);
+static void ShaderLogWrite(void*, const char* text) {
+    printf("%s\n", text);
+}
 // Shader
 
 // Input
@@ -53,25 +51,7 @@ Input* NextRecordedInputState();
 
 // UI
 void UIInit(Heap* const);
-void HighlightCell(const Shader* const [],
-                   const UI* const,
-                   GLuint);
-void RenderGame(const Shader* const [],
-                const Camera* const,
-                const Font* const [],
-                const UI* const,
-                const Puzzle* const,
-                GLuint);
-void BlitGameScreen(const Shader* const [],
-                    const Camera* const,
-                    const UI* const,
-                    GLuint,
-                    GLuint);
-void RenderTimer(const Shader* const [],
-                 const UI* const,
-                 GLuint);
-
-void RenderQuadToScreen(const Shader* const*,
+void RenderQuadToScreen(const ShaderLibrary* const,
                         const UI* const,
                         const GLuint,
                         const GLuint);
@@ -168,8 +148,13 @@ int main() {
     Heap* heaps[(uint32_t)Heaps::Count] = {nullptr};
     HeapsInit(heaps);
     
-    Shader* shaders[(uint32_t)Shaders::Count] = {nullptr};
-    ShadersInit(heaps[(uint32_t)Heaps::Shader], shaders, true);
+    ShaderLog shaderLog = { ShaderLogWrite, nullptr };
+    ShaderLibrary* shaders = ShaderLibraryOpen("Shaders/",
+                                               FocusShaderPrograms,
+                                               FocusShaderProgramCount,
+                                               &shaderLog,
+                                               1);
+    ASSERT(shaders == nullptr, "Shader library failed to open.");
     
     CameraInit(heaps[(uint32_t)Heaps::Camera]);
     Camera* const camera = (Camera*)heaps[(uint32_t)Heaps::Camera]->memory;
@@ -268,11 +253,9 @@ int main() {
         
         input = NextRecordedInputState();
         
-        while (shader_slots_to_reload) {
-            uint32_t slot = __builtin_ctzll(shader_slots_to_reload);
-            shader_slots_to_reload &= ~(1ULL << slot);
-            ReloadShader(heaps[(uint32_t)Heaps::Shader], slot);
-        }
+        // A no-op unless a shader file changed; the library owns the watcher
+        // and knows which programs were touched.
+        ShaderLibraryReloadChanged(shaders);
         
         while(AccumulatorTime >= dt) {
             AccumulatorTime -= dt;
@@ -344,7 +327,7 @@ int main() {
         
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
         
-        glUseProgram(shaders[(uint32_t)Shaders::Grid]->ID);
+        glUseProgram(ShaderLibraryProgram(shaders, (size_t)Shaders::Grid));
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Fullscreen]);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, 0);
@@ -354,7 +337,7 @@ int main() {
         glBindSampler(0, camera->sampler_clamp_linear);
         
         glBindTextureUnit(0, font->texture);
-        glUseProgram(shaders[(uint32_t)Shaders::SDF]->ID);
+        glUseProgram(ShaderLibraryProgram(shaders, (size_t)Shaders::SDF));
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, puzzle->cells_handle);
         glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, puzzle->quads_count);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, 0);
@@ -373,7 +356,7 @@ int main() {
         
         glEnable(GL_BLEND);
         
-        glUseProgram(shaders[(uint32_t)Shaders::Timer]->ID);
+        glUseProgram(ShaderLibraryProgram(shaders, (size_t)Shaders::Timer));
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Fullscreen]);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -381,13 +364,13 @@ int main() {
         glBindSampler(0, camera->sampler_repeat_linear);
         
         glBindTextureUnit(0, ui->quads[(uint32_t)RenderTarget::FULLSCREEN].texture);
-        glUseProgram(shaders[(uint32_t)Shaders::DrawTexture]->ID);
+        glUseProgram(ShaderLibraryProgram(shaders, (size_t)Shaders::DrawTexture));
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Grid]);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         
         glBindTextureUnit(0, font->texture);
-        glUseProgram(shaders[(uint32_t)Shaders::Level]->ID);
+        glUseProgram(ShaderLibraryProgram(shaders, (size_t)Shaders::Level));
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Level]);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, puzzle->level_handle);
         glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, puzzle->level_quads_count);
@@ -395,7 +378,7 @@ int main() {
         glBindSampler(0, 0);
         glBindTextureUnit(0, 0);
         
-        glUseProgram(shaders[(uint32_t)Shaders::Highlight]->ID);
+        glUseProgram(ShaderLibraryProgram(shaders, (size_t)Shaders::Highlight));
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Highlight]);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -410,7 +393,10 @@ int main() {
         glfwSwapBuffers(window);
     }
     
+    ShaderLibraryClose(shaders);
     glBindVertexArray(0);
+    glfwDestroyWindow(window);
+    glfwTerminate();
     
     return 1;
 }

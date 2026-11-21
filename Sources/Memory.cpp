@@ -18,7 +18,6 @@ static Heap* HeapInit(size_t size) {
 void HeapsInit(Heap* heaps[]) {
     heaps[(uint32_t)Heaps::Camera] = HeapInit(1024);
     heaps[(uint32_t)Heaps::Font]   = HeapInit(1024);
-    heaps[(uint32_t)Heaps::Shader] = HeapInit(5 * 1024);
     heaps[(uint32_t)Heaps::UI]     = HeapInit(1024);
     
     heaps[(uint32_t)Heaps::Main]   = HeapInit(sizeof(Puzzle));
@@ -50,7 +49,6 @@ static std::string FormatWithCommas(uint32_t value) {
 static const char* HeapNames[(uint32_t)Heaps::Count] = {
     // Keep these in sync with 'enum struct Heaps'
     // Used for prints only
-    "Shader",
     "UI",
     "Main",
     "Font",

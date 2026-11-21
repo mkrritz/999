@@ -4,7 +4,6 @@
 #include "game/Assert.h"
 #include "game/Window.h"
 #include "game/Camera.h"
-#include "game/Shader.h"
 #include "game/Memory.h"
 
 static GLuint Sampler(GLuint wrap, GLuint filter) {

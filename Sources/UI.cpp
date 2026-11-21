@@ -7,11 +7,12 @@
 #include "game/Shader.h"
 #include "game/Window.h"
 
-void RenderQuadToScreen(const Shader* const* shaders,
+void RenderQuadToScreen(const ShaderLibrary* const shaders,
                         const UI* const ui,
                         const GLuint sampler,
                         const GLuint texture) {
-    const Shader* shader = shaders[(uint32_t)Shaders::DrawTexture];
+    const GLuint program = ShaderLibraryProgram(
+        shaders, (size_t)Shaders::DrawTexture);
     
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // This means screen rendering.
     glClearColor(0, 0, 0, 0);
@@ -20,7 +21,7 @@ void RenderQuadToScreen(const Shader* const* shaders,
     glBindSampler(0, sampler);
     glBindTextureUnit(0, texture);
     
-    glUseProgram(shader->ID);
+    glUseProgram(program);
     glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Fullscreen]);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindBufferBase(GL_UNIFORM_BUFFER, 2, 0);
