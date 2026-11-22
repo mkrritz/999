@@ -1,5 +1,6 @@
-Binaries/999.exe
-Objects
-Assemblies
-Release
+Binaries/
+Objects/
+Assemblies/
+Release/
+
 Includes/pch.h.gch
