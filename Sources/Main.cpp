@@ -51,7 +51,7 @@ Input* NextRecordedInputState();
 
 // UI
 void UIInit(Heap* const);
-void RenderQuadToScreen(const ShaderLibrary* const,
+void RenderQuadToScreen(const Focus* const,
                         const UI* const,
                         const GLuint,
                         const GLuint);
@@ -149,7 +149,7 @@ int main() {
     HeapsInit(heaps);
     
     ShaderLog shaderLog = { ShaderLogWrite, nullptr };
-    ShaderLibrary* shaders = ShaderLibraryOpen("Shaders/",
+    Focus* shaders = FocusOpen("Shaders/",
                                                FocusShaderPrograms,
                                                FocusShaderProgramCount,
                                                &shaderLog,
@@ -255,7 +255,7 @@ int main() {
         
         // A no-op unless a shader file changed; the library owns the watcher
         // and knows which programs were touched.
-        ShaderLibraryReloadChanged(shaders);
+        ReloadShaders(shaders);
         
         while(AccumulatorTime >= dt) {
             AccumulatorTime -= dt;
@@ -327,7 +327,7 @@ int main() {
         
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
         
-        glUseProgram(ShaderLibraryProgram(shaders, (size_t)Shaders::Grid));
+        glUseProgram(GetShader(shaders, (size_t)Shaders::Grid));
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Fullscreen]);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, 0);
@@ -337,7 +337,7 @@ int main() {
         glBindSampler(0, camera->sampler_clamp_linear);
         
         glBindTextureUnit(0, font->texture);
-        glUseProgram(ShaderLibraryProgram(shaders, (size_t)Shaders::SDF));
+        glUseProgram(GetShader(shaders, (size_t)Shaders::SDF));
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, puzzle->cells_handle);
         glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, puzzle->quads_count);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, 0);
@@ -356,7 +356,7 @@ int main() {
         
         glEnable(GL_BLEND);
         
-        glUseProgram(ShaderLibraryProgram(shaders, (size_t)Shaders::Timer));
+        glUseProgram(GetShader(shaders, (size_t)Shaders::Timer));
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Fullscreen]);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -364,13 +364,13 @@ int main() {
         glBindSampler(0, camera->sampler_repeat_linear);
         
         glBindTextureUnit(0, ui->quads[(uint32_t)RenderTarget::FULLSCREEN].texture);
-        glUseProgram(ShaderLibraryProgram(shaders, (size_t)Shaders::DrawTexture));
+        glUseProgram(GetShader(shaders, (size_t)Shaders::DrawTexture));
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Grid]);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         
         glBindTextureUnit(0, font->texture);
-        glUseProgram(ShaderLibraryProgram(shaders, (size_t)Shaders::Level));
+        glUseProgram(GetShader(shaders, (size_t)Shaders::Level));
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Level]);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, puzzle->level_handle);
         glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, puzzle->level_quads_count);
@@ -378,7 +378,7 @@ int main() {
         glBindSampler(0, 0);
         glBindTextureUnit(0, 0);
         
-        glUseProgram(ShaderLibraryProgram(shaders, (size_t)Shaders::Highlight));
+        glUseProgram(GetShader(shaders, (size_t)Shaders::Highlight));
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene_ubo_handle);
         glBindBufferBase(GL_UNIFORM_BUFFER, 2, ui->ubo_handle[(uint32_t)Quads::Highlight]);
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -393,7 +393,7 @@ int main() {
         glfwSwapBuffers(window);
     }
     
-    ShaderLibraryClose(shaders);
+    FocusClose(shaders);
     glBindVertexArray(0);
     glfwDestroyWindow(window);
     glfwTerminate();

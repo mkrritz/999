@@ -2,7 +2,7 @@
 
 #include "game/Shader.h"
 
-extern const ShaderFileSet FocusShaderPrograms[] = {
+extern const ShaderConfig FocusShaderPrograms[] = {
     { "Quad.vs",       nullptr, "DrawTexture.fs",   nullptr, nullptr, nullptr },
     { "Quad.vs",       nullptr, "Grid.fs",          nullptr, nullptr, nullptr },
     { "Quad.vs",       nullptr, "Highlight.fs",     nullptr, nullptr, nullptr },

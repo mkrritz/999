@@ -7,11 +7,11 @@
 #include "game/Shader.h"
 #include "game/Window.h"
 
-void RenderQuadToScreen(const ShaderLibrary* const shaders,
+void RenderQuadToScreen(const Focus* const shaders,
                         const UI* const ui,
                         const GLuint sampler,
                         const GLuint texture) {
-    const GLuint program = ShaderLibraryProgram(
+    const GLuint program = GetShader(
         shaders, (size_t)Shaders::DrawTexture);
     
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // This means screen rendering.
