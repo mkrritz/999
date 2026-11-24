@@ -7,7 +7,7 @@
 #include "game/Shader.h"
 #include "game/Window.h"
 
-void RenderQuadToScreen(const Focus* const shaders,
+void RenderQuadToScreen(const Focus* shaders,
                         const UI* const ui,
                         const GLuint sampler,
                         const GLuint texture) {

@@ -39,19 +39,13 @@ void PrintMemory(const Heap* const*);
 void CameraInit(Heap* const);
 // Camera
 
-// Shader
-static void ShaderLogWrite(void*, const char* text) {
-    printf("%s\n", text);
-}
-// Shader
-
 // Input
 Input* NextRecordedInputState();
 // Input
 
 // UI
 void UIInit(Heap* const);
-void RenderQuadToScreen(const Focus* const,
+void RenderQuadToScreen(const Focus*,
                         const UI* const,
                         const GLuint,
                         const GLuint);
@@ -148,12 +142,12 @@ int main() {
     Heap* heaps[(uint32_t)Heaps::Count] = {nullptr};
     HeapsInit(heaps);
     
-    ShaderLog shaderLog = { ShaderLogWrite, nullptr };
+    ShaderLog shaderLog = { FocusConsoleLog, nullptr };
     Focus* shaders = FocusOpen("Shaders/",
-                                               FocusShaderPrograms,
-                                               FocusShaderProgramCount,
-                                               &shaderLog,
-                                               1);
+                               Programs,
+                               static_cast<size_t>(Shaders::Count),
+                               &shaderLog,
+                               1);
     ASSERT(shaders == nullptr, "Shader library failed to open.");
     
     CameraInit(heaps[(uint32_t)Heaps::Camera]);

@@ -2,7 +2,7 @@
 
 #include "game/Shader.h"
 
-extern const ShaderConfig FocusShaderPrograms[] = {
+ShaderConfig Programs[] = {
     { "Quad.vs",       nullptr, "DrawTexture.fs",   nullptr, nullptr, nullptr },
     { "Quad.vs",       nullptr, "Grid.fs",          nullptr, nullptr, nullptr },
     { "Quad.vs",       nullptr, "Highlight.fs",     nullptr, nullptr, nullptr },
@@ -11,9 +11,5 @@ extern const ShaderConfig FocusShaderPrograms[] = {
     { "Characters.vs", nullptr, "UICharacter.fs",   nullptr, nullptr, nullptr },
 };
 
-extern const size_t FocusShaderProgramCount =
-    sizeof(FocusShaderPrograms) / sizeof(FocusShaderPrograms[0]);
-
-static_assert(sizeof(FocusShaderPrograms) / sizeof(FocusShaderPrograms[0]) ==
-              (size_t)Shaders::Count,
-              "The enum and the Focus table must list the same programs.");
+static_assert(sizeof(Programs) / sizeof(Programs[0]) == (size_t)Shaders::Count,
+              "Mismatch between Programs and 'enum struct Shaders'.");
